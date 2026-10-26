@@ -238,7 +238,6 @@ private val MONTHS_SHORT = listOf("JAN", "FEB", "MAR", "APR", "MEI", "JUN",
     "JUL", "AGU", "SEP", "OKT", "NOV", "DES")
 private val DAYS_SHORT = listOf("SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN")
 private val FaceInk = Color(0xFF181430)
-private val ScreenGreen = Color(0xFFD7F7CD)
 
 /**
  * Tiga muka hidup di atas gambar:
