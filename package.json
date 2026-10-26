@@ -1,8 +1,8 @@
 {
   "name": "ruang-kelas",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
-  "description": "Aplikasi Android native (Kotlin + Jetpack Compose) Ruang Kelas: alat administrasi guru bertema pixel art, landscape, gelap. Prototipe HTML disimpan sebagai acuan desain.",
+  "description": "Launcher Android pixel-art: satu gambar workspace isometrik, objek bisa diketuk untuk membuka aplikasi bawaan.",
   "scripts": {
     "start": "python3 -m http.server 4173 --bind 0.0.0.0 --directory prototype",
     "build": "node build.js"

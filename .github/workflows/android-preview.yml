@@ -153,8 +153,8 @@ jobs:
           git config user.name "ruang-kelas-bot"
           git config user.email "bot@users.noreply.github.com"
           mkdir -p dist
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RuangKelas-debug.apk
-          git add -f dist/RuangKelas-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RuangKelas-0.7.0-debug.apk
+          git add -f dist/RuangKelas-0.7.0-debug.apk
           git commit -m "build(apk): RuangKelas-debug.apk dari CI [skip ci]"
           git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
 

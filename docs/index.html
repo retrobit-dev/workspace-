@@ -3,116 +3,75 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ruang Kelas 0.6.0 — screenshot dari emulator tablet</title>
+<title>Ruang Kelas 0.7.0 — launcher workspace</title>
 <style>
   :root{
     --ink:#0E0D1A; --night:#15142A; --navy:#1D1C36; --panel:#272647;
     --cream:#F8E9C8; --cream2:#E3CDA6; --muted:#A79EC4; --muted2:#7D75A0;
-    --amber:#F2AB3F; --coral:#EF6A5B; --teal:#4FA49A; --mint:#9FD8B0; --sky:#77B8D9;
+    --amber:#F2AB3F; --mint:#9FD8B0;
   }
   *{box-sizing:border-box}
-  body{
-    margin:0; background:var(--night); color:var(--cream);
-    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-    -webkit-font-smoothing:none;
-  }
-  header{
-    padding:28px 32px 20px; border-bottom:3px solid var(--ink);
-    background:linear-gradient(180deg,#1a1936,#15142a);
-  }
-  h1{
-    margin:0 0 8px; font-size:22px; letter-spacing:2px; color:var(--amber);
-    text-transform:uppercase;
-  }
-  .sub{color:var(--muted); font-size:13px; line-height:1.6}
-  .badges{display:flex; flex-wrap:wrap; gap:8px; margin-top:16px}
-  .badge{
-    border:2px solid var(--ink); background:var(--panel); color:var(--cream2);
-    padding:6px 10px; font-size:11px; letter-spacing:1px;
-  }
-  .badge b{color:var(--amber)}
-  a.cta{
-    display:inline-block; margin-top:18px; padding:14px 22px;
-    background:var(--amber); color:var(--ink); font-weight:700;
-    text-decoration:none; border:3px solid var(--ink);
-    font-size:14px; letter-spacing:1px; text-transform:uppercase;
-  }
+  body{margin:0;background:var(--night);color:var(--cream);
+    font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+  header{padding:26px 30px 20px;border-bottom:3px solid var(--ink)}
+  h1{margin:0 0 8px;font-size:20px;letter-spacing:2px;color:var(--amber);text-transform:uppercase}
+  .sub{color:var(--muted);font-size:13px;line-height:1.65;max-width:70ch}
+  a.cta{display:inline-block;margin-top:16px;padding:13px 20px;background:var(--amber);
+    color:var(--ink);font-weight:700;text-decoration:none;border:3px solid var(--ink);
+    font-size:13px;letter-spacing:1px;text-transform:uppercase}
   a.cta:hover{background:var(--mint)}
-  main{padding:24px 32px 48px}
-  h2{
-    font-size:13px; letter-spacing:2px; color:var(--cream2);
-    text-transform:uppercase; margin:32px 0 14px;
-    border-left:6px solid var(--amber); padding-left:10px;
-  }
-  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(420px,1fr)); gap:18px}
-  figure{margin:0; background:var(--navy); border:2px solid var(--ink)}
-  figure img{display:block; width:100%; height:auto; image-rendering:pixelated}
-  figcaption{
-    padding:10px 12px; font-size:12px; color:var(--muted);
-    border-top:2px solid var(--ink); display:flex; gap:8px; align-items:baseline;
-  }
-  figcaption b{color:var(--cream); letter-spacing:1px}
+  main{padding:22px 30px 40px}
+  h2{font-size:12px;letter-spacing:2px;color:var(--cream2);text-transform:uppercase;
+    margin:26px 0 12px;border-left:6px solid var(--amber);padding-left:10px}
+  figure{margin:0 0 18px;background:var(--navy);border:2px solid var(--ink)}
+  figure img{display:block;width:100%;height:auto;image-rendering:pixelated}
+  figcaption{padding:10px 12px;font-size:12px;color:var(--muted);border-top:2px solid var(--ink)}
+  figcaption b{color:var(--cream);letter-spacing:1px}
+  ul{color:var(--cream2);font-size:13px;line-height:1.8}
   code{color:var(--mint)}
-  footer{
-    padding:24px 32px 40px; border-top:3px solid var(--ink);
-    color:var(--muted2); font-size:12px; line-height:1.7;
-  }
 </style>
 </head>
 <body>
 <header>
-  <h1>Ruang Kelas 0.6.0 · Android</h1>
+  <h1>Ruang Kelas 0.7.0 · Launcher</h1>
   <div class="sub">
-    Aplikasi native Kotlin + Jetpack Compose. Semua gambar di bawah diambil dari
-    <b>emulator tablet 2560 × 1600</b> (landscape) setelah APK dipasang lewat GitHub Actions,
-    bukan mockup atau render HTML.
+    Satu layar saja: gambar workspace isometrik ukuran penuh. Tidak ada sidebar, tab, header,
+    atau panel. Setiap objek di gambar bisa diketuk dan akan membuka aplikasi bawaannya —
+    aplikasi itu dibuat menyusul satu per satu.
   </div>
-  <div class="badges">
-    <span class="badge">minSdk <b>26</b></span>
-    <span class="badge">targetSdk <b>35</b></span>
-    <span class="badge">layar <b>landscape</b></span>
-    <span class="badge">tema <b>gelap</b></span>
-    <span class="badge">art <b>51 × 32 px</b></span>
-    <span class="badge">12 layar</span>
-  </div>
-  <a class="cta" href="../dist/RuangKelas-debug.apk" download>⬇ Unduh APK (debug, 8,8 MB)</a>
+  <a class="cta" href="../dist/RuangKelas-0.7.0-debug.apk" download>⬇ Unduh APK 0.7.0</a>
 </header>
 
 <main>
-  <h2>Layar aplikasi</h2>
-  <div class="grid">
-    <figure><img src="screens/home.png" alt="Beranda"><figcaption><b>Beranda</b> scene + 11 hotspot, tool, catatan</figcaption></figure>
-    <figure><img src="screens/jurnal.png" alt="Jurnal"><figcaption><b>Jurnal</b> catatan pertemuan per kelas</figcaption></figure>
-    <figure><img src="screens/catatan.png" alt="Buku Catatan"><figcaption><b>Buku Catatan</b> cari, pin, filter</figcaption></figure>
-    <figure><img src="screens/absensi.png" alt="Absensi"><figcaption><b>Absensi</b> 24 siswa, H/S/I/A per baris</figcaption></figure>
-    <figure><img src="screens/nilai.png" alt="Nilai"><figcaption><b>Nilai</b> NA otomatis 40/30/30, KKM 75</figcaption></figure>
-    <figure><img src="screens/jadwal.png" alt="Jadwal"><figcaption><b>Jadwal</b> per hari + rekap pekan</figcaption></figure>
-    <figure><img src="screens/kalender.png" alt="Kalender"><figcaption><b>Kalender</b> agenda bulanan per tanggal</figcaption></figure>
-    <figure><img src="screens/kalkulator.png" alt="Kalkulator"><figcaption><b>Kalkulator</b> hitung · nilai · konversi</figcaption></figure>
-    <figure><img src="screens/binder.png" alt="Binder"><figcaption><b>Binder Materi</b> checklist kelengkapan dokumen</figcaption></figure>
-    <figure><img src="screens/kelas.png" alt="Kelas"><figcaption><b>Kelas</b> 4 kelas, kehadiran, siswa perlu perhatian</figcaption></figure>
-    <figure><img src="screens/profil.png" alt="Profil"><figcaption><b>Profil</b> identitas, XP, 8 lencana, pengaturan</figcaption></figure>
-    <figure><img src="screens/kit.png" alt="Design Kit"><figcaption><b>Design Kit</b> token warna, tipografi, peta tap</figcaption></figure>
-  </div>
+  <h2>Tampilan launcher</h2>
+  <figure>
+    <img src="screens/launcher.png" alt="Launcher Ruang Kelas">
+    <figcaption><b>Workspace</b> 1312 × 820 gambar asli, penuh ke seluruh layar 2560 × 1600</figcaption>
+  </figure>
 
-  <h2>Bukti interaksi nyata</h2>
-  <div class="grid">
-    <figure><img src="screens/aksi-dialog-jurnal.png" alt="Dialog catat pertemuan"><figcaption><b>Dialog</b> Catat Pertemuan terbuka</figcaption></figure>
-    <figure><img src="screens/aksi-form-jurnal.png" alt="Form terisi"><figcaption><b>Input</b> materi diketik lewat keyboard sistem</figcaption></figure>
-    <figure><img src="screens/aksi-jurnal-baru.png" alt="Jurnal tersimpan"><figcaption><b>Tersimpan</b> jurnal baru masuk daftar &amp; XP naik</figcaption></figure>
-    <figure><img src="screens/aksi-kalkulator.png" alt="Kalkulator 860"><figcaption><b>Hitung</b> 25 × 36 − 40 = <code>860</code></figcaption></figure>
-    <figure><img src="screens/aksi-form-catatan.png" alt="Form catatan"><figcaption><b>Catatan baru</b> judul + isi terisi</figcaption></figure>
-    <figure><img src="screens/aksi-catatan-baru.png" alt="Catatan tersimpan"><figcaption><b>Tersimpan</b> catatan ke-6 muncul di atas</figcaption></figure>
-    <figure><img src="screens/aksi-dialog-agenda.png" alt="Dialog agenda"><figcaption><b>Agenda</b> dialog tambah agenda kalender</figcaption></figure>
-    <figure><img src="screens/aksi-absensi.png" alt="Absensi diubah"><figcaption><b>Absensi</b> status diubah, rekap langsung ikut</figcaption></figure>
-  </div>
+  <h2>Objek yang bisa diketuk</h2>
+  <ul>
+    <li><b>Laptop</b> → Jurnal</li>
+    <li><b>Tumpukan buku</b> → Nilai</li>
+    <li><b>Papan tulis</b> → Absensi</li>
+    <li><b>Papan pin</b> → Buku Catatan</li>
+    <li><b>Jam digital</b> → Jadwal (layarnya menampilkan waktu nyata)</li>
+    <li><b>Kalender meja</b> → Kalender</li>
+    <li><b>Laci meja</b> dan <b>rak buku</b> → Binder Materi</li>
+    <li><b>Tempat pensil</b> → Kalkulator</li>
+    <li><b>Jendela</b> → Kelas</li>
+    <li><b>Kursi</b> → Profil</li>
+  </ul>
+
+  <h2>Bukti ketukan di perangkat</h2>
+  <figure>
+    <img src="screens/launcher-ketuk-jurnal.png" alt="Ketuk laptop">
+    <figcaption><b>Ketuk laptop</b> memunculkan label Jurnal</figcaption>
+  </figure>
+  <figure>
+    <img src="screens/launcher-ketuk-binder.png" alt="Ketuk laci">
+    <figcaption><b>Ketuk laci</b> — area ketuk tepat di objeknya</figcaption>
+  </figure>
 </main>
-
-<footer>
-  Dibangun oleh GitHub Actions (<code>.github/workflows/android.yml</code>), diuji dengan
-  emulator AVD 2560 × 1600 (<code>.github/workflows/android-preview.yml</code> +
-  <code>scripts/preview_actions.py</code>). Debug build ditandatangani debug key sehingga
-  bisa langsung dipasang; data tersimpan lokal di perangkat tanpa internet.
-</footer>
 </body>
 </html>

@@ -243,7 +243,15 @@ class AppState(private val ctx: Context) {
 
     private val file = File(ctx.filesDir, "ruangkelas.json")
 
-    init {
+    private var ready = false
+
+    /**
+     * Data contoh baru disiapkan saat aplikasi bawaan pertama kali dibuka.
+     * Launcher tidak perlu memuat 96 siswa hanya untuk menampilkan gambar.
+     */
+    fun ensureLoaded() {
+        if (ready) return
+        ready = true
         seed()
         load()
     }
