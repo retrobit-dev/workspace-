@@ -84,12 +84,20 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
-          git fetch -q origin 2a09ae7
-          git show 2a09ae7:dist/RuangKelas-0.15.1-debug.apk > /tmp/RuangKelas-0.15.1-debug.apk
-          ls -l /tmp/RuangKelas-0.15.1-debug.apk
-          gh release upload v0.15.1-android /tmp/RuangKelas-0.15.1-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
+          LOG=/tmp/restore.log
+          {
+            set -x
+            git fetch -q origin 2a09ae7
+            git show 2a09ae7:dist/RuangKelas-0.15.1-debug.apk > /tmp/RuangKelas-0.15.1-debug.apk
+            ls -l /tmp/RuangKelas-0.15.1-debug.apk
+            gh release upload v0.15.1-android /tmp/RuangKelas-0.15.1-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
+          } > "$LOG" 2>&1 || {
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" -f body="restore 0.15.1 gagal: $(tail -c 3000 "$LOG")" || true
+            exit 1
+          }
           echo "asset 0.15.1 dipulihkan"
 
       - name: Commit APK ke dist/
