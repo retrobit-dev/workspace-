@@ -10,8 +10,10 @@ Target: **HUAWEI MatePad Mini 8,8"**, **landscape**, mode gelap saja.
 |---|---|
 | APK siap pasang | [`dist/RuangKelas-debug.apk`](dist/RuangKelas-debug.apk) (≈ 8,8 MB, debug-signed) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) → job `assembleDebug` |
-| Bukti jalan | [`docs/screens/`](docs/screens) — 12 layar + 3 aksi, diambil dari emulator tablet 2560 × 1600 |
+| Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) — 12 layar + 8 aksi, dari emulator tablet 2560 × 1600 |
 | Prototipe HTML | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain, bukan deliverable) |
+
+![Tangkapan layar Ruang Kelas dari emulator tablet](docs/preview-android.png)
 
 ## Cara memasang di tablet
 
