@@ -151,8 +151,8 @@ fun NewJournalDialog(state: AppState, onClose: () -> Unit) {
     var jam by remember { mutableStateOf("3–4") }
     var materi by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
-    var hadir by remember { mutableStateOf("30") }
-    var total by remember { mutableStateOf("32") }
+    var hadir by remember { mutableStateOf("22") }
+    var total by remember { mutableStateOf("24") }
     var error by remember { mutableStateOf("") }
 
     PixelDialog("Catat Pertemuan", onClose) {
@@ -332,10 +332,11 @@ fun NoteEditorDialog(state: AppState, existing: Note?, onClose: () -> Unit) {
 
 @Composable
 fun AttendanceScreen(state: AppState, wide: Boolean) {
-    val statuses = state.attendance[state.absClass] ?: STUDENTS.map { "H" }
+    val names = studentsOf(state.absClass)
+    val statuses = state.attendance[state.absClass] ?: names.map { "H" }
     val counts = statuses.groupingBy { it }.eachCount()
-    val perColumn = if (wide && STUDENTS.size > 12) (STUDENTS.size + 2) / 3 else STUDENTS.size
-    val columns = STUDENTS.withIndex().chunked(perColumn)
+    val perColumn = if (wide) (names.size + 1) / 2 else names.size
+    val columns = names.withIndex().chunked(perColumn)
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader("Absensi", "${fmtDate(todayIso(), "EEEE, d MMM yyyy")} · kelas ${state.absClass}") {
@@ -439,7 +440,7 @@ fun GradesScreen(state: AppState, wide: Boolean) {
     val avg = if (rows.isEmpty()) 0 else rows.sumOf { it.na } / rows.size
     val low = rows.count { it.na < KKM }
     val max = rows.maxOfOrNull { it.na } ?: 0
-    val perColumn = if (wide && rows.size > 12) (rows.size + 2) / 3 else rows.size.coerceAtLeast(1)
+    val perColumn = if (wide) (rows.size + 1) / 2 else rows.size.coerceAtLeast(1)
     val columns = rows.withIndex().chunked(perColumn)
 
     Column(Modifier.fillMaxSize()) {

@@ -79,16 +79,32 @@ fun ScheduleScreen(state: AppState) {
                         Column(Modifier.weight(1f)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text("IPA · ${lesson.kelas}", style = MaterialTheme.typography.titleMedium)
-                                Spacer(Modifier.width(8.dp))
-                                Tag(lesson.kelas, Teal)
+                                Spacer(Modifier.weight(1f))
+                                Tag("JAM ${i + 1}", Teal)
                             }
                             Spacer(Modifier.height(3.dp))
                             Text(lesson.materi, style = MaterialTheme.typography.bodyMedium, color = Cream2)
                             Spacer(Modifier.height(4.dp))
-                            Text("${lesson.room.uppercase()} · JAM KE ${i + 1}", style = MaterialTheme.typography.labelSmall, color = Muted2)
+                            Text(lesson.room.uppercase(), style = MaterialTheme.typography.labelSmall, color = Muted2)
                         }
                     }
                     Spacer(Modifier.height(8.dp))
+                }
+
+                Spacer(Modifier.height(4.dp))
+                PixelPanel(padding = 12.dp, modifier = Modifier.fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text("RINGKASAN ${state.day.uppercase()}", style = MaterialTheme.typography.labelMedium, color = Amber)
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                "${lessons.size} pertemuan · ${lessons.map { it.kelas }.distinct().size} kelas · mulai ${lessons.firstOrNull()?.time ?: "—"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Muted2
+                            )
+                        }
+                        GhostButton("Catat Jurnal", { state.screen = Scr.JURNAL })
+                    }
                 }
             }
 
@@ -188,7 +204,7 @@ fun CalendarScreen(state: AppState) {
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Column(Modifier.weight(1.2f)) {
-                Row(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     listOf("SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN").forEach { d ->
                         Text(
                             d,
@@ -232,7 +248,8 @@ fun CalendarScreen(state: AppState) {
                                         Text(
                                             "${date.dayOfMonth}",
                                             style = MaterialTheme.typography.labelLarge,
-                                            fontSize = 13.sp,
+                                            fontFamily = UiFont,
+                                            fontSize = 15.sp,
                                             color = when {
                                                 selected -> Ink
                                                 !inMonth -> Muted2

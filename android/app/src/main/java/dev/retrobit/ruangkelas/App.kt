@@ -210,7 +210,8 @@ private fun Rail(state: AppState) {
                     item.short.uppercase(),
                     style = MaterialTheme.typography.labelSmall,
                     color = if (active) Amber else Muted2,
-                    maxLines = 1
+                    maxLines = 1,
+                    fontSize = 7.sp
                 )
             }
         }
@@ -326,6 +327,38 @@ private fun ContextPanel(state: AppState) {
                 }
                 Spacer(Modifier.height(6.dp))
                 Text("SELESAIKAN 1 JURNAL = +25 XP", style = MaterialTheme.typography.labelSmall, color = Muted2)
+            }
+        }
+
+        PixelPanel(padding = 10.dp) {
+            Column {
+                Text("BINDER TERBARU", style = MaterialTheme.typography.labelMedium, color = Amber)
+                Spacer(Modifier.height(8.dp))
+                state.docs.take(3).forEach { doc ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { state.screen = Scr.BINDER }
+                            .padding(vertical = 5.dp)
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                doc.nama,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Cream2,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(doc.jenis.uppercase(), style = MaterialTheme.typography.labelSmall, color = Muted2)
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "${state.docProgress(doc)}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Amber
+                        )
+                    }
+                }
             }
         }
     }

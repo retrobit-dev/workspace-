@@ -81,17 +81,51 @@ data class Grade(
 
 data class Lesson(val time: String, val end: String, val kelas: String, val room: String, val materi: String)
 
-val STUDENTS = listOf(
-    "Aditya Pratama", "Bunga Lestari", "Citra Maharani", "Dimas Saputra",
-    "Eka Wulandari", "Fajar Nugroho", "Gita Puspita", "Hendra Wijaya",
-    "Intan Permata", "Joko Susilo", "Kirana Dewi", "Lukman Hakim"
+val STUDENTS_BY_CLASS: Map<String, List<String>> = mapOf(
+    "7A" to listOf(
+        "Aditya Pratama", "Bunga Lestari", "Citra Maharani", "Dimas Saputra",
+        "Eka Wulandari", "Fajar Nugroho", "Gita Puspita", "Hendra Wijaya",
+        "Intan Permata", "Joko Susilo", "Kirana Dewi", "Lukman Hakim",
+        "Maya Anggraini", "Naufal Rizki", "Oktavia Sari", "Putra Mahendra",
+        "Qori Amalia", "Raka Pradana", "Siti Aminah", "Taufik Hidayat",
+        "Ulfa Rahmawati", "Vino Saputra", "Wulan Sari", "Yoga Pratama"
+    ),
+    "7B" to listOf(
+        "Ahmad Fauzi", "Bella Kartika", "Candra Wijaya", "Dewi Lestari",
+        "Eko Prasetyo", "Fitri Handayani", "Gilang Ramadhan", "Hana Safira",
+        "Ilham Maulana", "Jihan Aulia", "Kurnia Sandi", "Laras Ayu",
+        "Miftah Farid", "Nabila Zahra", "Oscar Simbolon", "Prasetya Aji",
+        "Qonita Rahma", "Rizal Fahmi", "Salsabila Putri", "Teguh Santoso",
+        "Umi Kalsum", "Vania Larasati", "Wisnu Adi", "Yuni Astuti"
+    ),
+    "8A" to listOf(
+        "Agus Setiawan", "Bunga Citra", "Cahyo Nugroho", "Dinda Ayu",
+        "Eri Kurniawan", "Farah Nabila", "Galih Pratama", "Hesti Wulandari",
+        "Irfan Hakim", "Jasmine Aulia", "Kevin Sanjaya", "Lina Marlina",
+        "Miko Ardiansyah", "Nadia Safitri", "Oka Mahendra", "Putri Amelia",
+        "Rafi Ahmad", "Sinta Dewi", "Tio Bagaskara", "Uswatun Hasanah",
+        "Vito Ramadhan", "Winda Lestari", "Yusuf Maulana", "Zulfa Hanifah"
+    ),
+    "8B" to listOf(
+        "Arif Budiman", "Bela Safitri", "Cakra Wijaya", "Dewa Ayu",
+        "Erna Wati", "Fikri Ramadhan", "Gita Savitri", "Hafiz Alfarizi",
+        "Indah Permata", "Joni Iskandar", "Kartika Sari", "Luthfi Hakim",
+        "Mila Kurnia", "Nanda Pratama", "Oki Setiawan", "Paramita Dewi",
+        "Qomaruddin", "Rina Anggraini", "Satria Wibowo", "Tiara Puspita",
+        "Ujang Solihin", "Vina Melati", "Wira Sanjaya", "Zahra Amelia"
+    )
 )
+
+fun studentsOf(kelas: String): List<String> =
+    STUDENTS_BY_CLASS[kelas] ?: STUDENTS_BY_CLASS.getValue("7A")
+
+val STUDENTS: List<String> = studentsOf("7A")
 
 val CLASS_CODES = listOf("7A", "7B", "8A", "8B")
 
 val CLASS_INFO = mapOf(
-    "7A" to ("VII A" to 32), "7B" to ("VII B" to 31),
-    "8A" to ("VIII A" to 32), "8B" to ("VIII B" to 31)
+    "7A" to ("VII A" to 24), "7B" to ("VII B" to 24),
+    "8A" to ("VIII A" to 24), "8B" to ("VIII B" to 24)
 )
 
 const val KKM = 75
@@ -204,10 +238,10 @@ class AppState(private val ctx: Context) {
         journal.clear()
         journal.addAll(
             listOf(
-                Journal(4, today, "8A", "3–4", "09:15", "Sistem pencernaan manusia", "Diskusi kelompok lancar, 2 siswa perlu pendampingan.", 30, 32),
-                Journal(3, today, "7A", "1–2", "07:00", "Klasifikasi makhluk hidup", "Kuis pembuka, rata-rata 78. Lanjut kunci determinasi.", 31, 32),
-                Journal(2, minusDays(3), "8B", "5–6", "10:35", "Zat aditif & adiktif", "Praktikum uji pewarna makanan. Alat aman, hasil tercatat.", 29, 31),
-                Journal(1, minusDays(5), "7B", "2–3", "08:20", "Ciri-ciri makhluk hidup", "Observasi taman sekolah, siswa antusias.", 30, 31)
+                Journal(4, today, "8A", "3–4", "09:15", "Sistem pencernaan manusia", "Diskusi kelompok lancar, 2 siswa perlu pendampingan.", 22, 24),
+                Journal(3, today, "7A", "1–2", "07:00", "Klasifikasi makhluk hidup", "Kuis pembuka, rata-rata 78. Lanjut kunci determinasi.", 23, 24),
+                Journal(2, minusDays(3), "8B", "5–6", "10:35", "Zat aditif & adiktif", "Praktikum uji pewarna makanan. Alat aman, hasil tercatat.", 22, 24),
+                Journal(1, minusDays(5), "7B", "2–3", "08:20", "Ciri-ciri makhluk hidup", "Observasi taman sekolah, siswa antusias.", 23, 24)
             )
         )
 
@@ -247,11 +281,21 @@ class AppState(private val ctx: Context) {
         )
 
         attendance.clear()
-        CLASS_CODES.forEach { attendance[it] = STUDENTS.map { _ -> "H" } }
+        CLASS_CODES.forEach { code ->
+            val seed = code[0].code + code[1].code
+            attendance[code] = studentsOf(code).mapIndexed { i, _ ->
+                when {
+                    (i * 3 + seed) % 17 == 0 -> "S"
+                    (i * 5 + seed) % 23 == 0 -> "I"
+                    (i * 7 + seed) % 31 == 0 -> "A"
+                    else -> "H"
+                }
+            }
+        }
 
         grades.clear()
         CLASS_CODES.forEach { code ->
-            grades[code] = STUDENTS.mapIndexed { i, nama ->
+            grades[code] = studentsOf(code).mapIndexed { i, nama ->
                 val base = 68 + ((i * 7 + code[0].code) % 26)
                 Grade(
                     nama,
