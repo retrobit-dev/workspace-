@@ -5,14 +5,14 @@ satu layar berisi gambar workspace isometrik ukuran penuh. Tanpa sidebar, tanpa 
 tanpa header, tanpa panel. Setiap objek di gambar bisa diketuk untuk membuka aplikasi
 bawaannya — aplikasi itu dibuat menyusul, satu per satu.
 
-**Status: v0.15.3 — jam analog dihapus, tinggal jam digital dinding yang sejajar dan
+**Status: v0.15.4 — jam analog dihapus, tinggal jam digital dinding yang sejajar dan
 setinggi bingkai foto; bendera Indonesia menempel di kanannya; papan tulis memakai
 judul "Jadwal Mengajar"; kalender meja lebih tebal dan halamannya melipat saat tanggal
 berganti; jendela tanpa palang dengan gorden & daun tanaman yang bergoyang; rel gorden
 jadi penunjuk baterai dengan persentase tertulis di dinding; tempat sampah membuka
 file manager; suasana siang/malam mengikuti jam perangkat.**
 
-Perbaikan 0.15.3: saat siang lampu meja MATI — pencahayaan ruangan datang dari
+Perbaikan 0.15.4: saat siang lampu meja MATI — pencahayaan ruangan datang dari
 jendela (gradasi dingin kebiruan, pantulan cahaya jendela di lantai, bayangan jatuh
 ke kanan-bawah). Malam tetap lampu menyala. Dan sebelumnya, sisi kanan gorden:
 kain 36 px (dari 58 px) dan rel mulai tepat di ujung jendela sehingga dinding kiri
@@ -20,7 +20,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.15.3-debug.apk`](dist/RuangKelas-0.15.3-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.15.4-debug.apk`](dist/RuangKelas-0.15.4-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain) |
@@ -29,7 +29,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.15.3-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.15.4-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -125,7 +125,7 @@ setiap hotspot berada tepat di atas objeknya dan muka jam/kalender terisi.
 ## Struktur
 
 ```
-art/workspace-iso-v7c.png         gambar isometrik terkini 1312 × 816 (gorden kiri ringkas, 0.15.3)
+art/workspace-iso-v7c.png         gambar isometrik terkini 1312 × 816 (gorden kiri ringkas, 0.15.4)
 art/workspace-iso-v6.png          gambar sebelumnya (arsip)
 art/workspace-iso-v5.png          gambar sebelumnya (arsip)
 art/workspace-iso-v4.png          percobaan sebelumnya (arsip)
@@ -152,6 +152,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.15.3-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.15.4-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.

@@ -67,8 +67,6 @@ BOOKS_BOX = (742, 292, 816, 404)    # tumpukan buku (tidak diusik)
 GLOW_BOX = (745, 196, 996, 442)     # dinding kena cahaya lampu (kiri gorden)
 GLOW_TOP = (770, 154, 996, 200)     # dinding atas (mencakup halo di atas tudung)
 LAPTOP_BOX = (862, 318, 976, 470)   # laptop: tetap cerah kena cahaya jendela
-DESK_GLOW_BOX = (745, 372, 1010, 505)  # meja kiri yang kena cahaya lampu
-DESK_SHADED = (1190, 430, 1258, 486)  # sampel meja tak kena cahaya (target lerp)
 BEAM_BOX = (918, 303, 990, 433)     # ujung berkas lampu yang jatuh ke meja
 WALL_REF = (700, 742)               # strip dinding bersih: sumber warna refill
 
@@ -216,26 +214,37 @@ def _in_box(x, y, box):
     return box[0] <= x < box[2] and box[1] <= y < box[3]
 
 
+def _soft_in(x, y, box, feather=14):
+    """1.0 di dalam kotak, meluruh mulus ke 0.0 di luar (feather piksel)."""
+    dx = max(box[0] - x, x - box[2], 0)
+    dy = max(box[1] - y, y - box[3], 0)
+    if dx == 0 and dy == 0:
+        return 1.0
+    d = (dx * dx + dy * dy) ** 0.5
+    return max(0.0, 1.0 - d / feather)
+
+
 def lamp_off(im):
-    """Matikan lampu meja (semua per piksel supaya tekstur dinding tetap hidup).
+    """Matikan lampu meja — semua per piksel dengan proteksi ber-feather,
+    jadi tidak ada tepi kotak buatan zona pemrosesan.
 
     1. Halo & berkas hangat lampu di dinding digeser jadi dingin (cahaya
-       jendela), makin dekat gorden makin lembut; lalu piksel yang masih
-       menyala-terang disamakan lumanya ke strip dinding bersih di kiri.
-    2. Bohlam & bukaan tudung dimatikan.
-    3. Kilau hangat di lengan lampu jadi logam netral.
-    4. Berkas yang jatuh ke meja (kanan laptop) direduksi.
-    5. Meja kiri yang kuning kena lampu dilerp ke meja yang hanya kena
-       cahaya jendela, dengan tepi zona difade supaya tidak ada batas kotak.
+       jendela); tudung, buku, dan laptop dilindungi secara lembut.
+    2. Piksel dinding yang menyisa lebih terang dari strip acuan direduksi
+       (juga ber-feather).
+    3. Bohlam & bukaan tudung dimatikan.
+    4. Kilau hangat di lengan lampu jadi logam netral.
+    5. Berkas yang jatuh ke meja direduksi dengan tepi meluruh.
     """
     px = im.load()
 
-    # 1) dinding: netralkan halo hangat
+    # 1) dinding: netralkan halo hangat (proteksi lembut, tanpa tepi keras)
     for zone in (GLOW_TOP, GLOW_BOX):
         for y in range(zone[1], zone[3]):
             for x in range(zone[0], zone[2]):
-                if (_in_box(x, y, SHADE_BOX) or _in_box(x, y, BOOKS_BOX)
-                        or _in_box(x, y, LAPTOP_BOX)):
+                prot = max(_soft_in(x, y, SHADE_BOX), _soft_in(x, y, BOOKS_BOX),
+                           _soft_in(x, y, LAPTOP_BOX, 16))
+                if prot >= 0.98:
                     continue
                 r, g, b = px[x, y]
                 if max(r, g, b) < 34:
@@ -245,20 +254,23 @@ def lamp_off(im):
                     continue  # memang sudah dingin
                 l = 0.299 * r + 0.587 * g + 0.114 * b
                 tr, tg, tb = l * 0.88, l * 0.92, l * 1.06
-                t = min(0.9, 0.15 + (d - 14) / 30.0 * 0.95)
+                t = min(0.9, 0.15 + (d - 14) / 30.0 * 0.95) * (1.0 - prot)
+                if x > 984:
+                    t *= max(0.0, min(1.0, (996 - x) / 12.0))
                 j = ((x * 7 + y * 13) % 3) - 1
                 px[x, y] = (int(r + (tr - r) * t) + j,
                             int(g + (tg - g) * t) + j,
                             int(b + (tb - b) * t) + j)
 
-    # 1b) piksel yang masih lebih terang dari strip acuan direduksi
+    # 1b) piksel yang masih lebih terang dari strip acuan direduksi (feather)
     for y in range(GLOW_TOP[1], 442):
         ref = [px[x, y] for x in range(*WALL_REF)]
         rl = sum(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in ref) / len(ref)
-        target = rl * 1.08
+        target = rl * 1.10
         for x in range(GLOW_BOX[0], GLOW_BOX[2]):
-            if (_in_box(x, y, SHADE_BOX) or _in_box(x, y, BOOKS_BOX)
-                    or _in_box(x, y, LAPTOP_BOX)):
+            prot = max(_soft_in(x, y, SHADE_BOX), _soft_in(x, y, BOOKS_BOX),
+                       _soft_in(x, y, LAPTOP_BOX, 16))
+            if prot >= 0.98:
                 continue
             r, g, b = px[x, y]
             if max(r, g, b) < 34:
@@ -266,7 +278,9 @@ def lamp_off(im):
             l = 0.299 * r + 0.587 * g + 0.114 * b
             if l <= target:
                 continue
-            k = max(0.5, min(1.0, target / l))
+            k = 1.0 - (1.0 - max(0.5, min(1.0, target / l))) * (1.0 - prot)
+            if x > 984:
+                k = 1.0 - (1.0 - k) * max(0.0, min(1.0, (996 - x) / 12.0))
             px[x, y] = (min(255, int(r * k)), min(255, int(g * k)), min(255, int(b * k)))
 
     # 2) bohlam & bukaan tudung mati
@@ -274,10 +288,11 @@ def lamp_off(im):
     for y in range(y0, y1):
         for x in range(x0, x1):
             r, g, b = px[x, y]
-            if (r > 140 and r - b > 15) or min(r, g, b) > 185:
+            if (r > 140 and r - b > 15) or min(r, g, b) > 185 or (y > 252 and r > 120 and r - b > 28):
                 px[x, y] = (56, 48, 52)
 
-    # 3) lengan lampu jadi logam netral
+    # 3) lengan lampu jadi logam netral (dinding di luar box sudah dingin,
+    #    jadi batas box tak terlihat)
     ax0, ay0, ax1, ay1 = ARM_BOX
     for y in range(ay0, ay1):
         for x in range(ax0, ax1):
@@ -286,49 +301,18 @@ def lamp_off(im):
                 l = 0.299 * r + 0.587 * g + 0.114 * b
                 px[x, y] = (int(l * 0.94), int(l * 0.92), int(l * 0.98))
 
-    # 4) berkas di meja (kanan laptop) dilerp ke meja cahaya-jendela
-    _tp2 = [px[x, y] for y in range(DESK_SHADED[1], DESK_SHADED[3])
-            for x in range(DESK_SHADED[0], DESK_SHADED[2])]
-    dr2 = sum(p[0] for p in _tp2) / len(_tp2)
-    dg2 = sum(p[1] for p in _tp2) / len(_tp2)
-    db2 = sum(p[2] for p in _tp2) / len(_tp2)
+    # 4) berkas di meja direduksi, tepi zona meluruh
     bx0, by0, bx1, by1 = BEAM_BOX
-    for y in range(by0, by1):
-        for x in range(bx0, bx1):
-            r, g, b = px[x, y]
-            d = r - b
-            l = 0.299 * r + 0.587 * g + 0.114 * b
-            if d > 60 and l > 110:
-                t = min(1.0, (d - 60) / 50.0 * 0.55 + 0.35)
-                t *= min(1.0, (by1 - y) / 30.0)   # fade di bawah (menyatu ke meja terang)
-                t *= min(1.0, (x - bx0 + 1) / 22.0)
-                j = ((x * 7 + y * 13) % 5) - 2
-                px[x, y] = (int(r + (dr2 - r) * t) + j,
-                            int(g + (dg2 - g) * t) + j,
-                            int(b + (db2 - b) * t) + j)
-
-    # 5) meja kiri yang kuning kena lampu dilerp ke meja cahaya-jendela
-    dx0, dy0, dx1, dy1 = DESK_GLOW_BOX
-    tp = [px[x, y] for y in range(DESK_SHADED[1], DESK_SHADED[3])
-          for x in range(DESK_SHADED[0], DESK_SHADED[2])]
-    dr = sum(p[0] for p in tp) / len(tp)
-    dg = sum(p[1] for p in tp) / len(tp)
-    db = sum(p[2] for p in tp) / len(tp)
-    for y in range(dy0, dy1):
-        for x in range(dx0, dx1):
-            if _in_box(x, y, BOOKS_BOX) or _in_box(x, y, ARM_BOX):
+    for y in range(by0 - 14, by1 + 14):
+        for x in range(bx0 - 14, bx1 + 14):
+            w = _soft_in(x, y, BEAM_BOX, 18)
+            if w <= 0.02:
                 continue
             r, g, b = px[x, y]
-            d = r - b
-            l = 0.299 * r + 0.587 * g + 0.114 * b
-            if d > 92 and l > 118:
-                t = min(1.0, (d - 92) / 55.0 * 0.5 + 0.5)
-                t *= min(1.0, (y - dy0 + 1) / 26.0)          # fade tepi atas
-                t *= min(1.0, (dx1 - x) / 42.0)              # fade tepi kanan
-                j = ((x * 7 + y * 13) % 5) - 2
-                px[x, y] = (int(r + (dr - r) * t) + j,
-                            int(g + (dg - g) * t) + j,
-                            int(b + (db - b) * t) + j)
+            l4 = 0.299 * r + 0.587 * g + 0.114 * b
+            if r - b > 80 and l4 > 125:
+                k = 1.0 - 0.30 * w
+                px[x, y] = (int(r * k), int(g * k), int(b * (k + 0.05)))
     return im
 
 
