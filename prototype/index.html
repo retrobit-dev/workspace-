@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ruang Kelas — Pixel Workspace UI</title>
+<meta name="description" content="Prototipe UI/UX aplikasi guru bergaya 64-bit pixel art: jurnal mengajar, absensi, nilai, dan jadwal.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="scanlines">
+
+<div class="page">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark"><span class="ico" data-icon="logo" data-size="24"></span></div>
+      <div>
+        <div class="brand-title">RUANG KELAS</div>
+        <div class="brand-sub">pixel workspace · v0.1</div>
+      </div>
+    </div>
+
+    <p class="lede">Ruang kerja digital untuk guru: catat jurnal, absensi, nilai, dan jadwal — dibungkus nuansa game retro 64-bit.</p>
+
+    <div class="side-block">
+      <h3>Palet warna</h3>
+      <div class="swatches" id="swatches"></div>
+    </div>
+
+    <div class="side-block">
+      <h3>Tampilan</h3>
+      <div class="toggle-row" data-toggle="scanlines" role="switch" aria-checked="true" tabindex="0">
+        <span>Scanline CRT</span>
+        <span class="switch" aria-hidden="true"></span>
+      </div>
+      <div class="toggle-row" data-toggle="motion" role="switch" aria-checked="true" tabindex="0">
+        <span>Animasi halus</span>
+        <span class="switch" aria-hidden="true"></span>
+      </div>
+    </div>
+
+    <div class="side-block">
+      <h3>Objek interaktif</h3>
+      <ul class="hint-list">
+        <li><span class="dot"></span><span><b>Laptop</b> → Jurnal mengajar</span></li>
+        <li><span class="dot" style="background:var(--mint)"></span><span><b>Papan tulis</b> → Absensi kelas</span></li>
+        <li><span class="dot" style="background:var(--coral)"></span><span><b>Papan pin</b> → Nilai siswa</span></li>
+        <li><span class="dot" style="background:var(--sky)"></span><span><b>Jam meja</b> → Jadwal hari ini</span></li>
+      </ul>
+    </div>
+
+    <p class="side-note">
+      PROTOTIPE UI/UX<br>
+      Layar 392 × 760 DP · Android
+    </p>
+  </aside>
+
+  <!-- ================= STAGE ================= -->
+  <main class="stage">
+    <div class="tabs" role="tablist" aria-label="Layar aplikasi">
+      <button class="tab" role="tab" data-screen="home" aria-selected="true">Beranda</button>
+      <button class="tab" role="tab" data-screen="jurnal" aria-selected="false">Jurnal</button>
+      <button class="tab" role="tab" data-screen="absensi" aria-selected="false">Absensi</button>
+      <button class="tab" role="tab" data-screen="nilai" aria-selected="false">Nilai</button>
+      <button class="tab" role="tab" data-screen="jadwal" aria-selected="false">Jadwal</button>
+      <button class="tab" role="tab" data-screen="kit" aria-selected="false">Design Kit</button>
+    </div>
+
+    <div class="stage-body" id="stageBody">
+
+      <!-- ============ PHONE ============ -->
+      <div class="phone-wrap" id="phoneWrap">
+        <div class="phone">
+          <div class="phone-speaker"></div>
+          <div class="phone-screen" id="phoneScreen">
+            <div class="statusbar">
+              <span>08:12</span>
+              <span class="status-right">
+                <span class="sig"><i></i><i></i><i></i><i></i></span>
+                <span class="battery"><span></span></span>
+              </span>
+            </div>
+
+            <div class="screens">
+
+              <!-- ---------- HOME ---------- -->
+              <section class="screen is-active" data-panel="home">
+                <div class="home-top">
+                  <div class="avatar"><span class="ico" data-icon="face" data-size="26"></span></div>
+                  <div>
+                    <p class="greet">Selamat pagi,</p>
+                    <h1>Bu Ratna</h1>
+                  </div>
+                  <div class="appbar-spacer"></div>
+                  <button class="icon-btn" data-icon="bell" aria-label="Notifikasi"></button>
+                </div>
+
+                <div class="scene">
+                  <img src="assets/workspace-scene.png" alt="Ruang kerja guru bergaya pixel art">
+                  <span class="scene-tag">RUANG KERJA</span>
+
+                  <button class="hotspot" style="left:48%;top:50%" data-goto="jurnal" data-tip="Jurnal" aria-label="Buka jurnal mengajar">+</button>
+                  <button class="hotspot" style="left:48%;top:26%" data-goto="absensi" data-tip="Absensi" aria-label="Buka absensi">+</button>
+                  <button class="hotspot" style="left:80%;top:27%" data-goto="nilai" data-tip="Nilai" aria-label="Buka nilai siswa">+</button>
+                  <button class="hotspot" style="left:65%;top:53%" data-goto="jadwal" data-tip="Jadwal" aria-label="Buka jadwal">+</button>
+
+                  <div class="scene-level">
+                    <div class="row"><span>LEVEL 7 · GURU SIGAP</span><b>740 / 1000 XP</b></div>
+                    <div class="xp"><span style="width:74%"></span></div>
+                  </div>
+                </div>
+
+                <div class="quick-stats">
+                  <div class="stat amber"><b>3</b><span>Kelas hari ini</span></div>
+                  <div class="stat mint"><b>96</b><span>Total siswa</span></div>
+                  <div class="stat sky"><b>12</b><span>Jurnal bulan ini</span></div>
+                </div>
+
+                <div class="section-head">
+                  <h3>Tools mengajar</h3>
+                  <button class="more" data-goto="kit">LIHAT SEMUA →</button>
+                </div>
+
+                <div class="tool-grid">
+                  <button class="tool" data-goto="jurnal">
+                    <span class="ico-box"><span class="ico" data-icon="book"></span></span>
+                    <span><b>Jurnal</b><small>Catat pertemuan</small></span>
+                  </button>
+                  <button class="tool" data-goto="absensi">
+                    <span class="ico-box"><span class="ico" data-icon="check"></span></span>
+                    <span><b>Absensi</b><small>Kehadiran siswa</small></span>
+                  </button>
+                  <button class="tool" data-goto="nilai">
+                    <span class="ico-box"><span class="ico" data-icon="chart"></span></span>
+                    <span><b>Nilai</b><small>Tugas &amp; ujian</small></span>
+                  </button>
+                  <button class="tool" data-goto="jadwal">
+                    <span class="ico-box"><span class="ico" data-icon="calendar"></span></span>
+                    <span><b>Jadwal</b><small>Weekly planner</small></span>
+                  </button>
+                  <button class="tool" data-soon="Bank Soal">
+                    <span class="ico-box"><span class="ico" data-icon="stack"></span></span>
+                    <span><b>Bank Soal</b><small>Kisi-kisi &amp; soal</small></span>
+                  </button>
+                  <button class="tool" data-soon="Perangkat Ajar">
+                    <span class="ico-box"><span class="ico" data-icon="folder"></span></span>
+                    <span><b>Perangkat</b><small>Modul &amp; RPP</small></span>
+                  </button>
+                </div>
+
+                <div class="section-head">
+                  <h3>Berikutnya</h3>
+                  <button class="more" data-goto="jadwal">JADWAL →</button>
+                </div>
+                <div class="today">
+                  <span class="time">09:15</span>
+                  <span class="bar"></span>
+                  <span class="info"><b>IPA · Kelas 8A</b><span>LAB SAINS · 09:15–10:35</span></span>
+                  <span class="now">LANJUT</span>
+                </div>
+                <div style="height:16px"></div>
+              </section>
+
+              <!-- ---------- JURNAL ---------- -->
+              <section class="screen" data-panel="jurnal">
+                <div class="appbar">
+                  <div>
+                    <h2>Jurnal</h2>
+                    <p class="sub">CATATAN MENGAJAR</p>
+                  </div>
+                  <div class="appbar-spacer"></div>
+                  <button class="icon-btn accent" id="openJournal" data-icon="plus" aria-label="Tambah catatan jurnal"></button>
+                </div>
+
+                <div class="chips" id="journalChips">
+                  <button class="chip" data-kelas="all" aria-pressed="true">SEMUA</button>
+                  <button class="chip" data-kelas="7A" aria-pressed="false">7A</button>
+                  <button class="chip" data-kelas="7B" aria-pressed="false">7B</button>
+                  <button class="chip" data-kelas="8A" aria-pressed="false">8A</button>
+                  <button class="chip" data-kelas="8B" aria-pressed="false">8B</button>
+                </div>
+
+                <div class="screen-scroll" id="journalList"></div>
+
+                <div class="save-bar">
+                  <button class="btn block" id="openJournal2"><span class="ico" data-icon="plus"></span> Catat Pertemuan</button>
+                </div>
+              </section>
+
+              <!-- ---------- ABSENSI ---------- -->
+              <section class="screen" data-panel="absensi">
+                <div class="appbar">
+                  <div>
+                    <h2>Absensi</h2>
+                    <p class="sub" id="absDate">SENIN, 26 OKT 2026 · JAM 1</p>
+                  </div>
+                  <div class="appbar-spacer"></div>
+                  <button class="icon-btn" data-icon="scan" aria-label="Scan kartu siswa"></button>
+                </div>
+
+                <div class="chips" id="absClassChips">
+                  <button class="chip" data-kelas="7A" aria-pressed="true">7A</button>
+                  <button class="chip" data-kelas="7B" aria-pressed="false">7B</button>
+                  <button class="chip" data-kelas="8A" aria-pressed="false">8A</button>
+                  <button class="chip" data-kelas="8B" aria-pressed="false">8B</button>
+                </div>
+
+                <div class="abs-summary" id="absSummary"></div>
+
+                <div class="screen-scroll" id="studentList"></div>
+
+                <div class="save-bar">
+                  <button class="btn block teal" id="saveAbsensi"><span class="ico" data-icon="check"></span> Simpan Absensi</button>
+                </div>
+              </section>
+
+              <!-- ---------- NILAI ---------- -->
+              <section class="screen" data-panel="nilai">
+                <div class="appbar">
+                  <div>
+                    <h2>Nilai</h2>
+                    <p class="sub">BOBOT · TUGAS 40% · UTS 30% · UAS 30%</p>
+                  </div>
+                  <div class="appbar-spacer"></div>
+                  <button class="icon-btn" data-icon="download" id="exportNilai" aria-label="Ekspor nilai"></button>
+                </div>
+
+                <div class="chips" id="scoreClassChips">
+                  <button class="chip" data-kelas="7A" aria-pressed="true">7A</button>
+                  <button class="chip" data-kelas="7B" aria-pressed="false">7B</button>
+                  <button class="chip" data-kelas="8A" aria-pressed="false">8A</button>
+                  <button class="chip" data-kelas="8B" aria-pressed="false">8B</button>
+                </div>
+
+                <div class="screen-scroll">
+                  <div class="nilai-head">
+                    <span>NAMA</span><span>TGS</span><span>UTS</span><span>UAS</span><span>NA</span>
+                  </div>
+                  <div id="scoreList"></div>
+
+                  <div class="score-summary">
+                    <div class="box"><span>RATA-RATA</span><b id="avgScore">—</b></div>
+                    <div class="box"><span>TERTINGGI</span><b id="maxScore" style="color:var(--mint)">—</b></div>
+                    <div class="box"><span>DI BAWAH KKM</span><b id="lowScore" style="color:var(--coral)">—</b></div>
+                  </div>
+                  <p class="empty" style="padding:14px 0 0">KKM MATA PELAJARAN IPA · 75</p>
+                </div>
+
+                <div class="save-bar">
+                  <button class="btn block" id="saveNilai"><span class="ico" data-icon="check"></span> Simpan Nilai</button>
+                </div>
+              </section>
+
+              <!-- ---------- JADWAL ---------- -->
+              <section class="screen" data-panel="jadwal">
+                <div class="appbar">
+                  <div>
+                    <h2>Jadwal</h2>
+                    <p class="sub">SEMESTER GANJIL · MINGGU 9</p>
+                  </div>
+                  <div class="appbar-spacer"></div>
+                  <button class="icon-btn" data-soon="Tambah jadwal" data-icon="plus" aria-label="Tambah jadwal"></button>
+                </div>
+
+                <div class="day-tabs" id="dayTabs">
+                  <button data-day="Senin" aria-pressed="true">SEN</button>
+                  <button data-day="Selasa" aria-pressed="false">SEL</button>
+                  <button data-day="Rabu" aria-pressed="false">RAB</button>
+                  <button data-day="Kamis" aria-pressed="false">KAM</button>
+                  <button data-day="Jumat" aria-pressed="false">JUM</button>
+                </div>
+
+                <div class="screen-scroll" id="lessonList"></div>
+
+                <div class="save-bar">
+                  <button class="btn block ghost" id="exportJadwal"><span class="ico" data-icon="download"></span> Ekspor Jadwal (.ics)</button>
+                </div>
+              </section>
+
+            </div>
+
+            <!-- bottom nav -->
+            <nav class="bottom-nav" aria-label="Navigasi utama">
+              <button class="nav-btn" data-goto="home" aria-current="page">
+                <span class="ico" data-icon="home"></span><span>BERANDA</span>
+              </button>
+              <button class="nav-btn" data-goto="jurnal">
+                <span class="ico" data-icon="book"></span><span>JURNAL</span>
+              </button>
+              <button class="nav-btn" data-goto="absensi">
+                <span class="ico" data-icon="check"></span><span>ABSENSI</span>
+              </button>
+              <button class="nav-btn" data-goto="nilai">
+                <span class="ico" data-icon="chart"></span><span>NILAI</span>
+              </button>
+              <button class="nav-btn" data-goto="jadwal">
+                <span class="ico" data-icon="calendar"></span><span>JADWAL</span>
+              </button>
+            </nav>
+
+            <div class="toast" id="toast"></div>
+
+            <!-- bottom sheet: jurnal baru -->
+            <div class="sheet-backdrop" id="journalSheet">
+              <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+                <h3 id="sheetTitle">Catat Pertemuan
+                  <button class="icon-btn" data-icon="close" data-close-sheet aria-label="Tutup"></button>
+                </h3>
+                <p class="sheet-sub">JURNAL MENGAJAR · DATA TERSIMPAN LOKAL</p>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="fKelas">Kelas</label>
+                    <select id="fKelas">
+                      <option>7A</option><option>7B</option><option>8A</option><option>8B</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="fJam">Jam ke</label>
+                    <input id="fJam" type="text" value="3–4" inputmode="numeric">
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="fMateri">Materi</label>
+                  <input id="fMateri" type="text" placeholder="Contoh: Klasifikasi makhluk hidup">
+                </div>
+
+                <div class="field">
+                  <label for="fCatatan">Catatan / refleksi</label>
+                  <textarea id="fCatatan" placeholder="Apa yang berjalan baik? Siswa yang perlu perhatian?"></textarea>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="fHadir">Hadir</label>
+                    <input id="fHadir" type="text" value="30" inputmode="numeric">
+                  </div>
+                  <div class="field">
+                    <label for="fTotal">Dari</label>
+                    <input id="fTotal" type="text" value="32" inputmode="numeric">
+                  </div>
+                </div>
+
+                <button class="btn block" id="saveJournal"><span class="ico" data-icon="check"></span> Simpan Catatan</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-caption">392 × 760 DP · TAP OBJEK DI RUANG KERJA</div>
+      </div>
+
+      <!-- ============ DESIGN KIT ============ -->
+      <section class="kit" data-panel="kit">
+        <h2>DESIGN KIT</h2>
+        <p class="kit-lede">Token desain yang sama dipakai di prototipe ini dan nantinya di Jetpack Compose. Semua nilai warna, ukuran, dan komponen di bawah siap disalin ke tema Android.</p>
+
+        <div class="kit-grid">
+          <div class="kit-card">
+            <h4>Warna inti</h4>
+            <div class="pal" id="kitPal"></div>
+          </div>
+
+          <div class="kit-card">
+            <h4>Tipografi</h4>
+            <div class="type-row">
+              <div class="t-title">RUANG KELAS</div>
+              <div class="meta">PRESS START 2P · JUDUL / LOGO · 12 SP</div>
+            </div>
+            <div class="type-row">
+              <div class="sample" style="font-family:var(--font-ui);font-weight:700">Jurnal Mengajar</div>
+              <div class="meta">PIXELIFY SANS BOLD · HEADING · 20 SP</div>
+            </div>
+            <div class="type-row">
+              <div class="sample" style="font-family:var(--font-ui);font-size:14px">Klasifikasi makhluk hidup</div>
+              <div class="meta">PIXELIFY SANS REGULAR · BODY · 14 SP</div>
+            </div>
+            <div class="type-row">
+              <div class="t-label">KEHADIRAN · 28/30</div>
+              <div class="meta">SILKSCREEN · LABEL / DATA · 10 SP</div>
+            </div>
+          </div>
+
+          <div class="kit-card">
+            <h4>Komponen</h4>
+            <div class="kit-actions" style="margin-bottom:12px">
+              <button class="btn small">Simpan</button>
+              <button class="btn small ghost">Batal</button>
+              <button class="chip" aria-pressed="true" style="cursor:default">7A</button>
+              <button class="chip" style="cursor:default">7B</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <span class="kelas-tag">7A</span>
+              <span class="kelas-tag b">8A</span>
+              <span class="kelas-tag c">8B</span>
+              <span class="kelas-tag d">REMEDIAL</span>
+            </div>
+            <div class="stat amber" style="background:var(--night)"><b>03</b><span>Kelas hari ini</span></div>
+          </div>
+
+          <div class="kit-card">
+            <h4>Spesifikasi teknis</h4>
+            <p class="kit-specs">
+              <b>Grid</b> 8 DP · padding layar 14 DP<br>
+              <b>Border</b> 2–3 px hard edge, radius 0<br>
+              <b>Bayangan</b> solid 3–4 px ke bawah, tanpa blur<br>
+              <b>Ikon</b> 16 × 16 piksel, crisp edges<br>
+              <b>Font</b> OFL · Pixelify Sans, Silkscreen, Press Start 2P<br>
+              <b>Target</b> Android 8+ · Compose · Material 3 dimatikan warnanya
+            </p>
+            <div style="margin-top:10px;padding:10px;background:var(--panel);box-shadow:0 0 0 2px var(--line)">
+              <div style="font-family:var(--font-label);font-size:8px;color:var(--amber);letter-spacing:1px;margin-bottom:6px">STATUS WARNA</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <span class="attend-pill" style="color:var(--mint);margin:0">HADIR</span>
+                <span class="attend-pill" style="color:var(--sky);margin:0">SAKIT</span>
+                <span class="attend-pill" style="color:var(--amber);margin:0">IZIN</span>
+                <span class="attend-pill" style="color:var(--coral);margin:0">ALFA</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="kit-card" style="margin-top:16px">
+          <h4>Alur navigasi</h4>
+          <p class="kit-specs">
+            <b>Beranda</b> (scene interaktif + 6 tool) → <b>Jurnal</b> (daftar + tambah) · <b>Absensi</b> (pilih kelas, tap status) · <b>Nilai</b> (input langsung, NA otomatis) · <b>Jadwal</b> (per hari)<br>
+            <b>Bottom nav</b> 5 tujuan · <b>FAB</b> hanya pada Jurnal · <b>Bottom sheet</b> untuk form cepat · Semua aksi memberi umpan balik toast.
+          </p>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
