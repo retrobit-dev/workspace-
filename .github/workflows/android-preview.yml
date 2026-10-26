@@ -46,7 +46,10 @@ jobs:
           sudo udevadm trigger --name-match=kvm
           ls -l /dev/kvm || true
 
-      - uses: android-actions/setup-android@v3
+      - name: Info SDK
+        run: |
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT ANDROID_HOME=$ANDROID_HOME"
+          ls $ANDROID_SDK_ROOT || true
 
       - name: Boot emulator + screenshot
         env:
