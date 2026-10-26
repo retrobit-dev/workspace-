@@ -180,24 +180,40 @@ val PALETTE = listOf(
     "Teal" to Teal, "Mint" to Mint, "Sky" to Sky, "Plum" to Plum
 )
 
-data class TileInfo(val label: String, val target: Scr, val glyph: String, val x: Int, val y: Int, val w: Int, val h: Int)
-
-val TILES = listOf(
-    TileInfo("Jurnal", Scr.JURNAL, "book", 12, 15, 10, 6),
-    TileInfo("Nilai", Scr.NILAI, "chart", 5, 19, 6, 4),
-    TileInfo("Absensi", Scr.ABSENSI, "check", 25, 6, 15, 9),
-    TileInfo("Catatan", Scr.CATATAN, "pencil", 40, 6, 8, 9),
-    TileInfo("Jadwal", Scr.JADWAL, "clock", 23, 15, 8, 6),
-    TileInfo("Kalender", Scr.KALENDER, "calendar", 31, 15, 6, 6),
-    TileInfo("Binder", Scr.BINDER, "folder", 27, 24, 10, 8),
-    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 20, 15, 3, 6),
-    TileInfo("Kelas", Scr.KELAS, "grid", 1, 1, 8, 20),
-    TileInfo("Profil", Scr.PROFIL, "face", 43, 14, 8, 10),
-    TileInfo("Arsip", Scr.BINDER, "folder", 10, 6, 11, 4)
+/**
+ * Satu objek yang bisa diketuk di gambar workspace.
+ * Koordinat memakai piksel gambar (SCENE_W × SCENE_H), bukan grid.
+ */
+data class TileInfo(
+    val label: String,
+    val target: Scr,
+    val glyph: String,
+    val x: Int,
+    val y: Int,
+    val w: Int,
+    val h: Int
 )
 
-const val SCENE_W = 51
-const val SCENE_H = 32
+/** 12 objek di gambar isometrik; rak & laci sama-sama menuju Binder. */
+val TILES = listOf(
+    TileInfo("Jurnal", Scr.JURNAL, "book", 566, 236, 194, 178),
+    TileInfo("Nilai", Scr.NILAI, "chart", 462, 298, 116, 94),
+    TileInfo("Absensi", Scr.ABSENSI, "check", 291, 26, 269, 318),
+    TileInfo("Catatan", Scr.CATATAN, "pencil", 696, 41, 224, 284),
+    TileInfo("Jadwal", Scr.JADWAL, "clock", 768, 349, 80, 84),
+    TileInfo("Kalender", Scr.KALENDER, "calendar", 856, 353, 89, 79),
+    TileInfo("Binder", Scr.BINDER, "folder", 596, 479, 154, 126),
+    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 763, 423, 55, 69),
+    TileInfo("Kelas", Scr.KELAS, "grid", 996, 26, 239, 479),
+    TileInfo("Profil", Scr.PROFIL, "face", 381, 386, 164, 234),
+    TileInfo("Binder", Scr.BINDER, "folder", 1, 276, 249, 284)
+)
+
+/** Layar jam LED di badan jam digital (piksel gambar). */
+val CLOCK_SCREEN = intArrayOf(786, 372, 60, 56)
+
+const val SCENE_W = 1312
+const val SCENE_H = 820
 
 /* ---------------- state aplikasi ---------------- */
 
