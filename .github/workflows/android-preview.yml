@@ -56,11 +56,12 @@ jobs:
             adb install -r dist/RuangKelas-0.6.0-debug.apk
             mkdir -p docs/screens
             for SCREEN in HOME JURNAL CATATAN ABSENSI NILAI JADWAL KALENDER KALKULATOR BINDER KELAS PROFIL KIT; do
+              LOWER=$(echo "$SCREEN" | tr '[A-Z]' '[a-z]')
               adb shell am force-stop dev.retrobit.ruangkelas
               adb shell am start -W -n dev.retrobit.ruangkelas/.MainActivity --es screen "$SCREEN"
               sleep 6
               adb shell screencap -p /sdcard/shot.png
-              adb pull /sdcard/shot.png "docs/screens/${SCREEN,,}.png"
+              adb pull /sdcard/shot.png "docs/screens/${LOWER}.png"
             done
             adb shell dumpsys activity activities | grep -i "mResumedActivity" || true
             adb logcat -d -s AndroidRuntime:E | tail -40 || true
