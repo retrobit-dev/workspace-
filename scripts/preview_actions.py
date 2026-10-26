@@ -80,20 +80,21 @@ def main() -> None:
     shot("launcher")
     crashes()
 
-    # 2. ketuk beberapa objek di scene (koordinat grid 51 x 32 -> piksel layar)
+    # 2. ketuk objek di scene. Koordinat memakai piksel gambar 1312 x 820
+    #    (sama dengan TILES di Data.kt), lalu dipetakan ke piksel layar.
+    SW, SH = 1312, 820
     hotspots = [
-        ("launcher-ketuk-jurnal", 12, 15, 10, 6),
-        ("launcher-ketuk-binder", 27, 24, 10, 8),
-        ("launcher-ketuk-kalender", 31, 15, 6, 6),
-        ("launcher-ketuk-profil", 43, 14, 8, 10),
+        ("launcher-ketuk-jurnal", 663, 325),     # laptop
+        ("launcher-ketuk-binder", 673, 542),     # laci
+        ("launcher-ketuk-kalender", 900, 392),   # kalender meja
+        ("launcher-ketuk-profil", 463, 503),     # kursi
     ]
-    for name, gx, gy, gw, gh in hotspots:
-        cx = int(w * (gx + gw / 2) / 51)
-        cy = int(h * (gy + gh / 2) / 32)
+    for name, px, py in hotspots:
+        cx, cy = int(w * px / SW), int(h * py / SH)
         print("ketuk", name, cx, cy, flush=True)
-        tap(cx, cy, wait=0.15)
+        tap(cx, cy, wait=0.25)
         shot(name)
-        time.sleep(2.5)
+        time.sleep(2.4)
 
     # 3. bukti tidak ada rail/header: seluruh lebar layar berisi gambar
     labels = [n["text"] for n in nodes() if n["text"]]
