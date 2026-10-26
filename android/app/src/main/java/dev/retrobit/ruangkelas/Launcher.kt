@@ -38,7 +38,41 @@ import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
 
 /**
- * Launcher: hanya gambar workspace isometrik ukuran penuh.
+ * Geometri layar launcher.
+ *
+ * Gambar selalu mempertahankan rasio aslinya (16:10). Bila layar lebih lebar/pendek,
+ * sisanya dibiarkan hitam (letterbox) sehingga art tidak pernah melar dan koordinat
+ * ketuk tetap presisi. Semua posisi dihitung dari [unit] = ukuran 1 piksel gambar.
+ */
+private data class SceneBox(
+    val unit: Dp,
+    val width: Dp,
+    val height: Dp,
+    val originX: Dp,
+    val originY: Dp
+) {
+    fun x(px: Int): Dp = originX + unit * px
+    fun y(px: Int): Dp = originY + unit * px
+    fun w(px: Int): Dp = unit * px
+    fun h(px: Int): Dp = unit * px
+}
+
+@Composable
+private fun rememberSceneBox(mw: Dp, mh: Dp): SceneBox {
+    val unit: Dp = minOf(mw.value / SCENE_W, mh.value / SCENE_H).dp
+    val width = unit * SCENE_W
+    val height = unit * SCENE_H
+    return SceneBox(
+        unit = unit,
+        width = width,
+        height = height,
+        originX = (mw - width) / 2,
+        originY = (mh - height) / 2
+    )
+}
+
+/**
+ * Launcher: hanya gambar workspace isometrik, landscape penuh.
  * Tidak ada rail, header, maupun panel — setiap objek pada gambar bisa diketuk.
  *
  * [onOpen] dipanggil dengan objek yang diketuk. Selama aplikasi bawaannya belum ada,
@@ -60,8 +94,7 @@ fun LauncherScreen(
     }
 
     BoxWithConstraints(Modifier.fillMaxSize().background(Ink)) {
-        val mw = maxWidth
-        val mh = maxHeight
+        val box = rememberSceneBox(maxWidth, maxHeight)
         val ctx = LocalContext.current
         val scene = remember {
             BitmapFactory.decodeResource(ctx.resources, R.drawable.scene).asImageBitmap()
@@ -72,16 +105,21 @@ fun LauncherScreen(
                 image = scene,
                 srcOffset = IntOffset.Zero,
                 srcSize = IntSize(scene.width, scene.height),
-                dstOffset = IntOffset.Zero,
-                dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()),
+                dstOffset = IntOffset(
+                    box.originX.toPx().roundToInt(),
+                    box.originY.toPx().roundToInt()
+                ),
+                dstSize = IntSize(
+                    box.width.toPx().roundToInt(),
+                    box.height.toPx().roundToInt()
+                ),
                 filterQuality = FilterQuality.None
             )
         }
 
         // jam LED hidup menimpa layar jam digital yang ada di gambar
         LauncherClock(
-            mw = mw,
-            mh = mh,
+            box = box,
             onTap = {
                 caption = "Jadwal"
                 captionTick++
@@ -92,8 +130,7 @@ fun LauncherScreen(
         TILES.forEach { tile ->
             LauncherHotspot(
                 tile = tile,
-                mw = mw,
-                mh = mh,
+                box = box,
                 onTap = {
                     caption = tile.label
                     captionTick++
@@ -126,8 +163,7 @@ fun LauncherScreen(
 @Composable
 private fun LauncherHotspot(
     tile: TileInfo,
-    mw: Dp,
-    mh: Dp,
+    box: SceneBox,
     onTap: () -> Unit
 ) {
     val source = remember { MutableInteractionSource() }
@@ -135,14 +171,8 @@ private fun LauncherHotspot(
 
     Box(
         Modifier
-            .offset(
-                x = mw * (tile.x.toFloat() / SCENE_W),
-                y = mh * (tile.y.toFloat() / SCENE_H)
-            )
-            .size(
-                width = mw * (tile.w.toFloat() / SCENE_W),
-                height = mh * (tile.h.toFloat() / SCENE_H)
-            )
+            .offset(x = box.x(tile.x), y = box.y(tile.y))
+            .size(width = box.w(tile.w), height = box.h(tile.h))
             .background(if (pressed) Color(0x33F2AB3F) else Color.Transparent)
             .border(
                 width = if (pressed) 3.dp else 0.dp,
@@ -153,7 +183,7 @@ private fun LauncherHotspot(
 }
 
 @Composable
-private fun LauncherClock(mw: Dp, mh: Dp, onTap: () -> Unit) {
+private fun LauncherClock(box: SceneBox, onTap: () -> Unit) {
     val clock = rememberClock()
     val x = CLOCK_SCREEN[0]
     val y = CLOCK_SCREEN[1]
@@ -162,8 +192,8 @@ private fun LauncherClock(mw: Dp, mh: Dp, onTap: () -> Unit) {
 
     Box(
         Modifier
-            .offset(x = mw * (x.toFloat() / SCENE_W), y = mh * (y.toFloat() / SCENE_H))
-            .size(width = mw * (w.toFloat() / SCENE_W), height = mh * (h.toFloat() / SCENE_H))
+            .offset(x = box.x(x), y = box.y(y))
+            .size(width = box.w(w), height = box.h(h))
             .background(Color(0xFF0C1712))
             .clickable { onTap() },
         contentAlignment = Alignment.Center

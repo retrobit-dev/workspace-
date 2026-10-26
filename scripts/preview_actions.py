@@ -65,10 +65,26 @@ def crashes() -> None:
         print("tidak ada crash", flush=True)
 
 
+def adb_resize(w: int, h: int) -> str:
+    return f"adb shell wm size {w}x{h}"
+
+
 def screen_size():
     out = sh("adb shell wm size")  # Physical size: 2560x1600
     m = re.search(r"(\d+)x(\d+)", out)
     return (int(m.group(1)), int(m.group(2))) if m else (2560, 1600)
+
+
+def scene_rect(sw: int, sh: int, scene_w=1312, scene_h=820):
+    """Letterbox: gambar 16:10 di tengah layar, sisanya hitam."""
+    scale = min(sw / scene_w, sh / scene_h)
+    bw, bh = scene_w * scale, scene_h * scale
+    return (sw - bw) / 2, (sh - bh) / 2, scale
+
+
+def tap_scene(px: int, py: int, sw: int, sh: int, wait: float = 0.25) -> None:
+    ox, oy, scale = scene_rect(sw, sh)
+    tap(int(ox + px * scale), int(oy + py * scale), wait=wait)
 
 
 def main() -> None:
@@ -90,13 +106,25 @@ def main() -> None:
         ("launcher-ketuk-profil", 463, 503),     # kursi
     ]
     for name, px, py in hotspots:
-        cx, cy = int(w * px / SW), int(h * py / SH)
-        print("ketuk", name, cx, cy, flush=True)
-        tap(cx, cy, wait=0.25)
+        ox, oy, scale = scene_rect(w, h)
+        print("ketuk", name, "layar", int(ox + px * scale), int(oy + py * scale), flush=True)
+        tap_scene(px, py, w, h)
         shot(name)
         time.sleep(2.4)
 
-    # 3. bukti tidak ada rail/header: seluruh lebar layar berisi gambar
+    # 3. layar dengan rasio lain: gambar harus di-letterbox, ketukan tetap kena
+    sh(adb_resize(w, 1200))
+    time.sleep(2)
+    launch()
+    shot("launcher-letterbox")
+    tap_scene(663, 325, w, 1200)   # laptop
+    shot("launcher-letterbox-ketuk")
+    time.sleep(2)
+    sh("adb shell wm size reset")
+    sh("adb shell wm density reset")
+    time.sleep(1)
+
+    # 4. bukti tidak ada rail/header: teks di layar hanya label sementara
     labels = [n["text"] for n in nodes() if n["text"]]
     print("teks di layar:", labels, flush=True)
 
