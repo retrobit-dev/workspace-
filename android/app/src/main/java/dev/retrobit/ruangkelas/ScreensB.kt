@@ -588,6 +588,12 @@ private fun CalcHitung(state: AppState) {
     }
 }
 
+fun currentNumber(expr: String): String {
+    var i = expr.length - 1
+    while (i >= 0 && (expr[i].isDigit() || expr[i] == '.')) i--
+    return expr.substring(i + 1)
+}
+
 fun pressKey(expr: String, key: String): String {
     val ops = "+-*/"
     val last = expr.lastOrNull()
@@ -611,7 +617,7 @@ fun pressKey(expr: String, key: String): String {
             }
         }
         "%" -> if (needsOperand()) expr else "$expr/100"
-        "." -> if (last == '.' || (last != null && last.isDigit() && expr.substringAfterLast(Regex("[+\-*/]")).contains('.'))) expr else expr + "."
+        "." -> if (last == '.' || currentNumber(expr).contains('.')) expr else expr + "."
         else -> if (last == '.' ) expr + key else expr + key
     }
 }

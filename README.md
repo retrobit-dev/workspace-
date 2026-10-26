@@ -1,9 +1,40 @@
-# Ruang Kelas — Pixel Workspace (Tablet Landscape)
+# Ruang Kelas — aplikasi Android pixel-art untuk guru
 
-Aplikasi guru native Android (rencana Kotlin + Jetpack Compose) untuk **HUAWEI MatePad Mini 8,8"**
-dalam **mode landscape**, dengan tampilan workspace pixel art **gelap** bergaya game retro.
+Aplikasi **native Android** (Kotlin + Jetpack Compose) berisi alat administrasi mengajar
+guru, dibungkus tampilan workspace pixel art gelap bergaya game retro.
+Target: **HUAWEI MatePad Mini 8,8"**, **landscape**, mode gelap saja.
 
-Tahap saat ini: **UI/UX prototipe v0.3** — interaktif di browser, sekaligus acuan token untuk Android.
+**Status: v0.6.0 — APK debug sudah dibangun oleh GitHub Actions dan diuji jalan di emulator tablet.**
+
+| | |
+|---|---|
+| APK siap pasang | [`dist/RuangKelas-debug.apk`](dist/RuangKelas-debug.apk) (≈ 8,8 MB, debug-signed) |
+| Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) → job `assembleDebug` |
+| Bukti jalan | [`docs/screens/`](docs/screens) — 12 layar + 3 aksi, diambil dari emulator tablet 2560 × 1600 |
+| Prototipe HTML | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain, bukan deliverable) |
+
+## Cara memasang di tablet
+
+1. Unduh `dist/RuangKelas-debug.apk` (atau artifact `RuangKelas-debug-apk` / release
+   [`v0.6.0-android`](https://github.com/retrobit-dev/workspace-/releases/tag/v0.6.0-android)).
+2. Buka file APK di tablet → izinkan "instal dari sumber ini" saat diminta.
+3. Buka **Ruang Kelas**. Aplikasi otomatis landscape penuh (system bar disembunyikan).
+
+Debug build ditandatangani dengan debug key, jadi bisa dipasang langsung tanpa Play Store.
+Data tersimpan lokal di `filesDir/ruangkelas.json` (tanpa internet, tanpa akun).
+
+## Yang sudah jalan di perangkat
+
+Semua ini diverifikasi lewat emulator, bukan asumsi:
+
+- 12 layar (Beranda, Jurnal, Catatan, Absensi, Nilai, Jadwal, Kalender, Kalkulator,
+  Binder, Kelas, Profil, Design Kit) bisa dibuka tanpa crash.
+- Dialog **Catat Pertemuan** terbuka, isi materi bisa diketik, dan tombol **Simpan** bekerja.
+- **Kalkulator** menghitung ekspresi campuran (`78+88×2`), termasuk operator menggantung
+  dan pembagian nol tanpa crash.
+- **Absensi** mengubah status H/S/I/A per siswa dan langsung memperbarui hitungan.
+- Jam digital berjalan real-time di app bar, panel konteks, dan display di scene.
+- Scanline CRT, toggle art 32/64 px, dan reset data tersedia di Pengaturan.
 
 ## Target perangkat
 
@@ -154,10 +185,38 @@ Aturan bentuk: sudut **0 px**, outline **2–3 px** gelap, bayangan **solid 3–
 blur**, grid 8 DP, padding layar 16 DP, tipografi **Pixelify Sans** (UI),
 **Silkscreen** (label & jam), **Press Start 2P** (judul).
 
-## Langkah berikutnya (Android)
+## Build sendiri
 
-1. Skeleton Compose (`minSdk 26`), `android:screenOrientation="sensorLandscape"`, tema dari token di atas.
-2. `HomeScreen`: `BoxWithConstraints` + `Image(painterResource(R.drawable.scene32), filterQuality = FilterQuality.None)` dan 11 hotspot dari tabel koordinat.
-3. Room: `Kelas`, `Siswa`, `Jurnal`, `Catatan`, `Nilai`, `Absensi`, `Agenda`, `Dokumen`.
-4. Widget/komponen jam digital memakai font Silkscreen + `rememberInfiniteTransition` untuk titik berkedip.
-5. Ekspor CSV/JSON untuk administrasi, lalu APK rilis.
+Lokal (butuh JDK 17 + Android SDK 35):
+
+```bash
+cd android
+gradle :app:assembleDebug      # hasil: app/build/outputs/apk/debug/app-debug.apk
+```
+
+Lewat GitHub (cara yang dipakai proyek ini):
+
+- **Build APK Ruang Kelas** — dipicu setiap perubahan di `android/`; menjalankan
+  `gradle :app:assembleDebug`, menyimpan APK ke `dist/`, mengunggah artifact, dan
+  memperbarui release `v0.6.0-android`. Kalau kompilasi gagal, ringkasan error
+  ditempel otomatis sebagai komentar commit.
+- **Preview APK di Emulator** — dipicu lewat `.ci/preview.trigger`; membuat AVD tablet
+  2560 × 1600, memasang APK, memotret 12 layar, menjalankan uji interaktif
+  (`scripts/preview_actions.py`), lalu menyimpan screenshot ke `docs/screens/`.
+
+## Isi repo Android
+
+```
+android/
+├── app/build.gradle.kts            # compileSdk 35 · minSdk 26 · Compose BOM 2024.10.01
+└── app/src/main/
+    ├── AndroidManifest.xml         # sensorLandscape, satu activity
+    ├── java/dev/retrobit/ruangkelas/
+    │   ├── App.kt                  # MainActivity, root layout, rail, app bar, panel konteks, scene
+    │   ├── Data.kt                 # model, data 96 siswa, seed, simpan/muat JSON, aksi
+    │   ├── ScreensA.kt             # Jurnal, Catatan, Absensi, Nilai
+    │   ├── ScreensB.kt             # Jadwal, Kalender, Kalkulator, Binder, Kelas, Profil, Design Kit
+    │   ├── Theme.kt                # token warna + 3 font pixel
+    │   └── Ui.kt                   # glif 8×8, panel, tombol, chip, field, dialog, jam
+    └── res/                        # font OFL, scene 51×32 & 102×64, ikon adaptif
+```

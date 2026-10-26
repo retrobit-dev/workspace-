@@ -1,8 +1,8 @@
 {
   "name": "ruang-kelas",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "private": true,
-  "description": "Preview HTML interaktif satu file, tampil seperti aplikasi real di tablet landscape (pixel art 32 px).",
+  "description": "Aplikasi Android native (Kotlin + Jetpack Compose) Ruang Kelas: alat administrasi guru bertema pixel art, landscape, gelap. Prototipe HTML disimpan sebagai acuan desain.",
   "scripts": {
     "start": "python3 -m http.server 4173 --bind 0.0.0.0 --directory prototype",
     "build": "node build.js"
