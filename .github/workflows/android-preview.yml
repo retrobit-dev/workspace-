@@ -2,6 +2,9 @@ name: Preview APK di Emulator
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "android/preview.trigger"
 
 concurrency:
   group: android-preview
