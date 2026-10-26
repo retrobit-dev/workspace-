@@ -44,8 +44,7 @@ NIGHT = dict(gamma=1.45, sat=0.85)
 # Cahaya siang: eksposur dinaikkan (bukan gamma — gamma memunculkan bercak
 # dithering), lalu ruangan digrade dingin-kebiruan karena satu-satunya sumber
 # cahaya adalah langit di luar jendela: pendar biru-putih di sekitar jendela dan
-# pantulan cahaya jendela di lantai. Standing lamp menyala hanya di malam
-# (night_lamp), jadi siang otomatis bebas lampu.
+# pantulan cahaya jendela di lantai. Lampu meja mati di siang (lihat lamp_off).
 DAY_GAIN = 1.50
 DAY_ADD = 0.05
 DAY_WB = (0.98, 1.00, 1.05)
@@ -58,13 +57,17 @@ DAY_FLOOR = dict(
     blur=12,
 )
 
-# Standing lamp (kiri meja): nyala hanya saat malam — lukisan glow prosedural,
-# sehingga siang otomatis tanpa lampu (tidak ada lamp_off lagi).
-LAMP_CX, LAMP_CY = 628, 242         # pusat cahaya tudung
-LAMP_SHADE_I = 24                   # tinggi interior tudung (y 223..246)
-LAMP_BULB = (628, 252)              # pusat bohlam di bawah bibir tudung
-HALO_BOX = (598, 100, 778, 462)     # dinding kena halo (kiri: papan tulis)
-POOL = (632, 518, 100, 34)          # kolam cahaya lantai (cx, cy, rx, ry)
+# Lampu meja: bohlam menyala + berkas hangat di dinding. Zona ini hanya dipakai
+# saat mode siang — lampu dimatikan dan cahayanya diganti cahaya jendela.
+BULB_BOX = (826, 202, 912, 292)     # bohlam + bukaan tudung menyala
+SHADE_BOX = (820, 178, 904, 268)    # tudung lampu (tidak diusik kecuali bohlam)
+ARM_BOX = (838, 246, 922, 414)      # lengan + kaki lampu
+BOOKS_BOX = (742, 292, 816, 404)    # tumpukan buku (tidak diusik)
+GLOW_BOX = (745, 196, 996, 442)     # dinding kena cahaya lampu (kiri gorden)
+GLOW_TOP = (770, 154, 996, 200)     # dinding atas (mencakup halo di atas tudung)
+LAPTOP_BOX = (862, 318, 976, 470)   # laptop: tetap cerah kena cahaya jendela
+BEAM_BOX = (918, 303, 990, 433)     # ujung berkas lampu yang jatuh ke meja
+WALL_REF = (700, 742)               # strip dinding bersih: sumber warna refill
 
 
 def grade(im, gamma, sat):
@@ -220,64 +223,95 @@ def _soft_in(x, y, box, feather=14):
     return max(0.0, 1.0 - d / feather)
 
 
-def night_lamp(im):
-    """Nyalakan standing lamp untuk suasana malam.
+def lamp_off(im):
+    """Matikan lampu meja — semua per piksel dengan proteksi ber-feather,
+    jadi tidak ada tepi kotak buatan zona pemrosesan.
 
-    Base art sengaja netral (tudung krem, dinding polos) supaya siang tidak
-    perlu "mematikan" apa pun. Fungsi ini melukis tiga hal:
-    1. interior tudung + bohlam jadi hangat terang,
-    2. halo hangat di dinding di sekitar lampu,
-    3. kolam cahaya di lantai mengelilingi kaki lampu.
+    1. Halo & berkas hangat lampu di dinding digeser jadi dingin (cahaya
+       jendela); tudung, buku, dan laptop dilindungi secara lembut.
+    2. Piksel dinding yang menyisa lebih terang dari strip acuan direduksi
+       (juga ber-feather).
+    3. Bohlam & bukaan tudung dimatikan.
+    4. Kilau hangat di lengan lampu jadi logam netral.
+    5. Berkas yang jatuh ke meja direduksi dengan tepi meluruh.
     """
     px = im.load()
 
-    # 1) interior tudung & bohlam
-    for i in range(LAMP_SHADE_I):
-        y = 223 + i
-        half = 7 + (15 + i) * 0.52 - 3
-        for x in range(int(round(LAMP_CX - half)) + 1, int(round(LAMP_CX + half))):
-            c = (252, 218, 122) if i < 6 else ((244, 178, 70) if i < 15 else (208, 132, 40))
-            px[x, y] = c
-    bx, by = LAMP_BULB
-    for dx in range(-8, 9):
-        for dy in range(0, 7):
-            if dx * dx / 64.0 + dy * dy / 30.0 <= 1:
-                px[bx + dx, by + dy] = (252, 218, 122) if dy < 3 else (244, 178, 70)
+    # 1) dinding: netralkan halo hangat (proteksi lembut, tanpa tepi keras)
+    for zone in (GLOW_TOP, GLOW_BOX):
+        for y in range(zone[1], zone[3]):
+            for x in range(zone[0], zone[2]):
+                prot = max(_soft_in(x, y, SHADE_BOX), _soft_in(x, y, BOOKS_BOX),
+                           _soft_in(x, y, LAPTOP_BOX, 16))
+                if prot >= 0.98:
+                    continue
+                r, g, b = px[x, y]
+                if max(r, g, b) < 34:
+                    continue  # outline gelap
+                d = r - b
+                if d <= 18:
+                    continue  # memang sudah dingin
+                l = 0.299 * r + 0.587 * g + 0.114 * b
+                tr, tg, tb = l * 0.88, l * 0.92, l * 1.06
+                t = min(0.9, 0.15 + (d - 14) / 30.0 * 0.95) * (1.0 - prot)
+                if x > 984:
+                    t *= max(0.0, min(1.0, (996 - x) / 12.0))
+                j = ((x * 7 + y * 13) % 3) - 1
+                px[x, y] = (int(r + (tr - r) * t) + j,
+                            int(g + (tg - g) * t) + j,
+                            int(b + (tb - b) * t) + j)
 
-    # 2) halo dinding
-    floor = lambda x: 402 + 0.42 * (x - 600)
-    edge = lambda x: 300 + 0.19 * (x - 745)
-    for y in range(HALO_BOX[1], HALO_BOX[3]):
-        for x in range(HALO_BOX[0], HALO_BOX[2]):
-            if x < 745 and y >= floor(x) - 2:
-                continue          # sudah lantai
-            if x >= 745 and y >= edge(x) - 1:
-                continue          # sudah meja
-            if 625 <= x <= 634 and y > 258:
-                continue          # tiang
+    # 1b) piksel yang masih lebih terang dari strip acuan direduksi (feather)
+    for y in range(GLOW_TOP[1], 442):
+        ref = [px[x, y] for x in range(*WALL_REF)]
+        rl = sum(0.299 * p[0] + 0.587 * p[1] + 0.114 * p[2] for p in ref) / len(ref)
+        target = rl * 1.10
+        for x in range(GLOW_BOX[0], GLOW_BOX[2]):
+            prot = max(_soft_in(x, y, SHADE_BOX), _soft_in(x, y, BOOKS_BOX),
+                       _soft_in(x, y, LAPTOP_BOX, 16))
+            if prot >= 0.98:
+                continue
             r, g, b = px[x, y]
-            if b <= r:
-                continue          # bukan dinding navy (objek lain)
-            d = ((x - LAMP_CX) * 1.15) ** 2 + (y - LAMP_CY) ** 2
-            d = d ** 0.5
-            w = max(0.0, 1.0 - d / 205.0) ** 1.55 * 0.8
+            if max(r, g, b) < 34:
+                continue
+            l = 0.299 * r + 0.587 * g + 0.114 * b
+            if l <= target:
+                continue
+            k = 1.0 - (1.0 - max(0.5, min(1.0, target / l))) * (1.0 - prot)
+            if x > 984:
+                k = 1.0 - (1.0 - k) * max(0.0, min(1.0, (996 - x) / 12.0))
+            px[x, y] = (min(255, int(r * k)), min(255, int(g * k)), min(255, int(b * k)))
+
+    # 2) bohlam & bukaan tudung mati
+    x0, y0, x1, y1 = BULB_BOX
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            r, g, b = px[x, y]
+            if (r > 140 and r - b > 15) or min(r, g, b) > 185 or (y > 252 and r > 120 and r - b > 28):
+                px[x, y] = (56, 48, 52)
+
+    # 3) lengan lampu jadi logam netral (dinding di luar box sudah dingin,
+    #    jadi batas box tak terlihat)
+    ax0, ay0, ax1, ay1 = ARM_BOX
+    for y in range(ay0, ay1):
+        for x in range(ax0, ax1):
+            r, g, b = px[x, y]
+            if r > 130 and r - b > 40:
+                l = 0.299 * r + 0.587 * g + 0.114 * b
+                px[x, y] = (int(l * 0.94), int(l * 0.92), int(l * 0.98))
+
+    # 4) berkas di meja direduksi, tepi zona meluruh
+    bx0, by0, bx1, by1 = BEAM_BOX
+    for y in range(by0 - 14, by1 + 14):
+        for x in range(bx0 - 14, bx1 + 14):
+            w = _soft_in(x, y, BEAM_BOX, 18)
             if w <= 0.02:
                 continue
-            # target hangat absolut: dinding dipetakan ke warna cahaya lampu
-            px[x, y] = (int(r + (88 - r) * w), int(g + (66 - g) * w), int(b + (60 - b) * w))
-
-    # 3) kolam cahaya lantai
-    cx, cy, rx, ry = POOL
-    for y in range(cy - ry - 6, cy + ry + 6):
-        for x in range(cx - rx - 6, cx + rx + 6):
-            n = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
-            if n > 1.0:
-                continue
             r, g, b = px[x, y]
-            if r + g + b < 60:
-                continue          # outline gelap tetap gelap
-            w = (1.0 - n) ** 1.5 * 0.5
-            px[x, y] = (int(r + (112 - r) * w), int(g + (88 - g) * w), int(b + (82 - b) * w))
+            l4 = 0.299 * r + 0.587 * g + 0.114 * b
+            if r - b > 80 and l4 > 125:
+                k = 1.0 - 0.30 * w
+                px[x, y] = (int(r * k), int(g * k), int(b * (k + 0.05)))
     return im
 
 
@@ -311,6 +345,59 @@ def add_daylight(im):
     return Image.alpha_composite(out.convert("RGBA"), glow).convert("RGB")
 
 
+def night_standing(im):
+    """Nyalakan standing lamp di kiri meja utk suasana malam.
+
+    Interior tudung & bohlam digambar netral di base art; di sini diganti
+    menjadi hangat terang + pendar kecil di sekitar tudung.
+    """
+    px = im.load()
+    # interior globe + bohlam: warna gading netral di base (grade menggesernya,
+    # jadi dicari lewat rentang, bukan warna persis), dibatasi area shade.
+    for y in range(286, 306):
+        for x in range(615, 675):
+            r, g, b = px[x, y]
+            if r > 165 and g > 150 and b > 115 and r >= b:
+                px[x, y] = (252, 218, 122) if y < 296 else (244, 178, 70)
+    # pendar lembut di dinding sekitar tudung (radial, hanya piksel navy)
+    cx, cy = 646, 262
+    for y in range(180, 360):
+        for x in range(560, 760):
+            r, g, b = px[x, y]
+            if b <= r:
+                continue                       # bukan dinding navy
+            d = (((x - cx) * 1.2) ** 2 + (y - cy) ** 2) ** 0.5
+            w = max(0.0, 1.0 - d / 150.0) ** 1.6 * 0.5
+            if w <= 0.02:
+                continue
+            px[x, y] = (int(r + (86 - r) * w), int(g + (64 - g) * w), int(b + (58 - b) * w))
+    # kolam cahaya kecil di lantai di sekitar kaki lampu
+    cx, cy, rx, ry = 618, 556, 78, 26
+    for y in range(cy - ry - 5, cy + ry + 5):
+        for x in range(cx - rx - 5, cx + rx + 5):
+            n = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
+            if n > 1.0:
+                continue
+            r, g, b = px[x, y]
+            if r + g + b < 60:
+                continue
+            w = (1.0 - n) ** 1.5 * 0.4
+            px[x, y] = (int(r + (104 - r) * w), int(g + (82 - g) * w), int(b + (76 - b) * w))
+    return im
+
+
+def day_standing_off(im):
+    """Siang: kaca globe standing lamp digelapkan (add_daylight membuatnya
+    ter-clipping putih seolah menyala)."""
+    px = im.load()
+    for y in range(286, 306):
+        for x in range(615, 675):
+            r, g, b = px[x, y]
+            if r > 200 and g > 195 and b > 170:
+                px[x, y] = (176, 166, 148)
+    return im
+
+
 def load_scene(mode="night"):
     """Gambar scene siap pakai untuk suasana ``night`` atau ``day``.
 
@@ -321,10 +408,11 @@ def load_scene(mode="night"):
     raw = Image.open(ART).convert("RGB")
     im = restyle_background(grade(raw, NIGHT["gamma"], NIGHT["sat"]))
     if mode == "day":
-        base = im
-        im = add_daylight(im)
+        base = lamp_off(im)
+        im = add_daylight(base)
+        im = day_standing_off(im)
         im = paint_day_sky(im, mask_from=base)
     else:
-        im = night_lamp(im)
+        im = night_standing(im)
     return im
 

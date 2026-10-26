@@ -5,19 +5,22 @@ satu layar berisi gambar workspace isometrik ukuran penuh. Tanpa sidebar, tanpa 
 tanpa header, tanpa panel. Setiap objek di gambar bisa diketuk untuk membuka aplikasi
 bawaannya — aplikasi itu dibuat menyusul, satu per satu.
 
-**Status: v0.15.8 — lampu meja diganti standing lamp di kiri meja (menyala hanya
-saat malam, lengkap dengan halo dinding & kolam cahaya di lantai); sebelumnya
-kalender meja dan jam digital dihapus — pintu ke aplikasi Jadwal kini papan tulis
+**Status: v0.15.9 — standing lamp ala lampu kerja (lengan artikulasi + tudung
+miring) dipindah ke sebelah papan tulis; sudut ruangan, tepi meja, buku, dan
+laptop yang sempat bergeser di 0.15.8 dikembalikan seperti semula; arah cahaya
+malam tetap sama seperti saat lampu masih di atas meja. Sebelumnya kalender
+meja dan jam digital dihapus — pintu ke aplikasi Jadwal kini papan tulis
 berjudul "Jadwal Mengajar"; gorden & daun tanaman bergoyang; rel gorden jadi
 penunjuk baterai dengan persentase tertulis di dinding; tempat sampah membuka
 file manager; suasana siang/malam mengikuti jam perangkat.**
 
-Perbaikan 0.15.8: lampu meja dihapus dari gambar dan diganti standing lamp
-berdiri di lantai di sebelah kiri meja — base art netral, dan scene_face kini
-menggambar cahayanya prosedural hanya untuk malam (interior tudung hangat, halo
-di dinding, kolam cahaya di lantai), sehingga siang otomatis bebas lampu tanpa
-langkah "mematikan" apa pun. Dan sebelumnya, 0.15.7: kalender meja (kertas tent
-+ spiral) dihapus dari gambar dan
+Perbaikan 0.15.9: 0.15.8 ternyata merusak sudut ruangan dan memotong meja,
+buku, serta laptop (garis tepi belakang meja terbalik arah) — semuanya
+dikembalikan dari art 0.15.7, lalu hanya fixture lampu mejanya yang dihapus.
+Standing lamp digambar ulang mengikuti referensi lampu kerja lantai dan
+diletakkan di sebelah papan tulis; cahaya malamnya (globe hangat, halo dinding,
+kolam lantai) diarahkan sama seperti lampu meja dahulu. Dan sebelumnya,
+0.15.7: kalender meja (kertas tent + spiral) dihapus dari gambar dan
 hotspot-nya pun demikian — layar Kalender masih ada, menunggu pintu baru. Dan
 sebelumnya, 0.15.6: jam digital dinding (jam:menit, tanggal, bilah detik) dan
 sisa benderanya dihapus dari launcher — dinding kini bersih, dan mengetuk papan
@@ -30,7 +33,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.15.8-debug.apk`](dist/RuangKelas-0.15.8-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.15.9-debug.apk`](dist/RuangKelas-0.15.9-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain) |
@@ -39,7 +42,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.15.8-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.15.9-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -152,6 +155,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.15.8-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.15.9-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.

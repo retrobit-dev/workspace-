@@ -1,11 +1,14 @@
 {
   "name": "ruang-kelas",
-  "version": "0.15.8",
+  "version": "0.15.9",
   "private": true,
   "description": "Launcher Android pixel-art: satu gambar workspace isometrik, objek bisa diketuk untuk membuka aplikasi bawaan.",
   "scripts": {
     "start": "python3 tools/serve.py",
     "build": "node build.js",
     "preview:build": "python3 tools/make_preview.py"
+  },
+  "dependencies": {
+    "jsdom": "^30.1.3"
   }
 }
