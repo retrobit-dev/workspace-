@@ -55,7 +55,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
-import java.time.LocalDate
 import java.time.LocalTime
 import kotlin.math.cos
 import kotlin.math.max
@@ -136,7 +135,7 @@ fun LauncherScreen(
         // angin: gorden & daun bergoyang halus
         WindSway(box = box, scene = scene)
 
-        // muka hidup: kalender, ikon bingkai, judul papan tulis
+        // muka hidup: ikon bingkai, judul papan tulis
         LiveFaces(box = box, battery = battery, isDay = isDay)
         BatteryLabel(box = box, battery = battery)
 
@@ -373,34 +372,16 @@ private inline fun DrawScope.withPlane(plane: Plane, block: (android.graphics.Ca
     }
 }
 
-private val MONTHS_SHORT = listOf("JAN", "FEB", "MAR", "APR", "MEI", "JUN",
-    "JUL", "AGU", "SEP", "OKT", "NOV", "DES")
-private val DAYS_SHORT = listOf("SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN")
 private val FaceInk = Color(0xFF181430)
 
 /**
  * Semua muka hidup di atas gambar:
- *  - kalender dengan animasi melipat saat tanggal berganti,
  *  - ikon aplikasi di lima bingkai,
  *  - judul "JADWAL MENGAJAR" di papan tulis,
  *  - rel gorden sebagai penunjuk baterai + persentasenya di dinding.
  */
 @Composable
 private fun LiveFaces(box: SceneBox, battery: Int, isDay: Boolean) {
-    val nowMs = rememberNowMs()
-    val today = remember(nowMs) { LocalDate.now() }
-
-    // animasi lipat kalender: 0 = kertas penuh, 1 = kertas terlipat habis
-    val flip = remember { Animatable(0f) }
-    var shownDate by remember { mutableStateOf(today) }
-    LaunchedEffect(today) {
-        if (today != shownDate) {
-            flip.animateTo(1f, tween(340, easing = LinearEasing))
-            shownDate = today
-            flip.animateTo(0f, tween(340, easing = LinearEasing))
-        }
-    }
-
     val ctx = LocalContext.current
     val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER } }
     val typeface = remember {
@@ -429,40 +410,6 @@ private fun LiveFaces(box: SceneBox, battery: Int, isDay: Boolean) {
                 board.width * 0.18f, board.height * 0.215f,
                 board.width * 0.82f, board.height * 0.215f, linePaint
             )
-        }
-
-        // ---------------- kalender: halaman bisa terlipat ----------------
-        val cal = planeOf(box, CALENDAR_QUAD, this)
-        val month = MONTHS_SHORT[shownDate.monthValue - 1]
-        val weekday = DAYS_SHORT[shownDate.dayOfWeek.value - 1]
-        val day = shownDate.dayOfMonth.toString()
-
-        withPlane(cal) { native ->
-            // tebal kertas: tumpukan di bawah muka
-            val pad = cal.height * 0.13f
-            native.drawRect(0f, cal.height * 0.06f, cal.width, cal.height + pad,
-                Paint().apply { color = 0xFFCBB68C.toInt() })
-            native.drawRect(0f, 0f, cal.width, cal.height,
-                Paint().apply { color = 0xFFF3E7C8.toInt() })
-
-            // halaman yang sedang terlipat ke belakang: makin sempit saat flip naik
-            val visible = cal.height * (1f - flip.value)
-            val page = native.save()
-            native.clipRect(0f, 0f, cal.width, visible)
-            paint.color = FaceInk.toArgb()
-            paint.textSize = cal.height * 0.22f
-            native.drawText(month, cal.width / 2f, cal.height * 0.30f, paint)
-            paint.textSize = cal.height * 0.46f
-            native.drawText(day, cal.width / 2f, cal.height * 0.74f, paint)
-            paint.textSize = cal.height * 0.22f
-            native.drawText(weekday, cal.width / 2f, cal.height * 0.99f, paint)
-            native.restoreToCount(page)
-
-            // bayangan lipatan di tepi halaman
-            if (flip.value > 0.02f) {
-                native.drawRect(0f, max(0f, visible - 2f), cal.width, visible,
-                    Paint().apply { color = 0x33281F14 })
-            }
         }
 
         // ---------------- ikon aplikasi di lima bingkai ----------------

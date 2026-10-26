@@ -3,7 +3,6 @@
 //   · tidak ada jam analog, hanya jam digital
 //   · (0.15.6) jam digital & bendera dihapus; Jadwal lewat papan tulis
 //   · bendera di kanan jam DIHAPUS (0.15.5)
-//   · kalender punya halaman yang bisa terlipat
 //   · rel gorden = indikator baterai + persen di dinding
 //   · siang/malam mengikuti jam, gorden & daun bergoyang
 //
@@ -38,7 +37,6 @@ const curtainRects = listOfQuads("CURTAIN_RECTS");
 const icons = [...data.matchAll(/AppIcon\("([^"]+)",\s*"(#[0-9A-Fa-f]+)"/g)].map((m) => ({ name: m[1], bg: m[2] }));
 
 const BOARD = rect("BOARD_QUAD");
-const CAL = rect("CALENDAR_QUAD");
 const RAIL = rect("RAIL_LINE");
 const BATT = rect("BATTERY_TEXT_QUAD");
 const LEAF = rect("LEAF_RECT");
@@ -53,7 +51,7 @@ const { document } = dom.window;
 
 const hotspots = [...document.querySelectorAll(".hotspot")];
 if (hotspots.length !== tiles.length) fail(`jumlah hotspot ${hotspots.length} != ${tiles.length} tile`);
-if (tiles.length !== 18) fail(`TILES berisi ${tiles.length} objek, harusnya 18`);
+if (tiles.length !== 17) fail(`TILES berisi ${tiles.length} objek, harusnya 17`);
 
 tiles.forEach((tile, i) => {
   const el = hotspots[i];
@@ -101,10 +99,9 @@ else {
   if (!document.querySelector("#board line")) fail("garis bawah judul papan hilang");
 }
 
-// ---- kalender: halaman bisa terlipat ----
-const page = document.getElementById("cal-page");
-if (!page) fail("halaman kalender hilang");
-else if (!/scaleY|rotateX/.test(page.getAttribute("style") || "")) fail("halaman kalender tidak bisa terlipat");
+// ---- kalender dihapus (0.15.7) ----
+if (document.getElementById("cal-page") || document.getElementById("cal"))
+  fail("kalender masih ada (sudah dihapus)");
 
 // ---- rel gorden = baterai ----
 if (!document.getElementById("rail")) fail("rel gorden baterai hilang");
@@ -133,18 +130,16 @@ if (icons[2]?.name !== "Spotify" || icons[3]?.name !== "YouTube")
 const scene = document.getElementById("scene");
 if (!/scene_(day|night)\.png/.test(scene.getAttribute("src") || "")) fail("scene tidak memakai scene_day/night");
 
-// ---- waktu & kalender hidup ----
+// ---- jam & tanggal browser masih dipakai untuk siang/malam ----
 const now = new Date();
-for (const id of ["cal-m", "cal-d", "cal-w", "batt"]) {
+for (const id of ["batt"]) {
   if (!document.getElementById(id).textContent.trim()) fail(`${id} kosong`);
 }
-if (+document.getElementById("cal-d").textContent !== now.getDate())
-  fail(`tanggal kalender ${document.getElementById("cal-d").textContent} != hari ini ${now.getDate()}`);
 if (!document.getElementById("tint").style.background) fail("selaput suasana belum diset");
 
 // ---- label wajib ----
 const labels = hotspots.map((e) => e.dataset.label);
-["Kalkulator", "Alat Tulis", "Kalender", "Jadwal", "Profil", "File"].forEach((k) => {
+["Kalkulator", "Alat Tulis", "Jadwal", "Profil", "File"].forEach((k) => {
   if (!labels.includes(k)) fail(`hotspot "${k}" hilang`);
 });
 ["WhatsApp", "Vivaldi", "Spotify", "YouTube", "Sinaga Jateng"].forEach((k) => {
@@ -157,6 +152,6 @@ if (BATT.length !== 6) fail("BATTERY_TEXT_QUAD harus 6 angka");
 if (document.querySelector("#fx #flag")) fail("#flag masih ada di svg");
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · ${icons.length} bingkai · kalender ${now.getDate()} · rel baterai ${ticks.length} tanda`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · ${icons.length} bingkai · rel baterai ${ticks.length} tanda`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);

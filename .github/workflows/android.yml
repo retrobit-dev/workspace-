@@ -65,7 +65,7 @@ jobs:
       - name: Rename artifact
         run: |
           mkdir -p dist
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RuangKelas-0.15.6-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RuangKelas-0.15.7-debug.apk
           ls -lh dist
 
       - name: Publish APK ke Release
@@ -73,12 +73,12 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v0.15.6-android"
+          TAG="v0.15.7-android"
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --title "Ruang Kelas 0.15.6 - Launcher: jam digital dinding dihapus (APK)" \
-              --notes "APK debug siap dipasang di tablet Android. Unduh RuangKelas-0.15.6-debug.apk lalu buka di perangkat (izinkan instalasi dari sumber ini)."
-          gh release upload "$TAG" dist/RuangKelas-0.15.6-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
+              --title "Ruang Kelas 0.15.7 - Launcher: jam digital dinding dihapus (APK)" \
+              --notes "APK debug siap dipasang di tablet Android. Unduh RuangKelas-0.15.7-debug.apk lalu buka di perangkat (izinkan instalasi dari sumber ini)."
+          gh release upload "$TAG" dist/RuangKelas-0.15.7-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
 
       - name: Commit APK ke dist/
         if: github.event_name != 'pull_request'
@@ -87,9 +87,9 @@ jobs:
         run: |
           git config user.name "ruang-kelas-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add -f dist/RuangKelas-0.15.6-debug.apk
+          git add -f dist/RuangKelas-0.15.7-debug.apk
           git rm -q --cached --ignore-unmatch dist/RuangKelas-0.15.1-debug.apk || true
-          git commit -q -m "build(apk): RuangKelas-0.15.6-debug.apk dari CI [skip ci]" || echo "tidak ada perubahan"
+          git commit -q -m "build(apk): RuangKelas-0.15.7-debug.apk dari CI [skip ci]" || echo "tidak ada perubahan"
           git pull --rebase -q origin "${GITHUB_REF}" || true
           git push -q origin "HEAD:${GITHUB_REF}" || true
 
@@ -97,6 +97,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: RuangKelas-debug-apk
-          path: dist/RuangKelas-0.15.6-debug.apk
+          path: dist/RuangKelas-0.15.7-debug.apk
           if-no-files-found: error
           retention-days: 30

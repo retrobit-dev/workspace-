@@ -101,7 +101,6 @@ def main() -> None:
     hotspots = [
         ("launcher-ketuk-jurnal", 854, 377),      # laptop
         ("launcher-ketuk-kalkulator", 942, 462),  # kalkulator, di kanan laptop
-        ("launcher-ketuk-kalender", 1062, 437),   # kalender meja tebal (tanggal hidup)
         ("launcher-ketuk-binder", 767, 615),      # laci meja
         ("launcher-ketuk-profil", 750, 98),       # foto user di kiri jam dinding
         ("launcher-ketuk-jadwal", 459, 287),      # papan tulis "JADWAL MENGAJAR"

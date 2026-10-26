@@ -206,7 +206,6 @@ val TILES = listOf(
     TileInfo("Nilai", Scr.NILAI, "chart", 686, 306, 112, 92),            // tumpukan buku
     TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 905, 436, 74, 52),    // kalkulator kanan laptop
     TileInfo("Alat Tulis", Scr.KIT, "pencil", 980, 372, 50, 66),         // tempat pensil
-    TileInfo("Kalender", Scr.KALENDER, "calendar", 1022, 392, 80, 90),   // kalender meja tebal
     TileInfo("Binder", Scr.BINDER, "folder", 688, 536, 158, 158),        // laci meja
 
     // --- dinding ---
@@ -236,11 +235,6 @@ val TILES = listOf(
 /** Papan tulis: judul "JADWAL MENGAJAR" di bagian atas, rata tengah. */
 val BOARD_QUAD = intArrayOf(344, 250, 574, 132, 344, 442)
 
-/**
- * Kertas kalender meja: bidang miring supaya tulisan ikut arah muka kalender.
- * Urutan: kiri-atas, kanan-atas, kiri-bawah, kanan-bawah (piksel gambar).
- */
-val CALENDAR_QUAD = intArrayOf(1043, 405, 1086, 425, 1030, 451, 1073, 470)
 
 /** Kertas di dalam lima bingkai (kiri-atas, kanan-atas, kiri-bawah). */
 val FRAME_QUADS = listOf(
