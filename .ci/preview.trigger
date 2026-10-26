@@ -27,3 +27,4 @@ run 0.15.3: bukti emulator siang — lampu meja mati, cahaya dari jendela
 run 0.15.4: bukti emulator siang v2 — lampu mati tanpa artefak
 20261026T162641Z 0.15.6
 20261026T163302Z ulang-preview
+20261026T164722Z preview-art-bersih
