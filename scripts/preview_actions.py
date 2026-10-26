@@ -1,12 +1,13 @@
-"""Uji interaktif APK di emulator: buka dialog, isi form, pakai kalkulator, ubah absensi.
+"""Uji launcher di emulator: buka aplikasi, ketuk objek di scene, tangkap reaksinya.
 
 Dijalankan di GitHub Actions setelah emulator boot dan APK terpasang.
-Semua langkah memakai uiautomator (bukan koordinat tetap) supaya tahan perubahan layout.
 """
 import re
 import subprocess
 import time
 
+PACKAGE = "dev.retrobit.ruangkelas"
+ACTIVITY = f"{PACKAGE}/.MainActivity"
 NODE = re.compile(r"<node[^>]*>")
 
 
@@ -38,56 +39,20 @@ def nodes():
     return out
 
 
-def tap(x: int, y: int, wait: float = 1.0) -> None:
+def tap(x: int, y: int, wait: float = 0.7) -> None:
     sh(f"adb shell input tap {x} {y}")
     time.sleep(wait)
 
 
-def tap_text(label: str, nth: int = 0) -> bool:
-    ns = nodes()
-    hits = [n for n in ns if n["text"].lower() == label.lower()]
-    if not hits:
-        hits = [n for n in ns if label.lower() in n["text"].lower()]
-    print(f"tap_text {label!r} hits={len(hits)}", flush=True)
-    if len(hits) <= nth:
-        print("  NOT FOUND; teks tersedia:", [n["text"] for n in ns if n["text"]][:40], flush=True)
-        return False
-    tap(*hits[nth]["c"])
-    return True
-
-
-def tap_cls(kind: str, nth: int = 0) -> bool:
-    ns = [n for n in nodes() if kind in n["class"]]
-    print(f"tap_cls {kind} hits={len(ns)}", flush=True)
-    if len(ns) <= nth:
-        return False
-    tap(*ns[nth]["c"])
-    return True
-
-
-def dismiss_system_dialog() -> None:
-    """Tutup dialog "System UI isn't responding" kalau muncul di emulator lambat."""
-    ns = nodes()
-    for n in ns:
-        if "isn't responding" in n["text"] or "is not responding" in n["text"]:
-            print("dialog sistem terdeteksi, tekan Wait", flush=True)
-            sh("adb shell settings put global hide_error_dialogs 1")
-            for cand in ns:
-                if cand["text"].lower() in ("wait", "tunggu"):
-                    tap(*cand["c"], wait=1.5)
-                    return
-
-
 def shot(name: str) -> None:
-    dismiss_system_dialog()
     sh(f"adb shell screencap -p /sdcard/{name}.png")
     print(sh(f"adb pull /sdcard/{name}.png docs/screens/{name}.png").strip(), flush=True)
 
 
-def launch(screen: str) -> None:
-    sh("adb shell am force-stop dev.retrobit.ruangkelas")
+def launch() -> None:
+    sh(f"adb shell am force-stop {PACKAGE}")
     sh("adb logcat -c")
-    sh(f"adb shell am start -W -n dev.retrobit.ruangkelas/.MainActivity --es screen {screen}")
+    sh(f"adb shell am start -W -n {ACTIVITY}")
     time.sleep(4)
 
 
@@ -100,60 +65,40 @@ def crashes() -> None:
         print("tidak ada crash", flush=True)
 
 
-def type_ascii(text: str) -> None:
-    """Ketik lewat adb input text (%s untuk spasi)."""
-    sh("adb shell input text " + repr(text).replace(" ", "%s"))
+def screen_size():
+    out = sh("adb shell wm size")  # Physical size: 2560x1600
+    m = re.search(r"(\d+)x(\d+)", out)
+    return (int(m.group(1)), int(m.group(2))) if m else (2560, 1600)
 
 
 def main() -> None:
-    # 1. Jurnal: dialog -> isi materi -> simpan
-    launch("JURNAL")
-    tap_text("CATAT PERTEMUAN")
-    shot("aksi-dialog-jurnal")
-    tap_cls("EditText", 0)
-    sh('adb shell input text "Sistem%sPencernaan%sManusia"')
-    time.sleep(1)
-    shot("aksi-form-jurnal")
-    tap_text("SIMPAN", 0)
-    time.sleep(1.5)
-    shot("aksi-jurnal-baru")
+    w, h = screen_size()
+    print("ukuran layar", w, h, flush=True)
+
+    # 1. launcher bersih: hanya gambar workspace
+    launch()
+    shot("launcher")
     crashes()
 
-    # 2. Kalkulator: 78 + 85 x 2
-    launch("KALKULATOR")
-    for key in ["2", "5", "×", "3", "6", "−", "4", "0"]:
-        print("key", key, tap_text(key), flush=True)
-    shot("aksi-kalkulator")
-    crashes()
+    # 2. ketuk beberapa objek di scene (koordinat grid 51 x 32 -> piksel layar)
+    hotspots = [
+        ("launcher-ketuk-jurnal", 12, 15, 10, 6),
+        ("launcher-ketuk-binder", 27, 24, 10, 8),
+        ("launcher-ketuk-kalender", 31, 15, 6, 6),
+        ("launcher-ketuk-profil", 43, 14, 8, 10),
+    ]
+    for name, gx, gy, gw, gh in hotspots:
+        cx = int(w * (gx + gw / 2) / 51)
+        cy = int(h * (gy + gh / 2) / 32)
+        print("ketuk", name, cx, cy, flush=True)
+        tap(cx, cy, wait=0.15)
+        shot(name)
+        time.sleep(2.5)
 
-    # 3. Catatan: tulis catatan baru (judul + isi)
-    launch("CATATAN")
-    tap_text("TULIS CATATAN")
-    tap_cls("EditText", 0)
-    sh('adb shell input text "Ide%skuis%scepat"')
-    time.sleep(0.8)
-    tap_cls("EditText", 1)
-    sh('adb shell input text "Tiga%ssoal%slisan%sdi%sakhir%spelajaran."')
-    time.sleep(0.8)
-    shot("aksi-form-catatan")
-    tap_text("SIMPAN", 0)
-    time.sleep(1.5)
-    shot("aksi-catatan-baru")
-    crashes()
+    # 3. bukti tidak ada rail/header: seluruh lebar layar berisi gambar
+    labels = [n["text"] for n in nodes() if n["text"]]
+    print("teks di layar:", labels, flush=True)
 
-    # 4. Kalender: pilih tanggal lain lalu buka dialog agenda
-    launch("KALENDER")
-    tap_text("AGENDA", 0)
-    time.sleep(1.5)
-    shot("aksi-dialog-agenda")
-    tap_text("BATAL", 0)
-    crashes()
-
-    # 5. Absensi: tandai sakit dua siswa
-    launch("ABSENSI")
-    tap_text("S", 0)
-    tap_text("S", 1)
-    shot("aksi-absensi")
     crashes()
 
 

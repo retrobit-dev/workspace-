@@ -37,7 +37,7 @@ jobs:
       - name: Salin APK
         run: |
           mkdir -p dist
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RuangKelas-0.6.0-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RuangKelas-0.7.0-debug.apk
 
       - name: Aktifkan KVM
         run: |
@@ -116,25 +116,19 @@ jobs:
           # emulator kadang lambat -> sembunyikan dialog ANR/crash supaya screenshot bersih
           adb shell settings put global hide_error_dialogs 1 || true
           adb shell settings put system screen_off_timeout 1800000 || true
-          adb install -r dist/RuangKelas-0.6.0-debug.apk || { emit "install gagal"; exit 1; }
+          adb install -r dist/RuangKelas-0.7.0-debug.apk || { emit "install gagal"; exit 1; }
           mkdir -p docs/screens
 
-          for SCREEN in HOME JURNAL CATATAN ABSENSI NILAI JADWAL KALENDER KALKULATOR BINDER KELAS PROFIL KIT; do
-            LOWER=$(echo "$SCREEN" | tr '[A-Z]' '[a-z]')
-            adb shell am force-stop dev.retrobit.ruangkelas
-            adb logcat -c
-            adb shell am start -W -n dev.retrobit.ruangkelas/.MainActivity --es screen "$SCREEN"
-            sleep 5
-            adb shell screencap -p /sdcard/shot.png
-            adb pull /sdcard/shot.png "docs/screens/${LOWER}.png" || true
-            adb logcat -d -s AndroidRuntime:E | tail -20
-          done
+          # launcher hanya punya satu layar: tunggu gambar scene tampil penuh
+          adb shell am force-stop dev.retrobit.ruangkelas
+          adb shell am start -W -n dev.retrobit.ruangkelas/.MainActivity
+          sleep 6
+          adb shell screencap -p /sdcard/launcher.png
+          adb pull /sdcard/launcher.png docs/screens/launcher.png || true
+          adb logcat -d -s AndroidRuntime:E | tail -20
 
-          adb shell dumpsys activity activities | grep -i "mResumedActivity" || true
-          ls -la docs/screens
-          emit "selesai"
 
-      - name: Aksi interaktif (dialog, kalkulator, absensi)
+      - name: Aksi ketuk objek launcher
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -145,7 +139,7 @@ jobs:
           set -x
           python3 scripts/preview_actions.py
           {
-            echo "Aksi interaktif report:"
+            echo "Aksi launcher report:"
             echo '```'
             tail -n 80 $REPORT
             echo '```'
