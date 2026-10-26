@@ -88,8 +88,9 @@ jobs:
           LOG=/tmp/restore.log
           {
             set -x
-            git fetch -q origin 2a09ae7
-            git show 2a09ae7:dist/RuangKelas-0.15.1-debug.apk > /tmp/RuangKelas-0.15.1-debug.apk
+            git fetch -q origin 2a09ae71d0180ef926d7d348298723b677d06178
+            git show 2a09ae71d0180ef926d7d348298723b677d06178:dist/RuangKelas-0.15.1-debug.apk > /tmp/RuangKelas-0.15.1-debug.apk
+            test -s /tmp/RuangKelas-0.15.1-debug.apk
             ls -l /tmp/RuangKelas-0.15.1-debug.apk
             gh release upload v0.15.1-android /tmp/RuangKelas-0.15.1-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
           } > "$LOG" 2>&1 || {
