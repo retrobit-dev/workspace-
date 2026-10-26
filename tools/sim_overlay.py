@@ -210,7 +210,7 @@ def build(mode, hour, battery=76, second=32):
     def paint_batt(w, h):
         layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
         dd = ImageDraw.Draw(layer)
-        fs = int(h * 0.66)
+        fs = int(h * 0.58)
         f = ImageFont.truetype(FONT, fs)
         while dd.textlength(f"{battery}%", font=f) > w * 0.94 and fs > 4:
             fs -= 1

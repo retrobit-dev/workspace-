@@ -578,9 +578,9 @@ private fun DrawScope.drawBatteryRail(box: SceneBox, battery: Int, isDay: Boolea
     }
 
     drawLine(color = Color(0x88000000), start = Offset(x1, y1 + 3f), end = Offset(x2, y2 + 3f),
-        strokeWidth = max(6f, box.unit.toPx() * 7f), cap = StrokeCap.Round)
+        strokeWidth = max(5f, box.unit.toPx() * 6f), cap = StrokeCap.Round)
     drawLine(color = mood, start = Offset(x1, y1), end = Offset(x2, y2),
-        strokeWidth = max(3f, box.unit.toPx() * 4.2f), cap = StrokeCap.Round)
+        strokeWidth = max(3f, box.unit.toPx() * 3.4f), cap = StrokeCap.Round)
 
     // tanda tiap 10% di sepanjang rel
     for (i in 1..9) {
@@ -590,8 +590,8 @@ private fun DrawScope.drawBatteryRail(box: SceneBox, battery: Int, isDay: Boolea
         val filled = battery >= i * 10
         drawLine(
             color = if (filled) Color(0xFF0E0D1A) else Color(0x66FFFFFF),
-            start = Offset(px, py - box.unit.toPx() * 5f),
-            end = Offset(px, py + box.unit.toPx() * 5f),
+            start = Offset(px, py - box.unit.toPx() * 4f),
+            end = Offset(px, py + box.unit.toPx() * 4f),
             strokeWidth = max(1f, box.unit.toPx() * 1.2f)
         )
     }
@@ -614,7 +614,7 @@ private fun BatteryLabel(box: SceneBox, battery: Int) {
         val plane = planeOf(box, BATTERY_TEXT_QUAD, this)
         withPlane(plane) { native ->
             paint.color = (if (battery <= 15) Color(0xFFEF6A5B) else Cream2).toArgb()
-            paint.textSize = plane.height * 0.66f
+            paint.textSize = plane.height * 0.58f
             val text = "$battery%"
             val measured = paint.measureText(text)
             if (measured > plane.width * 0.94f) paint.textSize *= plane.width * 0.94f / measured

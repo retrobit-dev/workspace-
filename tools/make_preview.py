@@ -211,7 +211,7 @@ HTML = """<!DOCTYPE html>
 
     <!-- rel gorden = indikator baterai -->
     <line id="rail" x1="__RAIL_X1__" y1="__RAIL_Y1__" x2="__RAIL_X2__" y2="__RAIL_Y2__"
-          stroke="#77B8D9" stroke-width="4.2" stroke-linecap="round"/>
+          stroke="#77B8D9" stroke-width="3.4" stroke-linecap="round"/>
     <g id="rail-ticks" stroke="#0E0D1A" stroke-width="1.2"></g>
 
     <!-- persentase baterai di dinding di atas rel -->
@@ -478,7 +478,7 @@ def build_html(data, scene_sizes):
         .replace("__BATT_MATRIX__", matrix_attr(batt))
         .replace("__BATT_W__", f"{batt_w / 2:.2f}")
         .replace("__BATT_H__", f"{batt_h * 0.86:.2f}")
-        .replace("__BATT_SIZE__", f"{batt_h * 0.66:.2f}")
+        .replace("__BATT_SIZE__", f"{batt_h * 0.58:.2f}")
         # papan tulis
         .replace("__BOARD_MATRIX__", matrix_attr(board))
         .replace("__BOARD_W__", f"{board_w / 2:.2f}")

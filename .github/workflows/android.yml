@@ -65,7 +65,7 @@ jobs:
       - name: Rename artifact
         run: |
           mkdir -p dist
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RuangKelas-0.15.0-debug.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RuangKelas-0.15.1-debug.apk
           ls -lh dist
 
       - name: Publish APK ke Release
@@ -73,17 +73,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v0.15.0-android"
+          TAG="v0.15.1-android"
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --title "Ruang Kelas 0.15.0 - Launcher: jam digital, bendera, kalender lipat, angin, rel baterai (APK)" \
+              --title "Ruang Kelas 0.15.1 - Launcher: gorden & rel lebih ringkas (APK)" \
               --notes "APK debug siap dipasang di tablet Android. Unduh RuangKelas-0.15.0-debug.apk lalu buka di perangkat (izinkan instalasi dari sumber ini)."
-          gh release upload "$TAG" dist/RuangKelas-0.15.0-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload "$TAG" dist/RuangKelas-0.15.1-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: RuangKelas-debug-apk
-          path: dist/RuangKelas-0.15.0-debug.apk
+          path: dist/RuangKelas-0.15.1-debug.apk
           if-no-files-found: error
           retention-days: 30

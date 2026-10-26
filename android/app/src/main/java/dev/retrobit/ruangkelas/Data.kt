@@ -259,14 +259,14 @@ val FRAME_QUADS = listOf(
 val WINDOW_QUAD = intArrayOf(1062, 112, 1200, 178, 1062, 332, 1200, 398)
 
 /** Rel gorden: dari titik kiri ke kanan, dipakai juga sebagai penunjuk baterai. */
-val RAIL_LINE = intArrayOf(960, 35, 1288, 198)
+val RAIL_LINE = intArrayOf(1006, 57, 1288, 198)
 
 /** Persentase baterai di dinding, tepat di atas rel, mengikuti arah dinding. */
-val BATTERY_TEXT_QUAD = intArrayOf(1002, 4, 1120, 34, 1002, 50)
+val BATTERY_TEXT_QUAD = intArrayOf(1014, 0, 1122, 26, 1014, 44)
 
 /** Area gorden kiri & kanan yang ikut bergoyang saat ada hembusan angin. */
 val CURTAIN_RECTS = listOf(
-    intArrayOf(962, 40, 62, 320),
+    intArrayOf(995, 78, 40, 308),
     intArrayOf(1236, 128, 62, 330)
 )
 

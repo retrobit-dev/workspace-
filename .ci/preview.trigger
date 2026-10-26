@@ -18,3 +18,5 @@ run 03:58:21 clockfit
 # 0.15.0 docs + bukti sampah 071732
 
 # 0.15.0 bukti fokus file manager 072610
+
+# 0.15.1 gorden kiri + rel ringkas 080240
