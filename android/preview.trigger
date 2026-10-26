@@ -1,1 +1,1 @@
-run 01:37:53 manual
+run 01:39:25 sdk
