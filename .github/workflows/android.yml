@@ -76,7 +76,7 @@ jobs:
           TAG="v0.15.7-android"
           gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --title "Ruang Kelas 0.15.7 - Launcher: jam digital dinding dihapus (APK)" \
+              --title "Ruang Kelas 0.15.7 - Launcher: kalender meja dihapus (APK)" \
               --notes "APK debug siap dipasang di tablet Android. Unduh RuangKelas-0.15.7-debug.apk lalu buka di perangkat (izinkan instalasi dari sumber ini)."
           gh release upload "$TAG" dist/RuangKelas-0.15.7-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
 
