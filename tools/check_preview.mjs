@@ -69,6 +69,7 @@ checkRect(document.getElementById("cal"), "cal", CAL);
 
 if (!document.getElementById("hh").getAttribute("transform")) fail("jarum jam belum diset");
 if (!document.getElementById("mh").getAttribute("transform")) fail("jarum menit belum diset");
+if (!document.getElementById("sh").getAttribute("transform")) fail("jarum detik belum diset");
 for (const id of ["cal-m", "cal-d", "cal-w"]) {
   const t = document.getElementById(id).textContent.trim();
   if (!t) fail(`${id} kosong`);

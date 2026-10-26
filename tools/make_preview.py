@@ -130,6 +130,7 @@ HTML = """<!DOCTYPE html>
       <g stroke="#0E0D1A" stroke-linecap="round">
         <line id="hh" x1="50" y1="50" x2="50" y2="26" stroke-width="8"></line>
         <line id="mh" x1="50" y1="50" x2="50" y2="14" stroke-width="5.5"></line>
+        <line id="sh" x1="50" y1="50" x2="50" y2="6" stroke-width="2.2" stroke="#EF6A5B"></line>
       </g>
       <circle cx="50" cy="50" r="4.5" fill="#0E0D1A"></circle>
     </svg>
@@ -213,6 +214,8 @@ function tick() {
     .setAttribute("transform", "rotate(" + (hour * 30) + " 50 50)");
   document.getElementById("mh")
     .setAttribute("transform", "rotate(" + (minute * 6) + " 50 50)");
+  document.getElementById("sh")
+    .setAttribute("transform", "rotate(" + (now.getSeconds() * 6) + " 50 50)");
   document.getElementById("cal-m").textContent = BULAN[now.getMonth()];
   document.getElementById("cal-d").textContent = now.getDate();
   document.getElementById("cal-w").textContent = HARI[(now.getDay() + 6) % 7];

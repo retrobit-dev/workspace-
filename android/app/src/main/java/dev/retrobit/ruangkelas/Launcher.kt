@@ -237,10 +237,10 @@ private fun LiveWallClock(box: SceneBox, onTap: () -> Unit) {
             val cx = rx
             val cy = ry
 
-            fun hand(angleDeg: Double, length: Float, width: Float) {
+            fun hand(angleDeg: Double, length: Float, width: Float, color: Color = Ink) {
                 val a = Math.toRadians(angleDeg - 90.0)
                 drawLine(
-                    color = Ink,
+                    color = color,
                     start = Offset(cx, cy),
                     end = Offset(cx + (cos(a) * rx * length).toFloat(), cy + (sin(a) * ry * length).toFloat()),
                     strokeWidth = width,
@@ -250,10 +250,13 @@ private fun LiveWallClock(box: SceneBox, onTap: () -> Unit) {
 
             val minute = time.minute + time.second / 60f
             val hour = (time.hour % 12) + minute / 60f
-            hand(hour * 30.0, 0.48f, size.width * 0.10f)
-            hand(minute * 6.0, 0.72f, size.width * 0.070f)
+            hand(hour * 30.0, 0.48f, size.width * 0.105f)
+            hand(minute * 6.0, 0.70f, size.width * 0.075f)
+            // jarum detik merah tipis: bikin jam jelas hidup
+            hand(time.second * 6.0, 0.80f, size.width * 0.030f, Coral)
 
-            drawCircle(color = Ink, radius = size.width * 0.055f, center = Offset(cx, cy))
+            drawCircle(color = Ink, radius = size.width * 0.06f, center = Offset(cx, cy))
+            drawCircle(color = Coral, radius = size.width * 0.025f, center = Offset(cx, cy))
         }
     }
 }
