@@ -147,37 +147,28 @@ const PALETTE = [
 /* rect = [x, y, w, h] dalam piksel gambar asli (night 1408×768 / day 1376×768) */
 
 const SCENE = {
-  night: { src: "assets/workspace-scene.png", w: 1408, h: 768, tag: "RUANG KERJA · SENJA" },
-  day: { src: "assets/workspace-scene-day.png", w: 1376, h: 768, tag: "RUANG KERJA · PAGI" }
+  src32: "assets/scene-32.png",
+  src64: "assets/scene-64.png",
+  w: 51,
+  h: 32,
+  colors: 32
 };
 
+/* rect = [x, y, w, h] dalam satuan grid art 51 × 32 */
 const TILES = [
-  { id: "laptop", label: "Jurnal", target: "jurnal", icon: "book",
-    night: [590, 328, 168, 174], day: [408, 328, 186, 172] },
-  { id: "papan", label: "Absensi", target: "absensi", icon: "check",
-    night: [516, 180, 390, 254], day: [598, 82, 448, 316] },
-  { id: "pinboard", label: "Catatan", target: "catatan", icon: "pencil",
-    night: [934, 178, 314, 240], day: [1066, 90, 312, 268] },
-  { id: "buku", label: "Nilai", target: "nilai", icon: "chart",
-    night: [398, 418, 204, 112], day: [272, 430, 156, 84] },
-  { id: "rak", label: "Binder", target: "binder", icon: "folder",
-    night: [428, 6, 560, 148], day: [238, 44, 340, 292] },
-  { id: "jendela", label: "Kalender", target: "kalender", icon: "calendar",
-    night: [38, 20, 336, 312], day: [0, 8, 232, 506] },
-  { id: "jam", label: "Jadwal", target: "jadwal", icon: "clock",
-    night: [836, 406, 90, 82], day: [796, 428, 90, 84] },
-  { id: "kursi", label: "Profil", target: "profil", icon: "face",
-    night: [980, 436, 268, 268], day: [1110, 450, 266, 300] },
-  { id: "laci", label: "Kelas", target: "kelas", icon: "grid",
-    night: [884, 520, 200, 190], day: [748, 498, 152, 148] }
+  { id: "laptop",     label: "Jurnal",   target: "jurnal",     icon: "book",     rect: [14, 15, 8, 5] },
+  { id: "buku",       label: "Nilai",    target: "nilai",      icon: "chart",    rect: [6, 18, 7, 4] },
+  { id: "papan",      label: "Absensi",  target: "absensi",    icon: "check",    rect: [25, 6, 16, 10] },
+  { id: "pinboard",   label: "Catatan",  target: "catatan",    icon: "pencil",   rect: [41, 6, 10, 9] },
+  { id: "jam",        label: "Jadwal",   target: "jadwal",     icon: "clock",    rect: [24, 15, 7, 6] },
+  { id: "kalender",   label: "Kalender", target: "kalender",   icon: "calendar", rect: [31, 15, 6, 7] },
+  { id: "laci",       label: "Binder",   target: "binder",     icon: "folder",   rect: [27, 23, 11, 9] },
+  { id: "kalkulator", label: "Kalkulator", target: "kalkulator", icon: "calc",   rect: [16, 23, 8, 4] },
+  { id: "jendela",    label: "Kelas",    target: "kelas",      icon: "grid",     rect: [0, 1, 9, 23] },
+  { id: "kursi",      label: "Profil",   target: "profil",     icon: "face",     rect: [41, 15, 9, 9] },
+  { id: "rak",        label: "Arsip",    target: "binder",     icon: "folder",   rect: [12, 5, 12, 9] }
 ];
 
-const INVENTORY = [
-  { label: "Kalkulator", target: "kalkulator", icon: "calc" },
-  { label: "Kelas", target: "kelas", icon: "grid" },
-  { label: "Kalender", target: "kalender", icon: "calendar" },
-  { label: "Profil", target: "profil", icon: "face" }
-];
 
 /* ------------------------------- data ---------------------------------- */
 
@@ -304,7 +295,7 @@ const state = {
   calSelected: null,   // 'YYYY-MM-DD'
   calcMode: "hitung",
   calcExpr: "",
-  sceneVariant: "night",
+  art: 32,
   jurnal: JSON.parse(JSON.stringify(JURNAL_SEED)),
   notes: JSON.parse(JSON.stringify(NOTE_SEED)),
   events: JSON.parse(JSON.stringify(EVENT_SEED)),
@@ -349,11 +340,10 @@ function restore() {
     });
     if (saved.absensi) state.absensi = { ...state.absensi, ...saved.absensi };
     if (saved.nilai) state.nilai = { ...state.nilai, ...saved.nilai };
-    if (saved.theme === "light") document.body.classList.add("theme-light");
-    if (saved.palette === "warm") document.body.classList.add("palette-warm");
     if (saved.scanlines === false) document.body.classList.remove("scanlines");
     if (saved.motion === false) document.body.classList.add("no-motion");
-    if (saved.sceneVariant) state.sceneVariant = saved.sceneVariant;
+    if (saved.focus === true) document.body.classList.add("focus");
+    if (saved.art === 64) state.art = 64;
     hydrateTogglesFromBody();
   } catch (e) { /* abaikan data rusak */ }
 }
@@ -363,11 +353,10 @@ function persist() {
     localStorage.setItem(LS_KEY, JSON.stringify({
       jurnal: state.jurnal, notes: state.notes, events: state.events, docs: state.docs,
       absensi: state.absensi, nilai: state.nilai,
-      theme: document.body.classList.contains("theme-light") ? "light" : "dark",
-      palette: document.body.classList.contains("palette-warm") ? "warm" : "default",
       scanlines: document.body.classList.contains("scanlines"),
       motion: !document.body.classList.contains("no-motion"),
-      sceneVariant: state.sceneVariant
+      focus: document.body.classList.contains("focus"),
+      art: state.art
     }));
   } catch (e) { /* kuota penuh — abaikan */ }
 }
@@ -447,22 +436,21 @@ function showScreen(name) {
 /* -------------------------------- home --------------------------------- */
 
 function renderTiles() {
-  const variant = state.sceneVariant;
   const img = $("#sceneImg");
-  img.src = SCENE[variant].src;
-  img.alt = `Ruang kerja guru bergaya pixel art — suasana ${variant === "night" ? "senja" : "pagi"}`;
-  $("#sceneTag").textContent = SCENE[variant].tag;
+  img.src = state.art === 32 ? SCENE.src32 : SCENE.src64;
+  img.alt = "Ruang kerja guru malam hari: laptop, papan tulis, papan pin, jam digital, kalender meja, dan laci";
+  const now = new Date();
+  $("#sceneTag").textContent = `RUANG KERJA · ${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  $("#scene").style.setProperty("--scene-ratio", (SCENE.w / SCENE.h).toFixed(4));
 
-  const meta = SCENE[variant];
-  $("#scene").style.setProperty("--scene-ratio", (meta.w / meta.h).toFixed(4));
   $("#sceneTiles").innerHTML = TILES.map((t) => {
-    const [x, y, w, h] = t[variant];
-    const left = (x / meta.w) * 100;
-    const top = (y / meta.h) * 100;
-    const width = (w / meta.w) * 100;
-    const height = (h / meta.h) * 100;
+    const [x, y, w, h] = t.rect;
+    const left = (x / SCENE.w) * 100;
+    const top = (y / SCENE.h) * 100;
+    const width = (w / SCENE.w) * 100;
+    const height = (h / SCENE.h) * 100;
     return `<button class="tile" data-goto="${t.target}" data-label="${t.label}"
-              style="left:${left.toFixed(2)}%;top:${top.toFixed(2)}%;width:${width.toFixed(2)}%;height:${height.toFixed(2)}%"
+              style="left:${left.toFixed(3)}%;top:${top.toFixed(3)}%;width:${width.toFixed(3)}%;height:${height.toFixed(3)}%"
               aria-label="${t.label}">
               <span class="tile-dot"><span class="ico" data-icon="${t.icon}" data-size="11"></span></span>
               <span class="tile-label">${t.label.toUpperCase()}</span>
@@ -472,34 +460,93 @@ function renderTiles() {
   hydrateIcons($("#sceneTiles"));
 }
 
-function renderInventory() {
-  const el = $("#inventory");
-  if (!el) return;
-  el.innerHTML = INVENTORY.map((it) => `
-    <button class="inv-slot" data-goto="${it.target}" aria-label="${it.label}">
-      <span class="ico" data-icon="${it.icon}" data-size="16"></span>
-      <span>${it.label.toUpperCase()}</span>
-    </button>`).join("");
-  hydrateIcons(el);
+/* ------------------------------ jam digital ---------------------------- */
+
+const pad2 = (n) => String(n).padStart(2, "0");
+
+function renderClock() {
+  const now = new Date();
+  const hhmm = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+  const hhmmss = `${hhmm}:${pad2(now.getSeconds())}`;
+  const dateLong = now.toLocaleDateString("id-ID", {
+    weekday: "long", day: "numeric", month: "short", year: "numeric"
+  }).replace(/,\s*/g, " · ").toUpperCase();
+
+  const set = (sel, text) => { const el = $(sel); if (el) el.textContent = text; };
+  set("#clockTime", hhmm);
+  set("#clockDate", dateLong);
+  set("#ctxClock", hhmmss);
+  set("#ctxClockDate", dateLong);
+  set("#homeDatePill", now.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" })
+    .replace(/,\s*/g, " · ").toUpperCase());
+
+  const tag = $("#sceneTag");
+  if (tag) tag.textContent = `RUANG KERJA · ${hhmm}`;
 }
+
+function startClock() {
+  renderClock();
+  setInterval(renderClock, 1000);
+}
+
+/* -------------------------------- home --------------------------------- */
 
 function renderHomeMeta() {
   const xp = Math.min(1000, 600 + state.jurnal.length * 35 + state.notes.length * 12);
-  $("#xpBar").style.width = `${(xp / 1000) * 100}%`;
-  $("#xpLabel").textContent = `${xp} / 1000 XP`;
-  $("#noteCount").textContent = state.notes.filter((n) => n.cat !== "to-do" || true).length;
+  const bar = $("#xpBar"); if (bar) bar.style.width = `${(xp / 1000) * 100}%`;
+  const label = $("#xpLabel"); if (label) label.textContent = `${xp} / 1000 XP`;
+  const nc = $("#noteCount"); if (nc) nc.textContent = state.notes.length;
+  const dc = $("#docCount"); if (dc) dc.textContent = state.docs.length;
+
   const hour = new Date().getHours();
-  const greet = hour < 11 ? "Selamat pagi," : hour < 15 ? "Selamat siang," : hour < 18 ? "Selamat sore," : "Selamat malam,";
-  $("#greetLine").textContent = greet;
+  const greet = hour < 11 ? "SELAMAT PAGI," : hour < 15 ? "SELAMAT SIANG," : hour < 18 ? "SELAMAT SORE," : "SELAMAT MALAM,";
+  const g = $("#greetLine"); if (g) g.textContent = greet;
+  renderHomeNotes();
+  renderContext();
 }
 
-function toggleScene() {
-  state.sceneVariant = state.sceneVariant === "night" ? "day" : "night";
-  document.body.classList.toggle("theme-light", state.sceneVariant === "day");
-  hydrateTogglesFromBody();
-  renderTiles();
-  persist();
-  toast(`SUASANA ${state.sceneVariant === "night" ? "SENJA" : "PAGI"} · MODE ${state.sceneVariant === "night" ? "GELAP" : "TERANG"}`);
+function renderHomeNotes() {
+  const el = $("#homeNotes");
+  if (!el) return;
+  const rows = [...state.notes]
+    .sort((a, b) => Number(b.pinned) - Number(a.pinned) || (a.date < b.date ? 1 : -1))
+    .slice(0, 3);
+
+  el.innerHTML = rows.map((n) => `
+    <button class="note ${NOTE_COLOR[n.color] || ""}" data-goto="catatan" style="text-align:left;border:0;cursor:pointer;color:inherit;font:inherit;width:100%">
+      <div class="note-head">
+        <span class="date">${fmtID(n.date).toUpperCase()}</span>
+        <span class="tag ${n.cat === "to-do" ? "sky" : n.cat === "refleksi" ? "teal" : "amber"}">${n.cat.toUpperCase()}</span>
+      </div>
+      <h4>${n.title}</h4>
+      <p>${n.body}</p>
+    </button>`).join("");
+}
+
+/* ----------------------------- panel konteks --------------------------- */
+
+function renderContext() {
+  const today = todayISO();
+  const events = eventsOn(today);
+  const agenda = $("#ctxAgenda");
+
+  if (agenda) {
+    agenda.innerHTML = events.length
+      ? events.sort((a, b) => (a.time > b.time ? 1 : -1)).map((e) => {
+          const kind = EVENT_KIND[e.jenis] || EVENT_KIND.kegiatan;
+          return `<div class="ctx-event">
+              <span class="t">${e.time}</span>
+              <span class="b"><b>${e.title}</b><span>${kind.label}</span></span>
+            </div>`;
+        }).join("")
+      : `<p class="ctx-empty">TIDAK ADA AGENDA HARI INI.<br>TAP UNTUK MENAMBAH.</p>`;
+  }
+
+  const classes = $("#ctxClasses");
+  if (classes) {
+    classes.innerHTML = Object.keys(CLASSES).map((k) => `
+      <button data-goto="absensi" data-kelas-ctx="${k}">${k}</button>`).join("");
+  }
 }
 
 /* ------------------------------- jurnal -------------------------------- */
@@ -759,6 +806,7 @@ function renderAgenda() {
     : `<p class="empty">TIDAK ADA AGENDA.<br><br>TAP + UNTUK MENAMBAH.</p>`;
 
   hydrateIcons($("#agendaList"));
+  renderContext();
 }
 
 function eventDialog() {
@@ -1101,10 +1149,10 @@ function closeSheet() { $("#journalSheet").classList.remove("open"); }
 
 function hydrateTogglesFromBody() {
   const map = {
-    theme: document.body.classList.contains("theme-light"),
-    palette: document.body.classList.contains("palette-warm"),
     scanlines: document.body.classList.contains("scanlines"),
     motion: !document.body.classList.contains("no-motion"),
+    focus: document.body.classList.contains("focus"),
+    art: state.art === 32,
     inspect: $("#scene")?.classList.contains("inspect") || false
   };
   $$("[data-toggle]").forEach((row) => {
@@ -1113,24 +1161,22 @@ function hydrateTogglesFromBody() {
     const sw = $(".switch", row);
     if (sw) sw.setAttribute("aria-checked", String(on));
   });
-  const st = $("#switchTheme"); if (st) st.setAttribute("aria-checked", String(map.theme));
-  const si = $("#switchInspect"); if (si) si.setAttribute("aria-checked", String(map.inspect));
+  const si = $("#switchInspect");
+  if (si) si.setAttribute("aria-checked", String(map.inspect));
 }
 
 function applyToggle(key, on) {
-  if (key === "theme") {
-    document.body.classList.toggle("theme-light", on);
-    state.sceneVariant = on ? "day" : "night";
+  if (key === "art") {
+    state.art = on ? 32 : 64;
     renderTiles();
-    renderAtlas();
-    toast(on ? "MODE TERANG AKTIF" : "MODE GELAP AKTIF");
-  }
-  if (key === "palette") {
-    document.body.classList.toggle("palette-warm", on);
-    toast(on ? "PALET HANGAT AKTIF" : "PALET SENJA AKTIF");
+    toast(on ? "ART 32 PX · TIAP PIKSEL 2× LEBIH BESAR" : "ART 64 PX · DETAIL LEBIH HALUS");
   }
   if (key === "scanlines") document.body.classList.toggle("scanlines", on);
   if (key === "motion") document.body.classList.toggle("no-motion", !on);
+  if (key === "focus") {
+    document.body.classList.toggle("focus", on);
+    toast(on ? "MODE FOKUS TABLET AKTIF" : "MODE FOKUS DIMATIKAN");
+  }
   if (key === "inspect") {
     $("#scene").classList.toggle("inspect", on);
     toast(on ? "INSPEKSI TILE AKTIF · KOTAK = AREA TAP" : "INSPEKSI TILE NONAKTIF");
@@ -1152,33 +1198,26 @@ function initKit() {
     <button class="swatch" style="background:${p.hex}" data-hex="${p.hex}" title="${p.name} ${p.hex}"
       aria-label="Salin warna ${p.name} ${p.hex}"></button>`).join("");
 
-  const rows = TILES.map((t) => {
-    const [x, y, w, h] = t.night;
-    const px = (v, total) => ((v / total) * 100).toFixed(2);
-    return `<tr>
-        <td>${t.label}</td>
-        <td>${t.id}</td>
-        <td>${px(x, 1408)}/${px(y, 768)}<br>${px(w, 1408)}×${px(h, 768)}</td>
-      </tr>`;
-  }).join("");
-  $("#tileTable").innerHTML = `<tr><th>TUJUAN</th><th>ID</th><th>X/Y · W×H (%)</th></tr>${rows}`;
+  $("#tileTable").innerHTML = `<tr><th>TUJUAN</th><th>ID</th><th>X · Y · W × H (grid)</th></tr>` +
+    TILES.map((t) => {
+      const [x, y, w, h] = t.rect;
+      return `<tr><td>${t.label}</td><td>${t.id}</td><td>${x} · ${y} · ${w}×${h}</td></tr>`;
+    }).join("");
 
   $("#tileHints").innerHTML = TILES.map((t) => `
-    <li><span class="dot"></span><span><b>${t.label}</b> → ${t.target}</span></li>`).join("") +
-    `<li><span class="dot" style="background:var(--sky)"></span><span><b>Kalkulator</b> → toolbar</span></li>`;
+    <li><span class="dot"></span><span><b>${t.label}</b> → ${t.target}</span></li>`).join("");
 }
 
 function renderAtlas() {
   const el = $("#atlas");
   if (!el) return;
-  const variant = state.sceneVariant;
   el.innerHTML = TILES.map((t) => {
-    const rect = t[variant];
+    const [x, y, w, h] = t.rect;
     return `<figure>
-        <img src="assets/tiles/${variant}-${t.id}.png" alt="Objek ${t.label}" loading="lazy">
+        <img src="assets/tiles32/${t.id}.png" alt="Objek ${t.label}" loading="lazy">
         <figcaption>
           <b>${t.label.toUpperCase()}</b><br>
-          ${t.id} · ${rect[2]}×${rect[3]} PX
+          ${t.id} · ${w}×${h} grid
         </figcaption>
       </figure>`;
   }).join("");
@@ -1462,6 +1501,18 @@ function initEvents() {
     if (doc) docDialog(doc);
   });
 
+  /* kelas cepat (panel konteks) */
+  $("#ctxClasses").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-kelas-ctx]");
+    if (!btn) return;
+    state.absClass = btn.dataset.kelasCtx;
+    const chip = $(`#absClassChips .chip[data-kelas="${state.absClass}"]`);
+    if (chip) {
+      $$(".chip", $("#absClassChips")).forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+    }
+    renderAbsensi();
+  });
+
   /* kelas */
   $("#classList").addEventListener("click", (e) => {
     const card = e.target.closest("[data-class]");
@@ -1472,8 +1523,9 @@ function initEvents() {
   $$("[data-setting]").forEach((row) => {
     row.addEventListener("click", () => {
       const key = row.dataset.setting;
-      if (key === "theme") applyToggle("theme", !document.body.classList.contains("theme-light"));
       if (key === "inspect") applyToggle("inspect", !$("#scene").classList.contains("inspect"));
+      if (key === "device") toast("TARGET: HUAWEI MATE PAD MINI 8,8\" · 2560 × 1600");
+      if (key === "orient") toast("ORIENTASI TERKUNCI: LANDSCAPE");
       if (key === "backup") {
         const data = JSON.stringify({ jurnal: state.jurnal, notes: state.notes, events: state.events, docs: state.docs }, null, 2);
         toast(`BACKUP SIAP · ${(data.length / 1024).toFixed(1)} KB JSON`);
@@ -1507,8 +1559,8 @@ function boot() {
   initKit();
   renderTiles();
   renderAtlas();
-  renderInventory();
   initEvents();
+  startClock();
   renderHomeMeta();
   renderJurnal();
   renderCatatan();

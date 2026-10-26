@@ -1,11 +1,19 @@
-# Ruang Kelas — Pixel Workspace
+# Ruang Kelas — Pixel Workspace (Tablet Landscape)
 
-Aplikasi guru (native Android, rencana Kotlin + Jetpack Compose) dengan tampilan
-**workspace bergaya 64-bit pixel art**: ruang kerja guru yang bisa diketuk, kartu
-bergaya game, dan tipografi piksel.
+Aplikasi guru native Android (rencana Kotlin + Jetpack Compose) untuk **HUAWEI MatePad Mini 8,8"**
+dalam **mode landscape**, dengan tampilan workspace pixel art **gelap** bergaya game retro.
 
-Tahap saat ini: **UI/UX prototipe v0.2** — interaktif, bisa dibuka di browser, dan
-sekaligus menjadi acuan token desain untuk implementasi Android.
+Tahap saat ini: **UI/UX prototipe v0.3** — interaktif di browser, sekaligus acuan token untuk Android.
+
+## Target perangkat
+
+| | |
+|---|---|
+| Perangkat | HUAWEI MatePad Mini 8,8" |
+| Layar | 2560 × 1600 (16:10), landscape lock |
+| UI acuan | 1280 × 800 DP (density ≈ 2,0) |
+| Rail navigasi | 84 DP · panel konteks 300 DP |
+| Art scene | **51 × 32 piksel** · 32 warna · nearest-neighbour |
 
 ## Menjalankan prototipe
 
@@ -13,68 +21,83 @@ sekaligus menjadi acuan token desain untuk implementasi Android.
 npm start          # python3 -m http.server 4173 → http://localhost:4173
 ```
 
-Atau buka `prototype/index.html` langsung (font & gambar sudah lokal, tanpa internet).
+Atau buka `prototype/index.html` langsung (font & gambar lokal, tanpa internet).
+Toggle **Fokus tablet** di panel kiri menyembunyikan panel kontrol agar tampil penuh seperti di perangkat.
 
 ## Struktur
 
 ```
 prototype/
-├── index.html                    # 11 layar + Design Kit
-├── styles.css                    # design token + komponen + mode terang
-├── app.js                        # data contoh, render, interaksi, penyimpanan lokal
+├── index.html                 # 11 layar, rail, panel konteks, Design Kit
+├── styles.css                 # token desain + komponen dasar
+├── tablet.css                 # tata letak landscape (rail + konten + panel)
+├── app.js                     # data contoh, render, interaksi, jam digital, localStorage
 └── assets/
-    ├── workspace-scene.png        # scene senja  1408×768
-    ├── workspace-scene-day.png    # scene pagi   1376×768 (cermin, lihat catatan)
-    ├── tiles/                     # 9 objek × 2 suasana = 18 aset PNG
-    └── fonts/                     # Pixelify Sans, Silkscreen, Press Start 2P (OFL)
+    ├── scene-32.png           # scene utama 51 × 32 (art 32 px)
+    ├── scene-64.png           # versi 102 × 64 (opsi detail)
+    ├── scene-landscape-raw.png# sumber 1312 × 816 untuk membuat ulang scene
+    ├── scene-32-map.png       # peta area tap semua objek
+    ├── tiles32/               # 11 objek dipotong (untuk animasi terpisah di Compose)
+    └── fonts/                 # Pixelify Sans, Silkscreen, Press Start 2P (OFL)
 ```
 
-## 8 tool + 3 layar pendukung
+## Scene: jam digital, kalender meja, dan laci
 
-| Layar | Isi | Interaksi |
-|---|---|---|
-| **Beranda** | scene 9 objek (hotspot presisi), bar XP, 3 statistik, 8 kartu tool, toolbar 4 tool | Ketuk objek: laptop→Jurnal · papan tulis→Absensi · papan pin→Catatan · buku→Nilai · rak→Binder · jendela→Kalender · jam→Jadwal · kursi→Profil · laci→Kelas |
-| **Jurnal** | catatan pertemuan (tanggal, kelas, jam, materi, refleksi, kehadiran), filter kelas | Bottom sheet tambah catatan |
-| **Buku Catatan** | catatan tempel berwarna: ide, refleksi, to-do | Cari, pin/sematkan, filter kategori, tambah/edit/hapus (dialog) |
-| **Absensi** | ringkasan H/S/I/A, daftar siswa | Tap status per siswa, simpan per kelas |
-| **Nilai** | Tugas/UTS/UAS, NA otomatis 40/30/30, rata-rata/tertinggi/< KKM | Input langsung, warna NA mengikuti KKM 75, tombol ke Kalkulator |
-| **Jadwal** | per hari Senin–Jumat, penanda "sekarang" | Pindah hari, ekspor `.ics` (placeholder) |
-| **Kalender** | grid bulan (Senin–Minggu), penanda agenda, agenda per hari | Ganti bulan, pilih tanggal, tambah/hapus agenda (ujian/rapat/kegiatan/libur/admin) |
-| **Kalkulator** | 3 mode: **Hitung** (retro keypad, keyboard fisik), **Nilai** (bobot & NA + predikat), **Konversi** (100 → 4 + predikat) | Hitung ekspresi sendiri, ubah bobot, konversi instan |
-| **Binder Materi** | 7 dokumen per kategori (Modul Ajar, LKPD, Bank Soal, Administrasi) | Filter kategori, checklist kelengkapan dokumen, tambah dokumen |
-| **Kelas** | 4 kelas, kehadiran %, rata-rata NA | Detail kelas → lompat ke Absensi/Nilai/Jurnal |
-| **Profil** | identitas guru, XP, 8 lencana (3 terbuka), pengaturan | Mode terang, inspeksi tile, ekspor JSON, reset data |
-| **Design Kit** | palet, tipografi, komponen, **atlas 9 tile**, tabel koordinat tile, alur navigasi | Salin kode warna ke clipboard |
+Scene malam digambar ulang khusus landscape, lalu diturunkan ke grid 32 piksel:
 
-## Scene: hotspot presisi per objek
+- **Jam digital** di atas meja (kotak hijau) → **Jadwal**
+- **Kalender meja** tepat di sebelah kanan jam → **Kalender**
+- **Laci meja** di bawah meja → **Binder materi**
+- Laptop → Jurnal · papan tulis → Absensi · papan pin → Catatan · buku → Nilai
+- Nampan di bawah meja → Kalkulator · jendela → Kelas · kursi → Profil · rak → Binder
 
-Scene dipecah menjadi **9 tile objek** yang koordinatnya diukur langsung pada gambar
-(dalam piksel asli, lalu dikonversi ke persen agar responsif). Aktifkan
-**Inspeksi tile** di panel kiri untuk melihat batas tap-area.
+Koordinat tap (satuan grid 51 × 32, `x · y · w × h`):
 
-| Objek | Tujuan | Malam (x, y, w, h) | Pagi |
-|---|---|---|---|
-| laptop | Jurnal | 590, 328, 168, 174 | 408, 328, 186, 172 |
-| papan tulis | Absensi | 516, 180, 390, 254 | 598, 82, 448, 316 |
-| papan pin | Catatan | 934, 178, 314, 240 | 1066, 90, 312, 268 |
-| buku | Nilai | 398, 418, 204, 112 | 272, 430, 156, 84 |
-| rak | Binder | 428, 6, 560, 148 | 238, 44, 340, 292 |
-| jendela | Kalender | 38, 20, 336, 312 | 0, 8, 232, 506 |
-| jam | Jadwal | 836, 406, 90, 82 | 796, 428, 90, 84 |
-| kursi | Profil | 980, 436, 268, 268 | 1110, 450, 266, 300 |
-| laci | Kelas | 884, 520, 200, 190 | 748, 498, 152, 148 |
+| Objek | Tujuan | x | y | w | h |
+|---|---|---|---|---|---|
+| laptop | Jurnal | 14 | 15 | 8 | 5 |
+| buku | Nilai | 6 | 18 | 7 | 4 |
+| papan tulis | Absensi | 25 | 6 | 16 | 10 |
+| papan pin | Catatan | 41 | 6 | 10 | 9 |
+| jam digital | Jadwal | 24 | 15 | 7 | 6 |
+| kalender meja | Kalender | 31 | 15 | 6 | 7 |
+| laci | Binder | 27 | 23 | 11 | 9 |
+| nampan | Kalkulator | 16 | 23 | 8 | 4 |
+| jendela | Kelas | 0 | 1 | 9 | 23 |
+| kursi | Profil | 41 | 15 | 9 | 9 |
+| rak | Binder | 12 | 5 | 12 | 9 |
 
-Aset per objek ada di `assets/tiles/` (mis. `night-laptop.png`) sehingga di Compose
-tiap objek bisa dianimasikan sendiri (jam berdetak, layar berkedip, sticky note bergoyang).
+Aktifkan **Inspeksi tile** untuk melihat batas tap di scene. Di Compose, koordinat ini
+dipakai apa adanya dengan `BoxWithConstraints` (persen dari lebar/tinggi gambar).
 
-> **Catatan aset:** ilustrasi "pagi" dibuat oleh model gambar terpisah, jadi susunannya
-> tidak identik dengan "senja" — makanya tiap suasana punya tabel koordinat sendiri.
-> Untuk produksi, scene pagi sebaiknya versi recolour dari scene yang sama (atau pakai
-> trik Compose `scaleX(-1f)` pada scene senja) agar tata letak 100% konsisten.
+## Jam digital
+
+- Jam besar 24 jam di status bar kiri atas + tanggal panjang (`SENIN · 26 OKT 2026`).
+- Blok jam digital hijau di panel kanan: `09:12:44` dengan efek glow + titik berkedip.
+- Tag di scene ikut menampilkan jam aktif.
+- Font **Silkscreen**, angka tabular, `letter-spacing` lebar.
+
+## Layar
+
+Rail kiri berisi 11 tujuan: Beranda · Jurnal · Catatan · Absensi · Nilai · Jadwal ·
+Kalender · Kalkulator · Binder · Kelas · Profil. Panel kanan selalu menampilkan jam,
+agenda hari ini, kelas cepat, dan progres XP.
+
+| Layar | Isi |
+|---|---|
+| **Beranda** | scene landscape + 11 hotspot, 4 statistik, 8 kartu tool, agenda berikutnya, 3 catatan terakhir |
+| **Jurnal** | grid catatan pertemuan, filter kelas, sheet tambah catatan |
+| **Buku Catatan** | catatan tempel berwarna, cari, pin, filter, tambah/edit/hapus |
+| **Absensi** | ringkasan H/S/I/A, grid 2 kolom siswa, tap status |
+| **Nilai** | tabel Tugas/UTS/UAS, NA otomatis 40/30/30, ringkasan rata-rata/tertinggi/< KKM |
+| **Jadwal** | per hari, penanda "sekarang" |
+| **Kalender** | grid bulan + agenda per hari (ujian/rapat/kegiatan/libur/admin) |
+| **Kalkulator** | 3 mode: Hitung (keypad + keyboard), Nilai (bobot 40/30/30 + predikat), Konversi (100 → 4) |
+| **Binder** | 7 dokumen per kategori, checklist kelengkapan, tombol unggah |
+| **Kelas** | 4 kelas, kehadiran %, rata-rata NA, detail + lompat ke layar lain |
+| **Profil** | identitas guru, XP, 8 lencana, pengaturan (inspeksi, ekspor JSON, reset) |
 
 ## Design token
-
-Palet gelap senja dengan aksen amber (mode terang memakai palet kertas krem):
 
 | Token | Hex | Pemakaian |
 |---|---|---|
@@ -82,21 +105,20 @@ Palet gelap senja dengan aksen amber (mode terang memakai palet kertas krem):
 | Night / Navy | `#15142A` / `#1D1C36` | latar layar & kartu |
 | Panel / Panel 2 | `#272647` / `#33325A` | kartu, tombol sekunder |
 | Cream | `#F8E9C8` | teks utama |
-| Amber | `#F2AB3F` | aksi utama, progres XP |
-| Coral | `#EF6A5B` | alfa, peringatan, tombol hapus |
-| Teal / Mint | `#4FA49A` / `#9FD8B0` | hadir, simpan, predikat tinggi |
-| Sky | `#77B8D9` | sakit, informasi |
-| Plum | `#A58ECB` | kategori lain, rapat |
+| Amber | `#F2AB3F` | aksi utama, XP, jam |
+| Coral | `#EF6A5B` | alfa, hapus |
+| Teal / Mint | `#4FA49A` / `#9FD8B0` | hadir, simpan, display jam digital |
+| Sky | `#77B8D9` | informasi, sakit |
+| Plum | `#A58ECB` | rapat, kategori lain |
 
-Aturan bentuk: sudut **0 px**, outline **2–3 px** gelap, bayangan **solid 3–4 px
-tanpa blur**, grid 8 dp, padding layar 14 dp. Font: **Pixelify Sans** (UI),
-**Silkscreen** (label/data), **Press Start 2P** (judul/logo).
+Aturan bentuk: sudut **0 px**, outline **2–3 px** gelap, bayangan **solid 3–4 px tanpa
+blur**, grid 8 DP, padding layar 16 DP, tipografi **Pixelify Sans** (UI),
+**Silkscreen** (label & jam), **Press Start 2P** (judul).
 
-## Langkah berikutnya (implementasi Android)
+## Langkah berikutnya (Android)
 
-1. Skeleton proyek Compose (`minSdk 26`), tema warna dari tabel token di atas.
-2. `HomeScreen`: `BoxWithConstraints` + `Image` scene, 9 hotspot memakai koordinat
-   persen dari tabel di atas (identik dengan prototipe ini).
-3. Room: entitas `Kelas`, `Siswa`, `Jurnal`, `Catatan`, `Nilai`, `Absensi`,
-   `Agenda`, `Dokumen` (binder).
-4. Fitur ekspor Excel/CSV + backup JSON, lalu APK rilis.
+1. Skeleton Compose (`minSdk 26`), `android:screenOrientation="sensorLandscape"`, tema dari token di atas.
+2. `HomeScreen`: `BoxWithConstraints` + `Image(painterResource(R.drawable.scene32), filterQuality = FilterQuality.None)` dan 11 hotspot dari tabel koordinat.
+3. Room: `Kelas`, `Siswa`, `Jurnal`, `Catatan`, `Nilai`, `Absensi`, `Agenda`, `Dokumen`.
+4. Widget/komponen jam digital memakai font Silkscreen + `rememberInfiniteTransition` untuk titik berkedip.
+5. Ekspor CSV/JSON untuk administrasi, lalu APK rilis.
