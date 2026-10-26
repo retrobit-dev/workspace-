@@ -169,7 +169,7 @@ def draw_plane(img, quad, layer_maker):
     img.alpha_composite(warped)
 
 
-def build(mode, hour):
+def build(mode, hour, battery=76, second=32):
     data = parse()
     src = Image.open(RES / f"drawable-nodpi/scene_{mode}.png").convert("RGBA")
 
@@ -177,7 +177,7 @@ def build(mode, hour):
     date = "SEN 26 OKT"
 
     clock_q = wall_quad(data["clock"])
-    draw_plane(src, clock_q, lambda w, h: _layer(w, h, lambda l: paint_clock(l, w, h, digital, date)))
+    draw_plane(src, clock_q, lambda w, h: _layer(w, h, lambda l: paint_clock(l, w, h, digital, date, second)))
 
     flag_q = wall_quad(data["flag"])
     draw_plane(src, flag_q, lambda w, h: _layer(w, h, lambda l: paint_flag(l, w, h)))
@@ -191,8 +191,12 @@ def build(mode, hour):
 
     d = ImageDraw.Draw(src)
     x1, y1, x2, y2 = data["rail"]
-    battery = 76
-    mood = (159, 216, 176, 255) if mode == "day" else (119, 184, 217, 255)
+    if battery <= 15:
+        mood = (217, 72, 59, 255)
+    elif battery <= 40:
+        mood = (224, 160, 58, 255)
+    else:
+        mood = (159, 216, 176, 255) if mode == "day" else (119, 184, 217, 255)
     d.line([x1, y1 + 3, x2, y2 + 3], fill=(0, 0, 0, 136), width=7)
     d.line([x1, y1, x2, y2], fill=mood, width=4)
     for i in range(1, 10):
@@ -211,7 +215,8 @@ def build(mode, hour):
         while dd.textlength(f"{battery}%", font=f) > w * 0.94 and fs > 4:
             fs -= 1
             f = ImageFont.truetype(FONT, fs)
-        text(dd, (w / 2, h * 0.86), f"{battery}%", f, CREAM2)
+        text(dd, (w / 2, h * 0.86), f"{battery}%", f,
+             (239, 106, 91, 255) if battery <= 15 else CREAM2)
         return layer
 
     draw_plane(src, bt, paint_batt)

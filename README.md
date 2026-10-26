@@ -5,14 +5,16 @@ satu layar berisi gambar workspace isometrik ukuran penuh. Tanpa sidebar, tanpa 
 tanpa header, tanpa panel. Setiap objek di gambar bisa diketuk untuk membuka aplikasi
 bawaannya — aplikasi itu dibuat menyusul, satu per satu.
 
-**Status: v0.14.0 — papan pin tetap di atas rak buku, papan tulis searah rak, meja
-diperlebar ke kiri, lima bingkai aplikasi (WhatsApp, Vivaldi, YouTube, Spotify,
-Sinaga Jateng) di atas papan pin, jam digital dinding yang menempel muka panelnya,
-dan gorden jendela yang berperan sebagai penunjuk baterai.**
+**Status: v0.15.0 — jam analog dihapus, tinggal jam digital dinding yang sejajar dan
+setinggi bingkai foto; bendera Indonesia menempel di kanannya; papan tulis memakai
+judul "Jadwal Mengajar"; kalender meja lebih tebal dan halamannya melipat saat tanggal
+berganti; jendela tanpa palang dengan gorden & daun tanaman yang bergoyang; rel gorden
+jadi penunjuk baterai dengan persentase tertulis di dinding; tempat sampah membuka
+file manager; suasana siang/malam mengikuti jam perangkat.**
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.14.0-debug.apk`](dist/RuangKelas-0.14.0-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.15.0-debug.apk`](dist/RuangKelas-0.15.0-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain) |
@@ -21,7 +23,7 @@ dan gorden jendela yang berperan sebagai penunjuk baterai.**
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.14.0-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.15.0-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -31,7 +33,7 @@ dan gorden jendela yang berperan sebagai penunjuk baterai.**
 - Gambar selalu mempertahankan rasio aslinya **16:10**. Kalau layar lebih lebar/pendek,
   sisa ruang dibiarkan hitam (letterbox) — art tidak pernah melar dan koordinat ketuk
   tetap presisi. Semua posisi dihitung dari satu satuan `unit` (ukuran 1 piksel gambar),
-  dipakai bersama oleh gambar, 17 area ketuk, dan muka jam/kalender.
+  dipakai bersama oleh gambar, 18 area ketuk, dan muka jam/kalender.
 - Di browser, jendela portrait menampilkan ajakan "putar ke landscape"; kalau didukung,
   browser juga diminta mengunci orientasi saat layar disentuh.
 
@@ -49,33 +51,50 @@ Koordinat ketuk disimpan di `Data.kt` (`TILES`, satuan piksel gambar 1312 × 816
 | Laci meja, rak buku | Binder Materi |
 | Papan tulis | Absensi |
 | Papan pin (atas rak) | Buku Catatan |
-| Jam dinding analog | Jadwal — jarum jam, menit, detik mengikuti waktu nyata |
+| Jam digital dinding | Jadwal — jam:menit, tanggal, dan bilah detik yang berjalan |
+| Bendera Indonesia (kanan jam) | Indonesia — penanda zona waktu bawaan |
 | Foto user (kiri jam) | Profil & pengaturan launcher |
 | Jendela | Kelas |
-| 5 bingkai di atas papan pin | Pintasan: WhatsApp, Vivaldi, YouTube, Spotify, Sinaga Jateng |
+| Tempat sampah (sudut kiri bawah) | File manager: aplikasi berkas bawaan, atau pemilih dokumen Android |
+| 5 bingkai di atas papan pin | Pintasan: WhatsApp, Vivaldi, Spotify, YouTube, Sinaga Jateng |
 
-Jam dinding, layar jam digital, dan kalender bukan gambar mati. Gambar aslinya
-dibersihkan dulu oleh `tools/scene_face.py` (jarum jam dihapus, tanda jam digambar
-ulang di piksel asli), lalu aplikasi menggambar:
+Jam, kalender, judul papan tulis, ikon aplikasi, dan persentase baterai bukan gambar
+mati: `Launcher.kt` menggambarnya di atas scene setiap detik.
 
-- tiga jarum jam analog dari `LocalTime.now()` di `CLOCK_FACE`,
-- `jam:menit:detik` di layar jam digital dinding (mengikuti muka panel), dan
-- hari/tanggal/bulan di kertas kalender.
+- **Jam digital** (`CLOCK_RECT`) sejajar dengan bingkai foto di dinding dan **tingginya
+  sama** (124 px). Isinya `jam:menit` besar, tanggal kecil (`SEN 26 OKT`), dan bilah
+  detik tipis di tepi bawah panel. Mengetuknya membuka `Jadwal`; ke depan jam ini yang
+  akan menampung alarm, pengatur waktu, dan jam dunia.
+- **Bendera Indonesia** (`FLAG_RECT`) menempel tepat di kanan jam, tinggi sama, dengan
+  sudut kirinya bertemu sudut kanan-atas jam. Menandai Indonesia sebagai zona bawaan.
+- **Papan tulis** (`BOARD_QUAD`) diberi judul **"Jadwal Mengajar"** rata tengah di bagian
+  atas, dengan garis tipis di bawahnya. Tempat jadwal pelajaran nanti.
+- **Kalender** (`CALENDAR_QUAD`) lebih tebal (tumpukan kertas di bawah muka), dan saat
+  tanggal berganti halamannya "dilipat" — tinggi kertas menyusut lalu muncul lagi
+  dengan angka baru.
+- **Ikon lima bingkai** digambar mengikuti vektor bingkai (`FRAME_QUADS`), jadi ikon
+  ikut miring seperti kertasnya, bukan kotak datar.
 
-**Gorden jendela = penunjuk baterai.** Baterai penuh → gorden tergulung dan jendela
-terbuka; makin sedikit baterai, makin turun kain menutup jendela, dan warnanya memerah
-di bawah 40% serta 15%. Persentasenya diambil dari `BatteryManager` (mendengar
-`ACTION_BATTERY_CHANGED`), dan di browser memakai Battery Status API. Lihat
+**Jendela & angin.** Kaca jendela di cat ulang jadi langit siang oleh
+`tools/scene_face.py`; gorden dan daun tanaman digambar ulang dengan geseran sinus
+(`WindSway`) sehingga ruangan terasa bergerak: gorden berayun pelan, daun sedikit lebih
+cepat.
+
+**Rel gorden = penunjuk baterai.** Warna rel mengikuti suasana (hijau mint saat siang,
+biru saat malam) dan berubah kuning di bawah 40% serta merah di bawah 15%; tanda tiap
+10% di sepanjang rel menunjukkan sisa daya, dan **persentasenya ditulis di dinding di
+atas rel** mengikuti arah dinding (`BATTERY_TEXT_QUAD`). Datanya dari `BatteryManager`
+(`ACTION_BATTERY_CHANGED`); di browser memakai Battery Status API. Lihat
 [`docs/screens/baterai-gorden.png`](docs/screens/baterai-gorden.png).
 
-Kalender dan layar jam digital digambar **menempel pada bidangnya** (miring mengikuti muka
-benda) memakai `Matrix.setPolyToPoly` dari `CALENDAR_QUAD` dan `LED_QUAD`, bukan teks
-datar. Selain itu `Ambience()` menambahkan selaput warna tipis sesuai jam perangkat:
-subuh ungu, pagi hangat, siang terang, sore jingga, malam biru, larut lebih gelap.
+**Siang & malam.** `scene_face.load_scene("day"|"night")` menghasilkan dua gambar:
+malam (grade navy pekat) dan siang (eksposur naik + pendar hangat di jendela + pantulan
+matahari di lantai + langit siang di kaca). Launcher memilih pukul 06–17 = siang,
+selebihnya malam, lalu menambahkan selaput `Ambience()` tipis sesuai jam: pagi hangat,
+siang terang, sore jingga, malam biru, larut lebih gelap.
 
-Ketukan saat ini memunculkan label "<NAMA> · SEGERA HADIR" selama 2 detik
-(`Root` → `LauncherScreen(onOpen)`); begitu satu aplikasi dibuat, arahkan saja
-`onOpen` ke layarnya.
+Semua tulisan digambar **menempel pada bidangnya** (miring mengikuti muka benda) dengan
+`Matrix.setPolyToPoly`, bukan teks datar.
 
 ## Preview di browser
 
@@ -87,11 +106,12 @@ npm run preview:build   # bangun ulang web/ dari art + TILES
 ```
 
 `web/index.html` dibuat oleh `tools/make_preview.py` yang membaca `TILES`,
-`CLOCK_FACE`, `CALENDAR_QUAD`, `LED_QUAD`, `FRAME_QUADS`, `APP_ICONS`, dan `SCENE_W/H`
-langsung dari `Data.kt` — jadi area
-ketuk di browser identik dengan di APK. Gambar penuh layar, tanpa sidebar/tab/header,
-objek menyala saat ditekan, jam analog (SVG) berputar mengikuti waktu, kalender
-menampilkan tanggal hari ini, dan label "SEGERA HADIR" muncul saat objek diketuk.
+`CLOCK_RECT`, `FLAG_RECT`, `BOARD_QUAD`, `CALENDAR_QUAD`, `FRAME_QUADS`, `APP_ICONS`,
+`RAIL_LINE`, `BATTERY_TEXT_QUAD`, `CURTAIN_RECTS`, `LEAF_RECT`, dan `SCENE_W/H`
+langsung dari `Data.kt` — jadi area ketuk di browser identik dengan di APK. Gambar
+penuh layar, tanpa sidebar/tab/header, objek menyala saat ditekan, jam digital dan
+kalender hidup, gorden bergoyang, rel baterai ikut berubah, dan suasana siang/malam
+otomatis mengikuti jam browser.
 
 Cek cepat tanpa browser: `node tools/check_preview.mjs` (jsdom) memastikan
 setiap hotspot berada tepat di atas objeknya dan muka jam/kalender terisi.
@@ -99,19 +119,21 @@ setiap hotspot berada tepat di atas objeknya dan muka jam/kalender terisi.
 ## Struktur
 
 ```
-art/workspace-iso-v6.png          gambar isometrik terkini 1312 × 816 (tata letak 0.14.0)
+art/workspace-iso-v7.png          gambar isometrik terkini 1312 × 816 (tata letak 0.15.0)
+art/workspace-iso-v6.png          gambar sebelumnya (arsip)
 art/workspace-iso-v5.png          gambar sebelumnya (arsip)
 art/workspace-iso-v4.png          percobaan sebelumnya (arsip)
 art/workspace-iso-v3.png          gambar sebelumnya (arsip)
 art/workspace-iso-v2.png          gambar pertama (arsip)
-tools/scene_face.py                grade warna latar, bersihkan muka jam, gambar tanda jam
-tools/make_scene.py                → res/drawable-nodpi/scene.png (tanpa padding)
+tools/scene_face.py                grade warna, suasana siang/malam (langit + cahaya), cari kertas kalender
+tools/make_scene.py                → res/drawable-nodpi/scene_night.png + scene_day.png
+tools/sim_overlay.py               simulasi overlay dengan PIL (cek tata letak tanpa emulator)
 tools/make_preview.py              bangun web/index.html dari Data.kt (preview browser)
 tools/check_preview.mjs            uji area ketuk preview (jsdom)
-web/                               preview statis: index.html + scene.png
+web/                               preview statis: index.html + scene_night.png + scene_day.png
 android/app/src/main/java/dev/retrobit/ruangkelas/
 ├── App.kt                         MainActivity (fullscreen) + Root
-├── Launcher.kt                    gambar penuh layar + 17 area ketuk + jam analog/digital + kalender + suasana
+├── Launcher.kt                    gambar penuh layar + 18 area ketuk + jam digital + kalender + angin + rel baterai
 ├── Data.kt                        model, data contoh, simpan/muat JSON, TILES
 ├── Theme.kt                       token warna + font pixel
 └── Ui.kt                          komponen dasar untuk aplikasi yang akan datang
@@ -124,6 +146,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.14.0-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.15.0-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.

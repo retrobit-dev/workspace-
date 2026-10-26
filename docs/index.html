@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ruang Kelas 0.7.0 — launcher workspace</title>
+<title>Ruang Kelas 0.15.0 — launcher workspace</title>
 <style>
   :root{
     --ink:#0E0D1A; --night:#15142A; --navy:#1D1C36; --panel:#272647;
@@ -33,16 +33,17 @@
 </head>
 <body>
 <header>
-  <h1>Ruang Kelas 0.14.0 · Launcher</h1>
+  <h1>Ruang Kelas 0.15.0 · Launcher</h1>
   <div class="sub">
     Satu layar saja: gambar workspace isometrik ukuran penuh. Tidak ada sidebar, tab, header,
     atau panel. Setiap objek di gambar bisa diketuk dan akan membuka aplikasi bawaannya —
-    aplikasi itu dibuat menyusul satu per satu. Jam dinding punya jarum yang benar-benar
-    berjalan, jam digital di bawahnya menampilkan jam:menit:detik, kalender mencetak
-    tanggal hari ini mengikuti arah muka kalender, suasana ruangan mengikuti jam,
-    dan gorden jendela berfungsi sebagai penunjuk baterai.
+    aplikasi itu dibuat menyusul satu per satu. Jam dinding sekarang satu saja: jam digital
+    yang sejajar dan setinggi bingkai foto, dengan bendera Indonesia menempel di kanannya.
+    Kalender meja lebih tebal dan halamannya melipat saat tanggal berganti, gorden serta
+    daun tanaman bergoyang, rel gorden jadi penunjuk baterai dengan persentase tertulis di
+    dinding, dan ruangan ikut terang saat jam perangkat menunjukkan siang.
   </div>
-  <a class="cta" href="../dist/RuangKelas-0.14.0-debug.apk" download>⬇ Unduh APK 0.14.0</a>
+  <a class="cta" href="../dist/RuangKelas-0.15.0-debug.apk" download>⬇ Unduh APK 0.15.0</a>
 </header>
 
 <main>
@@ -62,23 +63,42 @@
     <li><b>Laci meja</b> dan <b>rak buku</b> → Binder Materi</li>
     <li><b>Papan tulis</b> → Absensi</li>
     <li><b>Papan pin</b> → Buku Catatan</li>
-    <li><b>Jam dinding</b> → Jadwal (jarum + jam digital dinding berjalan)</li>
+    <li><b>Jam digital dinding</b> → Jadwal (jam:menit, tanggal, bilah detik)</li>
+    <li><b>Bendera Indonesia di kanan jam</b> → penanda zona waktu bawaan</li>
     <li><b>Foto user di kiri jam</b> → Profil &amp; pengaturan</li>
     <li><b>Jendela</b> → Kelas</li>
-    <li><b>5 bingkai di atas papan pin</b> → WhatsApp, Vivaldi, YouTube, Spotify, Sinaga Jateng</li>
+    <li><b>Tempat sampah di sudut kiri bawah</b> → file manager (aplikasi berkas bawaan)</li>
+    <li><b>5 bingkai di atas papan pin</b> → WhatsApp, Vivaldi, Spotify, YouTube, Sinaga Jateng</li>
   </ul>
 
-  <h2>Gorden sebagai penunjuk baterai</h2>
+  <h2>Rel gorden sebagai penunjuk baterai</h2>
   <figure>
-    <img src="screens/baterai-gorden.png" alt="Gorden baterai pada tiga tingkat">
-    <figcaption><b>Baterai penuh</b> gorden tergulung · <b>55%</b> menutup sebagian ·
-    <b>12%</b> menutup penuh dan kain memerah</figcaption>
+    <img src="screens/baterai-gorden.png" alt="Rel gorden sebagai indikator baterai">
+    <figcaption><b>Rel gorden</b> berwarna sesuai suasana (mint saat siang, biru saat malam),
+    berubah kuning di bawah 40% dan merah di bawah 15%; tanda tiap 10% di sepanjang rel, dan
+    persentasenya tertulis di dinding di atas rel mengikuti arah dinding.</figcaption>
   </figure>
+
+  <h2>Muka hidup di dinding</h2>
+  <ul>
+    <li><b>Jam digital</b> sejajar dengan bingkai foto, tinggi sama (124 px gambar):
+      <code>jam:menit</code> besar, tanggal kecil, bilah detik di tepi bawah.</li>
+    <li><b>Bendera Indonesia</b> menempel tepat di kanan jam, tinggi sama.</li>
+    <li><b>Papan tulis</b> berjudul <b>“Jadwal Mengajar”</b> rata tengah di bagian atas.</li>
+    <li><b>Kalender meja</b> tebal; saat tanggal berganti halamannya melipat lalu muncul
+      kembali dengan angka baru.</li>
+    <li><b>Angin</b> menggerakkan gorden dan daun tanaman.</li>
+  </ul>
 
   <h2>Bukti ketukan di perangkat</h2>
   <figure>
     <img src="screens/launcher-ketuk-jurnal.png" alt="Ketuk laptop">
     <figcaption><b>Ketuk laptop</b> memunculkan label Jurnal</figcaption>
+  </figure>
+  <figure>
+    <img src="screens/launcher-ketuk-jadwal.png" alt="Ketuk jam digital">
+    <figcaption><b>Ketuk jam digital</b> — membuka Jadwal; nanti di sinilah alarm,
+    pengatur waktu, dan jam dunia</figcaption>
   </figure>
   <figure>
     <img src="screens/launcher-ketuk-kalender.png" alt="Ketuk kalender">

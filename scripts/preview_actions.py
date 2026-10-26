@@ -112,7 +112,19 @@ def main() -> None:
         ox, oy, scale = scene_rect(w, h)
         print("ketuk", name, "layar", int(ox + px * scale), int(oy + py * scale), flush=True)
         tap_scene(px, py, w, h)
-        shot(name)
+        if name.endswith("sampah"):
+            # tempat sampah membuka aplikasi lain (file manager), jadi yang
+            # dibuktikan adalah aktivitas yang muncul di depan, lalu kembali.
+            focus = sh("adb shell dumpsys window 2>/dev/null | grep -E 'mCurrentFocus|mFocusedApp' | head -4")
+            print("fokus setelah ketuk sampah:", focus.strip(), flush=True)
+            shot("launcher-ketuk-sampah-file-manager")
+            sh("adb shell input keyevent KEYCODE_BACK")
+            time.sleep(2.0)
+            sh(f"adb shell am start -W -n {ACTIVITY}")
+            time.sleep(2.5)
+            shot("launcher-kembali-dari-sampah")
+        else:
+            shot(name)
         time.sleep(2.4)
 
     # 3. layar dengan rasio lain: gambar harus di-letterbox, ketukan tetap kena
