@@ -85,11 +85,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if git cat-file -e 2a09ae7:dist/RuangKelas-0.15.1-debug.apk 2>/dev/null; then
-            git show 2a09ae7:dist/RuangKelas-0.15.1-debug.apk > /tmp/RuangKelas-0.15.1-debug.apk
-            gh release upload v0.15.1-android /tmp/RuangKelas-0.15.1-debug.apk --repo "$GITHUB_REPOSITORY" --clobber || true
-            echo "asset 0.15.1 dipulihkan"
-          fi
+          set -e
+          gh api "repos/$GITHUB_REPOSITORY/contents/dist/RuangKelas-0.15.1-debug.apk?ref=2a09ae7" --jq .content | base64 -d > /tmp/RuangKelas-0.15.1-debug.apk
+          ls -l /tmp/RuangKelas-0.15.1-debug.apk
+          gh release upload v0.15.1-android /tmp/RuangKelas-0.15.1-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
+          echo "asset 0.15.1 dipulihkan"
 
       - name: Commit APK ke dist/
         if: github.event_name != 'pull_request'
