@@ -9,8 +9,8 @@
 <title>Ruang Kelas</title>
 <style>
   :root{
-    --ink:#0E0D1A; --night:#15142A;
-    --cream2:#E3CDA6; --amber:#F2AB3F; --screen:#D7F7CD;
+    --ink:#0E0D1A; --night:#15142A; --cream:#F8E9C8; --cream2:#E3CDA6;
+    --amber:#F2AB3F; --screen:#D7F7CD;
     --ratio: 1312 / 816;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -18,7 +18,7 @@
   body{touch-action:manipulation;user-select:none;
     font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
 
-  /* letterbox: gambar selalu 16:10, sisa layar hitam — sama seperti APK */
+  /* letterbox: gambar selalu 1312:816, sisa layar hitam — sama seperti APK */
   #stage{
     position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     aspect-ratio:var(--ratio);
@@ -27,37 +27,14 @@
   }
   #scene{position:absolute;inset:0;width:100%;height:100%;display:block;
     image-rendering:pixelated;pointer-events:none}
+  #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  #fx text{font-family:"Silkscreen","Courier New",monospace;font-weight:700;dominant-baseline:auto}
 
   .hotspot{position:absolute;border:0;padding:0;margin:0;background:transparent;
     cursor:pointer;outline:none;border-radius:0}
-  .hotspot.is-pressed{
-    background:rgba(242,171,63,.20);
-    box-shadow:0 0 0 3px var(--amber) inset;
-  }
+  .hotspot.is-pressed{background:rgba(242,171,63,.20);box-shadow:0 0 0 3px var(--amber) inset}
 
-  /* jam analog hidup di dinding: SVG di dalam kotak muka jam */
-  #clock{position:absolute;cursor:pointer}
-  #clock svg{display:block;width:100%;height:100%;overflow:visible}
-
-  /* kertas kalender: tulisan menempel pada bidang miringnya */
-  #cal{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;
-    flex-direction:column;align-items:center;justify-content:center;
-    color:#181430;font-weight:700;line-height:.95;letter-spacing:.5px;
-    pointer-events:none;white-space:nowrap}
-  #cal .m,#cal .w{opacity:.9}
-
-  /* layar jam digital: digit menempel pada bidang miring panel, tanpa kotak */
-  #led{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;
-    align-items:center;justify-content:center;background:transparent;
-    color:#D7F7CD;font-weight:700;line-height:1;letter-spacing:0;
-    pointer-events:none;white-space:nowrap;overflow:hidden}
-
-  /* lapisan vektor: ikon bingkai + gorden baterai, dalam koordinat scene */
-  #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-
-  /* selaput suasana: pagi hangat, malam kebiruan */
   #tint{position:absolute;inset:0;pointer-events:none}
-
   #scan{position:absolute;inset:0;pointer-events:none;
     background:repeating-linear-gradient(180deg,rgba(0,0,0,.10) 0 1px,transparent 1px 3px)}
 
@@ -67,59 +44,117 @@
     opacity:0;transition:opacity .18s ease,transform .18s ease;pointer-events:none}
   #toast.show{opacity:1;transform:translate(-50%,0)}
 
-  /* hanya muncul kalau jendela masih tegak */
-  #rotate{
-    position:fixed;inset:0;display:none;flex-direction:column;
+  #rotate{position:fixed;inset:0;display:none;flex-direction:column;
     align-items:center;justify-content:center;gap:18px;
     background:var(--ink);color:var(--cream2);
     font-size:12px;letter-spacing:2px;text-align:center;padding:24px;z-index:10}
-  #rotate .icon{
-    width:56px;height:56px;border:3px solid var(--amber);
-    border-radius:8px;position:relative}
-  #rotate .icon::after{
-    content:"";position:absolute;inset:8px 16px;
-    border:3px solid var(--amber);border-radius:4px}
+  #rotate .icon{width:56px;height:56px;border:3px solid var(--amber);border-radius:8px;position:relative}
+  #rotate .icon::after{content:"";position:absolute;inset:8px 16px;border:3px solid var(--amber);border-radius:4px}
   #rotate small{color:#7D75A0;letter-spacing:1px;font-size:11px;line-height:1.7}
-  @media (orientation:portrait){
-    #rotate{display:flex}
-  }
+  @media (orientation:portrait){ #rotate{display:flex} }
 </style>
 </head>
 <body>
 <div id="stage">
-  <img id="scene" src="scene.png?v=ea6277f768" alt="Workspace guru malam hari" draggable="false">
-  <div id="clock" role="img" aria-label="Jam analog">
-    <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-      <g stroke="#0E0D1A" stroke-linecap="round">
-        <line id="hh" x1="50" y1="50" x2="50" y2="26" stroke-width="8"></line>
-        <line id="mh" x1="50" y1="50" x2="50" y2="14" stroke-width="5.5"></line>
-        <line id="sh" x1="50" y1="50" x2="50" y2="6" stroke-width="2.2" stroke="#EF6A5B"></line>
-      </g>
-      <circle cx="50" cy="50" r="4.5" fill="#0E0D1A"></circle>
-    </svg>
-  </div>
-  <div id="cal" role="img" aria-label="Kalender hari ini">
-    <span class="m" id="cal-m">OKT</span>
-    <span class="d" id="cal-d">26</span>
-    <span class="w" id="cal-w">SEN</span>
-  </div>
-  <div id="led" role="img" aria-label="Jam digital"><span id="led-t">00:00:00</span></div>
+  <img id="scene" src="scene_night.png" alt="Workspace guru" draggable="false">
   <svg id="fx" viewBox="0 0 1312 816" preserveAspectRatio="none">
-    <polygon points="59.00,237.00 98.00,217.00 98.00,279.00 59.00,299.00" fill="#1FBF5B"/>
-    <polygon points="66.80,244.16 90.20,232.16 90.20,259.44 76.94,266.24 70.70,280.60 71.09,269.24 66.80,271.44" fill="#FFFFFF"/>
-    <polygon points="143.00,196.00 183.00,175.00 183.00,236.00 143.00,257.00" fill="#E03A3A"/>
-    <polygon points="151.80,204.80 159.00,201.02 163.00,223.32 167.00,196.82 174.20,193.04 166.20,232.62 159.80,235.98" fill="#FFFFFF"/>
-    <polygon points="229.00,152.00 267.00,134.00 264.00,197.00 226.00,215.00" fill="#D63B32"/>
-    <polygon points="237.46,161.54 235.78,196.82 257.90,169.10" fill="#FFFFFF"/>
-    <polygon points="311.00,110.00 352.00,90.00 352.00,153.00 311.00,173.00" fill="#1DB954"/>
-    <polygon points="319.20,124.90 343.80,115.42 343.80,121.72 319.20,131.20" fill="#FFFFFF"/>
-    <polygon points="320.02,135.84 342.98,127.16 342.98,132.20 320.02,140.88" fill="#FFFFFF"/>
-    <polygon points="320.84,145.52 342.16,137.64 342.16,141.42 320.84,149.30" fill="#FFFFFF"/>
-    <polygon points="396.00,68.00 437.00,47.00 437.00,110.00 396.00,131.00" fill="#1E2C63"/>
-    <polygon points="416.50,67.58 428.80,68.84 428.80,85.22 416.50,109.16 404.20,97.82 404.20,81.44" fill="#FFFFFF"/>
-    <polygon points="416.50,76.40 423.06,78.08 423.06,86.90 416.50,99.08 409.94,93.62 409.94,84.80" fill="#1E2C63"/>
-    <polygon id="curtain" points="" fill="#8F6A72" fill-opacity=".95"/>
-    <g id="curtain-lines" stroke="#000" stroke-opacity=".2" stroke-width="1"></g>
+    <!-- angin: gorden & daun -->
+    
+    <g clip-path="url(#c0)">
+      <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1312" height="816">
+        <animateTransform attributeName="transform" type="translate"
+          values="-2.2,0; 2.2,0; -2.2,0" dur="5.2s"
+          begin="0.0s" repeatCount="indefinite" calcMode="spline"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+      </image>
+    </g>
+    <clipPath id="c0"><rect x="962" y="40" width="62" height="320"/></clipPath>
+
+    <g clip-path="url(#c1)">
+      <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1312" height="816">
+        <animateTransform attributeName="transform" type="translate"
+          values="-2.2,0; 2.2,0; -2.2,0" dur="5.2s"
+          begin="0.9s" repeatCount="indefinite" calcMode="spline"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+      </image>
+    </g>
+    <clipPath id="c1"><rect x="1236" y="128" width="62" height="330"/></clipPath>
+
+    <g clip-path="url(#c2)">
+      <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1312" height="816">
+        <animateTransform attributeName="transform" type="translate"
+          values="-2.2,0; 2.2,0; -2.2,0" dur="5.2s"
+          begin="1.8s" repeatCount="indefinite" calcMode="spline"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+      </image>
+    </g>
+    <clipPath id="c2"><rect x="1088" y="470" width="170" height="200"/></clipPath>
+
+    <!-- rel gorden = indikator baterai -->
+    <line id="rail" x1="960" y1="35" x2="1288" y2="198"
+          stroke="#77B8D9" stroke-width="4.2" stroke-linecap="round"/>
+    <g id="rail-ticks" stroke="#0E0D1A" stroke-width="1.2"></g>
+
+    <!-- persentase baterai di dinding di atas rel -->
+    <g id="batt-g" transform="matrix(118.000,30.000,0.000,46.000,1002.000,4.000)">
+      <text id="batt" x="60.88" y="39.56" text-anchor="middle"
+            fill="#E3CDA6" font-size="30.36">100%</text>
+    </g>
+
+    <!-- lima bingkai aplikasi -->
+    <g id="icons">
+    <polygon points="77.0,241.0 107.0,226.0 107.0,278.0 77.0,293.0" fill="#1FBF5B"/>
+    <polygon points="83.0,247.4 101.0,238.4 101.0,261.2 90.8,266.3 86.0,278.1 86.3,268.6 83.0,270.2" fill="#FFFFFF"/>
+    <polygon points="151.0,202.0 181.0,187.0 181.0,239.0 151.0,254.0" fill="#E03A3A"/>
+    <polygon points="157.6,210.1 163.0,207.4 166.0,226.7 169.0,204.4 174.4,201.7 168.4,234.9 163.6,237.3" fill="#FFFFFF"/>
+    <polygon points="225.0,164.0 255.0,149.0 255.0,201.0 225.0,216.0" fill="#1DB954"/>
+    <polygon points="231.0,176.6 249.0,169.7 249.0,174.9 231.0,181.8" fill="#FFFFFF"/>
+    <polygon points="231.6,185.7 248.4,179.3 248.4,183.5 231.6,189.8" fill="#FFFFFF"/>
+    <polygon points="232.2,193.7 247.8,188.0 247.8,191.1 232.2,196.8" fill="#FFFFFF"/>
+    <polygon points="299.0,124.0 329.0,110.0 329.0,163.0 299.0,177.0" fill="#D63B32"/>
+    <polygon points="306.2,132.3 306.2,162.0 323.0,139.3" fill="#FFFFFF"/>
+    <polygon points="374.0,86.0 404.0,72.0 403.0,125.0 373.0,139.0" fill="#1E2C63"/>
+    <polygon points="388.8,87.5 397.7,89.6 397.5,103.4 388.2,122.5 379.5,111.8 379.7,98.0" fill="#FFFFFF"/>
+    <polygon points="388.7,94.9 393.4,96.9 393.3,104.3 388.3,114.0 383.7,108.8 383.8,101.4" fill="#1E2C63"/>
+    </g>
+
+    <!-- judul papan tulis -->
+    <g id="board" transform="matrix(230.000,-118.000,0.000,192.000,344.000,250.000)">
+      <text id="board-title" x="129.25" y="30.72" text-anchor="middle"
+            fill="#181430" font-size="22.08" letter-spacing="1">JADWAL MENGAJAR</text>
+      <line x1="46.53" y1="41.28" x2="211.97" y2="41.28"
+            stroke="rgba(24,20,48,.35)" stroke-width="1.6"/>
+    </g>
+
+    <!-- jam digital + bendera -->
+    <g id="clock" transform="matrix(120.000,50.000,0.000,124.000,796.000,38.000)">
+      <rect x="0" y="0" width="130.00" height="124.00" fill="#07060F"/>
+      <rect x="1.5" y="1.5" width="127.00" height="121.00"
+            fill="none" stroke="#2B2A46" stroke-width="2.2"/>
+      <text id="clock-time" x="65.00" y="57.04" text-anchor="middle"
+            fill="#D7F7CD" font-size="29.33">00:00</text>
+      <text id="clock-date" x="65.00" y="81.84" text-anchor="middle"
+            fill="#9FD8B0" font-size="15.14">SEN 26 OKT</text>
+      <rect id="clock-sec" x="15.60" y="104.16" width="0"
+            height="4.34" fill="#D7F7CD" opacity="0.6" data-full="98.80"/>
+    </g>
+    <g id="flag" transform="matrix(52.000,21.000,0.000,124.000,916.000,88.000)">
+      <rect x="0" y="0" width="56.08" height="62.00" fill="#CE1126"/>
+      <rect x="0" y="62.00" width="56.08" height="62.00" fill="#F6F1E3"/>
+      <rect x="0" y="0" width="56.08" height="124.00"
+            fill="none" stroke="#2B2A46" stroke-width="2"/>
+    </g>
+
+    <!-- kalender: halaman bisa terlipat -->
+    <g id="cal" transform="matrix(43.000,20.000,-13.000,46.000,1043.000,405.000)">
+      <rect id="cal-pad" x="0" y="2.87" width="47.42" height="54.02" fill="#CBB68C"/>
+      <rect x="0" y="0" width="47.42" height="47.80" fill="#F3E7C8"/>
+      <g id="cal-page" style="transform:scaleY(1);transform-origin:50% 0%;transition:transform .26s linear">
+        <text id="cal-m" x="23.71" y="14.34" text-anchor="middle" fill="#181430" font-size="10.52">OKT</text>
+        <text id="cal-d" x="23.71" y="35.37" text-anchor="middle" fill="#181430" font-size="21.99">26</text>
+        <text id="cal-w" x="23.71" y="47.32" text-anchor="middle" fill="#181430" font-size="10.52">SEN</text>
+      </g>
+    </g>
   </svg>
   <div id="tint"></div>
   <div id="scan"></div>
@@ -134,40 +169,38 @@
 
 <script>
 const SCENE = {w: 1312, h: 816};
-const CLOCK_FACE = [901,88,70,96];
-const CAL_QUAD = [1084,424,1130,445,1075,462,1121,483];
-const LED_QUAD = [887,211,971,252,887,245];
-const WINDOW_QUAD = [1104,176,1200,206,1104,448,1200,478];
 const TILES = [
-  {label: "Jurnal", x: 690, y: 398, w: 250, h: 80},
-  {label: "Nilai", x: 752, y: 296, w: 132, h: 102},
-  {label: "Kalkulator", x: 938, y: 462, w: 66, h: 44},
-  {label: "Alat Tulis", x: 966, y: 376, w: 46, h: 60},
-  {label: "Kalender", x: 1066, y: 412, w: 104, h: 84},
-  {label: "Binder", x: 700, y: 538, w: 140, h: 152},
-  {label: "Absensi", x: 348, y: 118, w: 284, h: 364},
-  {label: "Catatan", x: 28, y: 240, w: 228, h: 240},
-  {label: "Jadwal", x: 884, y: 72, w: 110, h: 122},
-  {label: "Profil", x: 852, y: 92, w: 74, h: 104},
-  {label: "Binder", x: 18, y: 442, w: 306, h: 262},
-  {label: "Kelas", x: 1088, y: 118, w: 212, h: 358},
-  {label: "WhatsApp", x: 55, y: 214, w: 46, h: 88},
-  {label: "Vivaldi", x: 140, y: 173, w: 46, h: 88},
-  {label: "YouTube", x: 224, y: 131, w: 46, h: 88},
-  {label: "Spotify", x: 309, y: 88, w: 46, h: 88},
-  {label: "Sinaga Jateng", x: 394, y: 45, w: 46, h: 89},
+  {label: "Jurnal", x: 756, y: 314, w: 196, h: 126},
+  {label: "Nilai", x: 686, y: 306, w: 112, h: 92},
+  {label: "Kalkulator", x: 905, y: 436, w: 74, h: 52},
+  {label: "Alat Tulis", x: 980, y: 372, w: 50, h: 66},
+  {label: "Kalender", x: 1022, y: 392, w: 80, h: 90},
+  {label: "Binder", x: 688, y: 536, w: 158, h: 158},
+  {label: "Absensi", x: 334, y: 124, w: 252, h: 330},
+  {label: "Catatan", x: 70, y: 265, w: 168, h: 190},
+  {label: "Jadwal", x: 794, y: 36, w: 178, h: 190},
+  {label: "Profil", x: 712, y: 36, w: 76, h: 124},
+  {label: "Binder", x: 60, y: 425, w: 255, h: 310},
+  {label: "Kelas", x: 1024, y: 95, w: 230, h: 300},
+  {label: "File", x: 12, y: 646, w: 92, h: 122},
+  {label: "WhatsApp", x: 70, y: 218, w: 48, h: 82},
+  {label: "Vivaldi", x: 144, y: 179, w: 48, h: 82},
+  {label: "Spotify", x: 218, y: 141, w: 48, h: 82},
+  {label: "YouTube", x: 292, y: 102, w: 48, h: 82},
+  {label: "Sinaga Jateng", x: 366, y: 63, w: 48, h: 83},
 ];
+const RAIL = [960,35,1288,198];
 
 const stage = document.getElementById("stage");
-const clockEl = document.getElementById("clock");
-const calEl = document.getElementById("cal");
-const ledEl = document.getElementById("led");
-const ledText = document.getElementById("led-t");
-const curtainEl = document.getElementById("curtain");
-const curtainLines = document.getElementById("curtain-lines");
-const tintEl = document.getElementById("tint");
+const sceneEl = document.getElementById("scene");
 const toast = document.getElementById("toast");
+const railEl = document.getElementById("rail");
+const railTicks = document.getElementById("rail-ticks");
+const battEl = document.getElementById("batt");
+const tintEl = document.getElementById("tint");
+const calPage = document.getElementById("cal-page");
 let toastTimer = 0;
+let batteryLevel = 100;
 
 function pct(v, total) { return (v / total * 100).toFixed(4) + "%"; }
 
@@ -179,13 +212,15 @@ function place(el, x, y, w, h) {
 }
 
 function showToast(name) {
-  toast.textContent = name.toUpperCase() + " · SEGERA HADIR";
+  toast.textContent = name.toUpperCase();
   toast.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.remove("show"), 2000);
 }
 
-function open(name) { showToast(name); }
+function open(name) {
+  showToast("MEMBUKA " + name);
+}
 
 TILES.forEach((tile) => {
   const el = document.createElement("button");
@@ -201,125 +236,97 @@ TILES.forEach((tile) => {
   stage.appendChild(el);
 });
 
-place(clockEl, CLOCK_FACE[0], CLOCK_FACE[1], CLOCK_FACE[2], CLOCK_FACE[3]);
-clockEl.addEventListener("click", (e) => { e.stopPropagation(); open("Jadwal"); });
+// ---------------- rel gorden: tanda tiap 10% ----------------
+(function buildTicks() {
+  const ns = "http://www.w3.org/2000/svg";
+  for (let i = 1; i <= 9; i++) {
+    const t = i / 10;
+    const x = RAIL[0] + (RAIL[2] - RAIL[0]) * t;
+    const y = RAIL[1] + (RAIL[3] - RAIL[1]) * t;
+    const line = document.createElementNS(ns, "line");
+    line.setAttribute("x1", x); line.setAttribute("y1", y - 5);
+    line.setAttribute("x2", x); line.setAttribute("y2", y + 5);
+    line.dataset.index = i;
+    railTicks.appendChild(line);
+  }
+})();
 
-// tempelkan sebuah elemen pada bidang miring: quad = [kiri-atas, kanan-atas, kiri-bawah]
-function placeOnPlane(el, quad, u) {
-  const [ax, ay, bx, by, cx, cy] = quad;
-  const W = Math.hypot(bx - ax, by - ay);
-  const H = Math.hypot(cx - ax, cy - ay);
-  el.style.width = (u * W).toFixed(2) + "px";
-  el.style.height = (u * H).toFixed(2) + "px";
-  el.style.left = (u * ax).toFixed(2) + "px";
-  el.style.top = (u * ay).toFixed(2) + "px";
-  const a = (bx - ax) / W, b = (by - ay) / W, c = (cx - ax) / H, d = (cy - ay) / H;
-  el.style.transform = "matrix(" + [a, b, c, d, 0, 0].join(",") + ")";
-  return H;
+const BULAN = ["JAN","FEB","MAR","APR","MEI","JUN","JUL","AGU","SEP","OKT","NOV","DES"];
+const HARI = ["SEN","SEL","RAB","KAM","JUM","SAB","MIN"];
+
+function ambience(h) {
+  if (h >= 5 && h <= 8) return "rgba(255,217,160,.10)";
+  if (h >= 9 && h <= 15) return "rgba(255,246,226,.16)";
+  if (h >= 16 && h <= 18) return "rgba(255,154,92,.12)";
+  if (h >= 19 && h <= 22) return "rgba(43,63,143,.14)";
+  return "rgba(6,10,34,.34)";
 }
 
-// muka jam (krem + 12 tanda) sudah tergambar di scene.png;
-// di sini hanya jarum jam & menit yang diputar sesuai waktu perangkat
-const BULAN = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN",
-               "JUL", "AGU", "SEP", "OKT", "NOV", "DES"];
-const HARI = ["SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN"];
+function paintRail(day) {
+  const colour = batteryLevel <= 15 ? "#D9483B" : batteryLevel <= 40 ? "#E0A03A"
+    : day ? "#9FD8B0" : "#77B8D9";
+  railEl.setAttribute("stroke", colour);
+  [...railTicks.children].forEach((line) => {
+    const i = +line.dataset.index;
+    line.setAttribute("stroke", batteryLevel >= i * 10 ? "#0E0D1A" : "rgba(255,255,255,.4)");
+  });
+  battEl.textContent = batteryLevel + "%";
+  battEl.setAttribute("fill", batteryLevel <= 15 ? "#EF6A5B" : "#E3CDA6");
+}
 
-// jarum jam & menit mengikuti waktu perangkat; kalender mengikuti tanggal hari ini
+let lastDay = null;
+
 function tick() {
   const now = new Date();
-  const minute = now.getMinutes() + now.getSeconds() / 60;
-  const hour = (now.getHours() % 12) + minute / 60;
-  document.getElementById("hh")
-    .setAttribute("transform", "rotate(" + (hour * 30) + " 50 50)");
-  document.getElementById("mh")
-    .setAttribute("transform", "rotate(" + (minute * 6) + " 50 50)");
-  document.getElementById("sh")
-    .setAttribute("transform", "rotate(" + (now.getSeconds() * 6) + " 50 50)");
-  document.getElementById("cal-m").textContent = BULAN[now.getMonth()];
-  document.getElementById("cal-d").textContent = now.getDate();
-  document.getElementById("cal-w").textContent = HARI[(now.getDay() + 6) % 7];
-  ledText.textContent =
+  const day = now.getHours() >= 6 && now.getHours() <= 17;
+
+  if (day !== lastDay) {
+    const file = day ? "scene_day.png" : "scene_night.png";
+    sceneEl.src = file;
+    document.querySelectorAll(".sway-scene").forEach((img) => img.setAttribute("href", file));
+    lastDay = day;
+  }
+
+  document.getElementById("clock-time").textContent =
     String(now.getHours()).padStart(2, "0") + ":" +
-    String(now.getMinutes()).padStart(2, "0") + ":" +
-    String(now.getSeconds()).padStart(2, "0");
+    String(now.getMinutes()).padStart(2, "0");
+  const sec = document.getElementById("clock-sec");
+  sec.setAttribute("width", (parseFloat(sec.dataset.full || 0) * now.getSeconds() / 60).toFixed(2));
+  document.getElementById("clock-date").textContent =
+    HARI[(now.getDay() + 6) % 7] + " " + now.getDate() + " " + BULAN[now.getMonth()];
+
+  // kalender: kalau tanggal berganti, halaman dilipat dulu
+  const shown = document.getElementById("cal-d").textContent;
+  if (shown !== String(now.getDate())) {
+    calPage.style.transform = "scaleY(0)";
+    setTimeout(() => {
+      document.getElementById("cal-m").textContent = BULAN[now.getMonth()];
+      document.getElementById("cal-d").textContent = now.getDate();
+      document.getElementById("cal-w").textContent = HARI[(now.getDay() + 6) % 7];
+      calPage.style.transform = "scaleY(1)";
+    }, 280);
+  }
+
   tintEl.style.background = ambience(now.getHours());
-  drawCurtain();
+  paintRail(day);
 }
 
-/* ---- gorden jendela = penunjuk baterai ---- */
-let batteryLevel = 100;
+tick();
+setInterval(tick, 1000);
 
-function drawCurtain() {
-  const [ax, ay, bx, by, cx, cy, dx, dy] = WINDOW_QUAD;
-  const cover = Math.max(0, Math.min(1, (100 - batteryLevel) / 100));
-  if (cover <= 0.001) {
-    curtainEl.setAttribute("points", "");
-    curtainLines.innerHTML = "";
-    return;
-  }
-  const blx = ax + (cx - ax) * cover, bly = ay + (cy - ay) * cover;
-  const brx = bx + (dx - bx) * cover, bry = by + (dy - by) * cover;
-  curtainEl.setAttribute("points",
-    [ax, ay, bx, by, brx, bry, blx, bly].map((v) => v.toFixed(1)).join(" "));
-  curtainEl.setAttribute("fill", batteryLevel <= 15 ? "#8E4A4E" : batteryLevel <= 40 ? "#9A6567" : "#A9888A");
-  let g = "";
-  // lipatan kain: pita gelap-terang bergantian
-  for (let i = 0; i < 5; i += 2) {
-    const t0 = i / 5, t1 = (i + 1) / 5;
-    const p1 = [ax + (bx - ax) * t0, ay + (by - ay) * t0];
-    const p2 = [ax + (bx - ax) * t1, ay + (by - ay) * t1];
-    const p3 = [blx + (brx - blx) * t1, bly + (bry - bly) * t1];
-    const p4 = [blx + (brx - blx) * t0, bly + (bry - bly) * t0];
-    g += '<polygon points="' + [p1, p2, p3, p4].map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ") +
-         '" fill="#000" fill-opacity=".10"/>';
-  }
-  for (let i = 1; i <= 5; i++) {
-    const t = i / 6;
-    const x1 = ax + (bx - ax) * t, y1 = ay + (by - ay) * t;
-    const x2 = blx + (brx - blx) * t, y2 = bly + (bry - bly) * t;
-    g += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
-         '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
-  }
-  curtainLines.innerHTML = g;
-}
-
+// baterai: di browser memakai Battery Status API (kalau tersedia)
 if (navigator.getBattery) {
   navigator.getBattery().then((b) => {
-    const sync = () => { batteryLevel = Math.round(b.level * 100); drawCurtain(); };
+    const sync = () => {
+      batteryLevel = Math.round(b.level * 100);
+      paintRail(lastDay);
+    };
     sync();
     b.addEventListener("levelchange", sync);
   }).catch(() => {});
 }
 
-// suasana mengikuti jam: sama seperti ambienceOf() di Launcher.kt
-function ambience(h) {
-  if (h >= 4 && h <= 5) return "rgba(110,90,168,.10)";
-  if (h >= 6 && h <= 9) return "rgba(255,196,107,.06)";
-  if (h >= 10 && h <= 14) return "rgba(255,242,208,.03)";
-  if (h >= 15 && h <= 17) return "rgba(255,138,76,.10)";
-  if (h >= 18 && h <= 21) return "rgba(43,63,143,.12)";
-  return "rgba(6,10,34,.34)";
-}
-tick();
-setInterval(tick, 1000);
-
-// ukuran bidang & huruf mengikuti `unit` panggung, sama seperti di APK
-function fitFaces() {
-  const u = (stage.clientWidth || SCENE.w) / SCENE.w;
-  const calH = placeOnPlane(calEl, CAL_QUAD, u);
-  const ledH = placeOnPlane(ledEl, LED_QUAD, u);
-  const calFont = (f) => (calH * u * f).toFixed(2) + "px";
-  calEl.querySelector(".m").style.fontSize = calFont(0.22);
-  calEl.querySelector(".d").style.fontSize = calFont(0.46);
-  calEl.querySelector(".w").style.fontSize = calFont(0.22);
-  const ledW = parseFloat(ledEl.style.width);
-  ledEl.style.fontSize = Math.min(ledH * u * 0.80, (ledW * 0.76) / 5.0).toFixed(2) + "px";
-}
-fitFaces();
-window.addEventListener("resize", fitFaces);
-if (window.ResizeObserver) new ResizeObserver(fitFaces).observe(stage);
-
-// minta browser mengunci landscape (butuh fullscreen; kalau ditolak, abaikan saja)
+// minta browser mengunci landscape saat layar disentuh
 function lockLandscape() {
   try {
     if (screen.orientation && screen.orientation.lock) {

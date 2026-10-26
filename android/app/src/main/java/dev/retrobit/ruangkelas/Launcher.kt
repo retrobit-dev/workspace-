@@ -29,20 +29,24 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -61,7 +65,7 @@ import kotlin.math.sin
 /**
  * Geometri layar launcher.
  *
- * Gambar selalu mempertahankan rasio aslinya (16:10). Bila layar lebih lebar/pendek,
+ * Gambar selalu mempertahankan rasio aslinya. Bila layar lebih lebar/pendek,
  * sisanya dibiarkan hitam (letterbox) sehingga art tidak pernah melar dan koordinat
  * ketuk tetap presisi. Semua posisi dihitung dari [unit] = ukuran 1 piksel gambar.
  */
@@ -93,11 +97,10 @@ private fun rememberSceneBox(mw: Dp, mh: Dp): SceneBox {
 }
 
 /**
- * Launcher: hanya gambar workspace isometrik, landscape penuh.
- * Tidak ada rail, header, maupun panel — setiap objek pada gambar bisa diketuk.
+ * Launcher: gambar workspace isometrik, landscape penuh, tanpa rail/header.
  *
- * [onOpen] dipanggil dengan objek yang diketuk. Selama aplikasi bawaannya belum ada,
- * yang muncul hanya label sebentar; nanti tinggal diarahkan ke layar masing-masing.
+ * Siang/malam mengikuti jam perangkat: pukul 06–17 memakai gambar langit siang,
+ * selebihnya langit malam, dan selaput warna di atasnya ikut menyesuaikan.
  */
 @Composable
 fun LauncherScreen(
@@ -105,6 +108,10 @@ fun LauncherScreen(
     onOpen: (TileInfo) -> Unit = {}
 ) {
     val battery = rememberBatteryLevel()
+    val nowMs = rememberNowMs()
+    val hour = remember(nowMs) { LocalTime.now().hour }
+    val isDay = hour in 6..17
+
     var caption by remember { mutableStateOf("") }
     var captionTick by remember { mutableStateOf(0) }
 
@@ -118,39 +125,39 @@ fun LauncherScreen(
     BoxWithConstraints(Modifier.fillMaxSize().background(Ink)) {
         val box = rememberSceneBox(maxWidth, maxHeight)
         val ctx = LocalContext.current
-        val scene = remember {
-            BitmapFactory.decodeResource(ctx.resources, R.drawable.scene).asImageBitmap()
+        val scene = remember(isDay) {
+            val res = if (isDay) R.drawable.scene_day else R.drawable.scene_night
+            BitmapFactory.decodeResource(ctx.resources, res).asImageBitmap()
         }
 
-        Canvas(Modifier.fillMaxSize()) {
-            drawImage(
-                image = scene,
-                srcOffset = IntOffset.Zero,
-                srcSize = IntSize(scene.width, scene.height),
-                dstOffset = IntOffset(
-                    box.originX.toPx().roundToInt(),
-                    box.originY.toPx().roundToInt()
-                ),
-                dstSize = IntSize(
-                    box.width.toPx().roundToInt(),
-                    box.height.toPx().roundToInt()
-                ),
-                filterQuality = FilterQuality.None
-            )
-        }
+        // gambar dasar
+        Canvas(Modifier.fillMaxSize()) { drawScene(box, scene) }
 
-        // muka jam (analog + digital), kalender, ikon bingkai, dan gorden baterai
-        LiveFaces(box = box, level = battery)
+        // angin: gorden & daun bergoyang halus
+        WindSway(box = box, scene = scene)
 
-        // suasana mengikuti jam perangkat
-        Ambience()
+        // muka hidup: jam digital, bendera, kalender, ikon bingkai, judul papan tulis
+        LiveFaces(box = box, battery = battery, isDay = isDay)
+        BatteryLabel(box = box, battery = battery)
 
         TILES.forEach { tile ->
             LauncherHotspot(
                 tile = tile,
                 box = box,
                 onTap = {
-                    caption = if (tile.label == "Kelas") "${tile.label} · BATERAI $battery%" else tile.label
+                    val pkg = APP_PACKAGES[tile.label]
+                    when {
+                        pkg != null -> {
+                            val ok = launchApp(ctx, pkg)
+                            caption = if (ok) "MEMBUKA ${tile.label.uppercase()}"
+                            else "${tile.label.uppercase()} · TIDAK TERPASANG"
+                        }
+                        tile.label == "File" ->
+                            caption = if (openFileManager(ctx)) "MEMBUKA FILE MANAGER"
+                            else "FILE MANAGER TIDAK DITEMUKAN"
+                        tile.label == "Kelas" -> caption = "KELAS · BATERAI $battery%"
+                        else -> caption = tile.label
+                    }
                     captionTick++
                     onOpen(tile)
                 }
@@ -158,6 +165,8 @@ fun LauncherScreen(
         }
 
         if (state.scanlines) Scanlines()
+
+        Ambience(hour = hour)
 
         if (caption.isNotEmpty()) {
             Box(
@@ -169,11 +178,71 @@ fun LauncherScreen(
                     .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text(
-                    "${caption.uppercase()} · SEGERA HADIR",
+                    caption.uppercase(),
                     style = MaterialTheme.typography.labelMedium,
                     color = Cream2
                 )
             }
+        }
+    }
+}
+
+/** Gambar scene penuh layar, tanpa distorsi. */
+private fun DrawScope.drawScene(box: SceneBox, scene: ImageBitmap, dx: Float = 0f) {
+    drawImage(
+        image = scene,
+        srcOffset = IntOffset.Zero,
+        srcSize = IntSize(scene.width, scene.height),
+        dstOffset = IntOffset(
+            (box.originX.toPx() + dx).roundToInt(),
+            box.originY.toPx().roundToInt()
+        ),
+        dstSize = IntSize(box.width.toPx().roundToInt(), box.height.toPx().roundToInt()),
+        filterQuality = FilterQuality.None
+    )
+}
+
+/**
+ * Hembusan angin: bagian gorden dan daun digambar ulang dengan geseran halus
+ * mengikuti gelombang sinus, sehingga ruangan terasa "hidup" walau gambarnya diam.
+ */
+@Composable
+private fun WindSway(box: SceneBox, scene: ImageBitmap) {
+    val phase = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            phase.animateTo(
+                targetValue = (2f * Math.PI).toFloat(),
+                animationSpec = tween(durationMillis = 5200, easing = LinearEasing)
+            )
+            phase.snapTo(0f)
+        }
+    }
+
+    Canvas(Modifier.fillMaxSize()) {
+        val base = box.unit.toPx()
+        CURTAIN_RECTS.forEachIndexed { i, rect ->
+            val amount = sin(phase.value + i * 1.1f) * base * 1.6f
+            val left = box.x(rect[0]).toPx()
+            val top = box.y(rect[1]).toPx()
+            val w = box.w(rect[2]).toPx()
+            val h = box.h(rect[3]).toPx()
+            clipRect(left = left, top = top, right = left + w, bottom = top + h) {
+                drawScene(box, scene, dx = amount)
+            }
+        }
+        // daun tanaman bergoyang sedikit lebih cepat
+        val leaf = LEAF_RECT
+        val dx = sin(phase.value * 1.7f) * base * 1.2f
+        val left = box.x(leaf[0]).toPx()
+        val top = box.y(leaf[1]).toPx()
+        clipRect(
+            left = left,
+            top = top,
+            right = left + box.w(leaf[2]).toPx(),
+            bottom = top + box.h(leaf[3]).toPx()
+        ) {
+            drawScene(box, scene, dx = dx)
         }
     }
 }
@@ -201,8 +270,41 @@ private fun LauncherHotspot(
 }
 
 /**
- * Persentase baterai perangkat, dipakai gorden jendela sebagai penunjuk.
- * Mendengar ACTION_BATTERY_CHANGED, jadi angkanya ikut berubah saat dicas/dipakai.
+ * Tempat sampah = pintasan ke file manager.
+ * Coba aplikasi file manager bawaan pabrik dulu; kalau tidak ada, buka
+ * pemilih dokumen Android (DocumentsUI) yang juga menampilkan isi penyimpanan.
+ */
+private fun openFileManager(ctx: Context): Boolean {
+    val candidates = listOf(
+        "com.android.documentsui",
+        "com.google.android.documentsui",
+        "com.mi.android.globalFileexplorer",
+        "com.coloros.filemanager",
+        "com.huawei.hidisk",
+        "com.sec.android.app.myfiles"
+    )
+    for (pkg in candidates) {
+        val intent = ctx.packageManager.getLaunchIntentForPackage(pkg) ?: continue
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        if (runCatching { ctx.startActivity(intent) }.isSuccess) return true
+    }
+    val picker = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+        addCategory(Intent.CATEGORY_OPENABLE)
+        type = "*/*"
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    return runCatching { ctx.startActivity(picker) }.isSuccess
+}
+
+/** Buka aplikasi lain yang terpasang di HP. */
+private fun launchApp(ctx: Context, pkg: String): Boolean {
+    val intent = ctx.packageManager.getLaunchIntentForPackage(pkg) ?: return false
+    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    return runCatching { ctx.startActivity(intent) }.isSuccess
+}
+
+/**
+ * Persentase baterai perangkat, dipakai rel gorden dan angka di dinding.
  */
 @Composable
 private fun rememberBatteryLevel(): Int {
@@ -254,8 +356,8 @@ private fun planeOf(box: SceneBox, quad: IntArray, density: Density): Plane = wi
     )
 }
 
-/** Tulis satu baris teks seolah menempel di bidang [plane]. */
-private fun DrawScope.drawOnPlane(plane: Plane, paint: Paint, text: String, baseline: Float) {
+/** Jalankan [block] dengan kanvas sudah "dilipat" ke bidang [plane] (0,0 = kiri-atas). */
+private inline fun DrawScope.withPlane(plane: Plane, block: (android.graphics.Canvas) -> Unit) {
     drawIntoCanvas { canvas ->
         val native = canvas.nativeCanvas
         val matrix = Matrix()
@@ -266,7 +368,7 @@ private fun DrawScope.drawOnPlane(plane: Plane, paint: Paint, text: String, base
         )
         val save = native.save()
         native.concat(matrix)
-        native.drawText(text, plane.width / 2f, baseline, paint)
+        block(native)
         native.restoreToCount(save)
     }
 }
@@ -275,108 +377,166 @@ private val MONTHS_SHORT = listOf("JAN", "FEB", "MAR", "APR", "MEI", "JUN",
     "JUL", "AGU", "SEP", "OKT", "NOV", "DES")
 private val DAYS_SHORT = listOf("SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN")
 private val FaceInk = Color(0xFF181430)
+private val FlagRed = Color(0xFFCE1126)
 
 /**
- * Tiga muka hidup di atas gambar:
- *  - jarum jam analog mengikuti [LocalTime],
- *  - layar jam digital di bawahnya menampilkan jam:menit:detik,
- *  - kertas kalender mencetak hari, tanggal, bulan hari ini.
- *
- * Tulisan menempel pada bidangnya masing-masing (kalender & layar LED miring),
- * jadi ikut arah muka benda — bukan datar di atas gambar.
+ * Semua muka hidup di atas gambar:
+ *  - jam digital (jam:menit:detik + tanggal) sejajar bingkai foto, tinggi sama,
+ *  - bendera Indonesia menempel di kanan jam, tinggi sama,
+ *  - kalender dengan animasi melipat saat tanggal berganti,
+ *  - ikon aplikasi di lima bingkai,
+ *  - judul "JADWAL MENGAJAR" di papan tulis,
+ *  - rel gorden sebagai penunjuk baterai + persentasenya di dinding.
  */
 @Composable
-private fun LiveFaces(box: SceneBox, level: Int) {
+private fun LiveFaces(box: SceneBox, battery: Int, isDay: Boolean) {
     val nowMs = rememberNowMs()
     val time = remember(nowMs) { LocalTime.now() }
     val today = remember(nowMs) { LocalDate.now() }
-    val ctx = LocalContext.current
 
-    val paint = remember {
-        Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    // animasi lipat kalender: 0 = kertas penuh, 1 = kertas terlipat habis
+    val flip = remember { Animatable(0f) }
+    var shownDate by remember { mutableStateOf(today) }
+    LaunchedEffect(today) {
+        if (today != shownDate) {
+            flip.animateTo(1f, tween(340, easing = LinearEasing))
+            shownDate = today
+            flip.animateTo(0f, tween(340, easing = LinearEasing))
+        }
     }
+
+    val ctx = LocalContext.current
+    val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER } }
     val typeface = remember {
         runCatching { ctx.resources.getFont(R.font.silkscreen_bold) }.getOrNull()
     }
 
     Canvas(Modifier.fillMaxSize()) {
-        // ---------- jarum jam analog ----------
-        val f = CLOCK_FACE
-        val left = box.x(f[0]).toPx()
-        val top = box.y(f[1]).toPx()
-        val w = box.w(f[2]).toPx()
-        val h = box.h(f[3]).toPx()
-        val cx = left + w / 2f
-        val cy = top + h / 2f
-        val rx = w / 2f
-        val ry = h / 2f
+        paint.typeface = typeface
 
-        fun hand(angleDeg: Double, length: Float, width: Float, color: Color = Ink) {
-            val a = Math.toRadians(angleDeg - 90.0)
-            drawLine(
-                color = color,
-                start = Offset(cx, cy),
-                end = Offset(cx + (cos(a) * rx * length).toFloat(), cy + (sin(a) * ry * length).toFloat()),
-                strokeWidth = width,
-                cap = StrokeCap.Round
+        // ---------------- jam digital + bendera ----------------
+        val clock = planeOf(box, wallQuad(CLOCK_RECT), this)
+        withPlane(clock) { native ->
+            native.drawRect(0f, 0f, clock.width, clock.height, Paint().apply { color = 0xFF07060F.toInt() })
+            native.drawRect(1.5f, 1.5f, clock.width - 1.5f, clock.height - 1.5f,
+                Paint().apply { color = 0xFF2B2A46.toInt(); style = Paint.Style.STROKE; strokeWidth = 2.2f })
+
+            // jam:menit besar, tanggal kecil, detik jadi bilah tipis di tepi bawah
+            paint.textAlign = Paint.Align.CENTER
+            paint.color = ScreenGreen.toArgb()
+            paint.textSize = minOf(clock.height * 0.34f, clock.width * 0.88f / 3.9f)
+            val digital = "%02d:%02d".format(time.hour, time.minute)
+            native.drawText(digital, clock.width / 2f, clock.height * 0.46f, paint)
+
+            paint.textSize = clock.height * 0.15f
+            paint.color = Color(0xFF9FD8B0).toArgb()
+            val date = "${DAYS_SHORT[today.dayOfWeek.value - 1]} ${today.dayOfMonth} ${MONTHS_SHORT[today.monthValue - 1]}"
+            val dateW = paint.measureText(date)
+            if (dateW > clock.width * 0.92f) paint.textSize *= clock.width * 0.92f / dateW
+            native.drawText(date, clock.width / 2f, clock.height * 0.66f, paint)
+
+            // detik berjalan sebagai bilah di tepi bawah panel
+            val barStart = clock.width * 0.12f
+            val barFull = clock.width * 0.76f
+            native.drawRect(barStart, clock.height * 0.84f,
+                barStart + max(1f, barFull * time.second / 60f), clock.height * 0.875f,
+                Paint().apply { color = 0x99D7F7CD.toInt() })
+        }
+
+        // bendera Indonesia menempel di kanan jam (tinggi sama)
+        val flag = planeOf(box, wallQuad(FLAG_RECT), this)
+        withPlane(flag) { native ->
+            val half = flag.height / 2f
+            native.drawRect(0f, 0f, flag.width, half, Paint().apply { color = FlagRed.toArgb() })
+            native.drawRect(0f, half, flag.width, flag.height, Paint().apply { color = 0xFFF6F1E3.toInt() })
+            native.drawRect(0f, 0f, flag.width, flag.height,
+                Paint().apply { color = 0xFF2B2A46.toInt(); style = Paint.Style.STROKE; strokeWidth = 2f })
+        }
+
+        // ---------------- judul di papan tulis ----------------
+        val board = planeOf(box, BOARD_QUAD, this)
+        paint.color = FaceInk.toArgb()
+        paint.textAlign = Paint.Align.CENTER
+        paint.textSize = minOf(board.height * 0.115f, board.width * 0.80f / 9.3f)
+        val title = "JADWAL MENGAJAR"
+        val tw = paint.measureText(title)
+        if (tw > board.width * 0.80f) paint.textSize *= board.width * 0.80f / tw
+        withPlane(board) { native ->
+            native.drawText(title, board.width / 2f, board.height * 0.16f, paint)
+            // garis tipis di bawah judul
+            val linePaint = Paint().apply {
+                color = 0x55181430
+                strokeWidth = 1.6f
+            }
+            native.drawLine(
+                board.width * 0.18f, board.height * 0.215f,
+                board.width * 0.82f, board.height * 0.215f, linePaint
             )
         }
 
-        val minute = time.minute + time.second / 60f
-        val hour = (time.hour % 12) + minute / 60f
-        hand(hour * 30.0, 0.48f, w * 0.105f)
-        hand(minute * 6.0, 0.70f, w * 0.075f)
-        hand(time.second * 6.0, 0.80f, w * 0.030f, Coral)
-        drawCircle(color = Ink, radius = w * 0.06f, center = Offset(cx, cy))
-        drawCircle(color = Coral, radius = w * 0.025f, center = Offset(cx, cy))
-
-        // ---------- layar jam digital (jam:menit:detik) ----------
-        // digit digambar mengikuti bidang panel; tanpa kotak tambahan supaya
-        // tidak ada bagian yang menonjol keluar dari panel kayu.
-        val led = planeOf(box, LED_QUAD, this)
-        val digital = "%02d:%02d:%02d".format(time.hour, time.minute, time.second)
-        paint.color = ScreenGreen.toArgb()
-        paint.typeface = typeface
-        paint.textAlign = Paint.Align.CENTER
-        paint.textSize = led.height * 0.80f
-        // sisakan margin ~12% tiap sisi supaya digit terakhir tidak menyentuh tepi panel
-        val measured = paint.measureText(digital)
-        if (measured > led.width * 0.76f) paint.textSize *= led.width * 0.76f / measured
-        drawOnPlane(led, paint, digital, led.height * 0.76f)
-
-        // ---------- kalender: bulan, tanggal, hari ----------
+        // ---------------- kalender: halaman bisa terlipat ----------------
         val cal = planeOf(box, CALENDAR_QUAD, this)
-        val month = MONTHS_SHORT[today.monthValue - 1]
-        val weekday = DAYS_SHORT[today.dayOfWeek.value - 1]
-        val day = today.dayOfMonth.toString()
-        paint.color = FaceInk.toArgb()
+        val month = MONTHS_SHORT[shownDate.monthValue - 1]
+        val weekday = DAYS_SHORT[shownDate.dayOfWeek.value - 1]
+        val day = shownDate.dayOfMonth.toString()
 
-        paint.textSize = cal.height * 0.22f
-        drawOnPlane(cal, paint, month, cal.height * 0.30f)
+        withPlane(cal) { native ->
+            // tebal kertas: tumpukan di bawah muka
+            val pad = cal.height * 0.13f
+            native.drawRect(0f, cal.height * 0.06f, cal.width, cal.height + pad,
+                Paint().apply { color = 0xFFCBB68C.toInt() })
+            native.drawRect(0f, 0f, cal.width, cal.height,
+                Paint().apply { color = 0xFFF3E7C8.toInt() })
 
-        paint.textSize = cal.height * 0.46f
-        val dayWidth = paint.measureText(day)
-        if (dayWidth > cal.width * 0.84f) paint.textSize *= cal.width * 0.84f / dayWidth
-        drawOnPlane(cal, paint, day, cal.height * 0.74f)
+            // halaman yang sedang terlipat ke belakang: makin sempit saat flip naik
+            val visible = cal.height * (1f - flip.value)
+            val page = native.save()
+            native.clipRect(0f, 0f, cal.width, visible)
+            paint.color = FaceInk.toArgb()
+            paint.textSize = cal.height * 0.22f
+            native.drawText(month, cal.width / 2f, cal.height * 0.30f, paint)
+            paint.textSize = cal.height * 0.46f
+            native.drawText(day, cal.width / 2f, cal.height * 0.74f, paint)
+            paint.textSize = cal.height * 0.22f
+            native.drawText(weekday, cal.width / 2f, cal.height * 0.99f, paint)
+            native.restoreToCount(page)
 
-        paint.textSize = cal.height * 0.22f
-        drawOnPlane(cal, paint, weekday, cal.height * 0.99f)
+            // bayangan lipatan di tepi halaman
+            if (flip.value > 0.02f) {
+                native.drawRect(0f, max(0f, visible - 2f), cal.width, visible,
+                    Paint().apply { color = 0x33281F14 })
+            }
+        }
 
-        // ---------- ikon aplikasi di lima bingkai ----------
+        // ---------------- ikon aplikasi di lima bingkai ----------------
         APP_ICONS.forEachIndexed { i, icon ->
             val q = FRAME_QUADS.getOrNull(i) ?: return@forEachIndexed
             val plane = planeOf(box, q, this)
-            drawRect(
-                color = icon.bg.toPixelColor(),
-                topLeft = plane.tl,
-                size = Size(plane.width, plane.height)
-            )
+            // latar kertas ikut kemiringan bingkai (bukan kotak lurus)
+            val u = plane.tr - plane.tl
+            val v = plane.bl - plane.tl
+            val bg = Path().apply {
+                moveTo(plane.tl.x, plane.tl.y)
+                lineTo(plane.tl.x + u.x, plane.tl.y + u.y)
+                lineTo(plane.tl.x + u.x + v.x, plane.tl.y + u.y + v.y)
+                lineTo(plane.tl.x + v.x, plane.tl.y + v.y)
+                close()
+            }
+            drawPath(bg, icon.bg.toPixelColor())
             icon.shapes.forEach { part -> drawIconShape(plane, part) }
         }
 
-        // ---------- gorden jendela sebagai penunjuk baterai ----------
-        drawBatteryCurtain(box, level)
+        // ---------------- rel gorden = penunjuk baterai ----------------
+        drawBatteryRail(box, battery, isDay)
     }
+}
+
+/** Persegi panjang tegak lurus -> quad bidang dinding (miring mengikuti dinding). */
+private fun wallQuad(rect: IntArray): IntArray {
+    val (x, y, w, h) = rect
+    val slope = 0.42f            // kemiringan dinding pada gambar ini
+    val dx = (w * slope).toInt()
+    return intArrayOf(x, y, x + w, y + dx, x, y + h)
 }
 
 /** "#RRGGBB" -> Color. */
@@ -385,8 +545,8 @@ private fun String.toPixelColor(): Color =
 
 /** Satu potongan ikon, digambar mengikuti vektor bidang bingkai (jadi ikut miring). */
 private fun DrawScope.drawIconShape(plane: Plane, part: IconShape) {
-    val u = plane.tr - plane.tl           // arah kanan kertas
-    val v = plane.bl - plane.tl           // arah bawah kertas
+    val u = plane.tr - plane.tl
+    val v = plane.bl - plane.tl
     val pts = part.points
     if (pts.size < 6) return
     val cell = Path()
@@ -400,82 +560,82 @@ private fun DrawScope.drawIconShape(plane: Plane, part: IconShape) {
 }
 
 /**
- * Gorden sebagai penunjuk baterai.
- * Baterai penuh → gorden tergulung, jendela terbuka. Baterai menipis → kain
- * turun menutup kaca. Warnanya ikut berubah saat baterai rendah.
+ * Rel gorden sekaligus indikator baterai:
+ * warnanya mengikuti suasana (siang/malam) dan memerah saat baterai menipis.
+ * Persentasenya ditulis di dinding tepat di atas rel, mengikuti arah dinding.
  */
-private fun DrawScope.drawBatteryCurtain(box: SceneBox, level: Int) {
-    if (level >= 100) return
-    val q = WINDOW_QUAD
-    val cover = (100 - level) / 100f
+private fun DrawScope.drawBatteryRail(box: SceneBox, battery: Int, isDay: Boolean) {
+    val x1 = box.x(RAIL_LINE[0]).toPx()
+    val y1 = box.y(RAIL_LINE[1]).toPx()
+    val x2 = box.x(RAIL_LINE[2]).toPx()
+    val y2 = box.y(RAIL_LINE[3]).toPx()
 
-    fun pt(i: Int) = Offset(box.x(q[i]).toPx(), box.y(q[i + 1]).toPx())
-    val tl = pt(0)
-    val tr = pt(2)
-    val bl = pt(4)
-    val br = pt(6)
-
-    fun lerp(a: Offset, b: Offset, t: Float) = Offset(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
-    val bottomL = lerp(tl, bl, cover)
-    val bottomR = lerp(tr, br, cover)
-
-    // warna mengikuti kain gorden di gambar, memerah saat baterai kritis
-    val fabric = when {
-        level <= 15 -> Color(0xFF8E4A4E)
-        level <= 40 -> Color(0xFF9A6567)
-        else -> Color(0xFFA9888A)
+    val mood = when {
+        battery <= 15 -> Color(0xFFD9483B)
+        battery <= 40 -> Color(0xFFE0A03A)
+        isDay -> Color(0xFF9FD8B0)
+        else -> Color(0xFF77B8D9)
     }
-    val cloth = Path().apply {
-        moveTo(tl.x, tl.y); lineTo(tr.x, tr.y)
-        lineTo(bottomR.x, bottomR.y); lineTo(bottomL.x, bottomL.y); close()
-    }
-    drawPath(cloth, fabric.copy(alpha = 0.95f))
 
-    // lipatan kain: pita gelap-terang bergantian supaya terbaca sebagai gorden
-    for (i in 0 until 5) {
-        if (i % 2 != 0) continue
-        val t0 = i / 5f
-        val t1 = (i + 1) / 5f
-        val band = Path().apply {
-            val a = lerp(tl, tr, t0); val b = lerp(tl, tr, t1)
-            val c = lerp(bottomL, bottomR, t1); val e = lerp(bottomL, bottomR, t0)
-            moveTo(a.x, a.y); lineTo(b.x, b.y); lineTo(c.x, c.y); lineTo(e.x, e.y); close()
-        }
-        drawPath(band, Color(0x1A000000))
-    }
-    for (i in 1..5) {
-        val t = i / 6f
+    drawLine(color = Color(0x88000000), start = Offset(x1, y1 + 3f), end = Offset(x2, y2 + 3f),
+        strokeWidth = max(6f, box.unit.toPx() * 7f), cap = StrokeCap.Round)
+    drawLine(color = mood, start = Offset(x1, y1), end = Offset(x2, y2),
+        strokeWidth = max(3f, box.unit.toPx() * 4.2f), cap = StrokeCap.Round)
+
+    // tanda tiap 10% di sepanjang rel
+    for (i in 1..9) {
+        val t = i / 10f
+        val px = x1 + (x2 - x1) * t
+        val py = y1 + (y2 - y1) * t
+        val filled = battery >= i * 10
         drawLine(
-            color = Color(0x26000000),
-            start = lerp(tl, tr, t),
-            end = lerp(bottomL, bottomR, t),
-            strokeWidth = max(1f, box.unit.toPx() * 0.8f)
+            color = if (filled) Color(0xFF0E0D1A) else Color(0x66FFFFFF),
+            start = Offset(px, py - box.unit.toPx() * 5f),
+            end = Offset(px, py + box.unit.toPx() * 5f),
+            strokeWidth = max(1f, box.unit.toPx() * 1.2f)
         )
     }
-    drawLine(
-        color = Color(0x66000000),
-        start = bottomL,
-        end = bottomR,
-        strokeWidth = max(1.5f, box.unit.toPx() * 1.4f)
-    )
 }
 
-/** Warna selaput suasana untuk satu jam tertentu. */
-private fun ambienceOf(hour: Int): Pair<Color, Float> = when (hour) {
-    in 4..5 -> Color(0xFF6E5AA8) to 0.10f      // subuh
-    in 6..9 -> Color(0xFFFFC46B) to 0.06f      // pagi
-    in 10..14 -> Color(0xFFFFF2D0) to 0.03f    // siang
-    in 15..17 -> Color(0xFFFF8A4C) to 0.10f    // sore
-    in 18..21 -> Color(0xFF2B3F8F) to 0.12f    // malam
+/**
+ * Angka persentase baterai di dinding di atas rel, ditulis mengikuti bidang dinding.
+ */
+@Composable
+private fun BatteryLabel(box: SceneBox, battery: Int) {
+    val ctx = LocalContext.current
+    val paint = remember {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    }
+    val typeface = remember {
+        runCatching { ctx.resources.getFont(R.font.silkscreen_bold) }.getOrNull()
+    }
+    Canvas(Modifier.fillMaxSize()) {
+        paint.typeface = typeface
+        val plane = planeOf(box, BATTERY_TEXT_QUAD, this)
+        withPlane(plane) { native ->
+            paint.color = (if (battery <= 15) Color(0xFFEF6A5B) else Cream2).toArgb()
+            paint.textSize = plane.height * 0.66f
+            val text = "$battery%"
+            val measured = paint.measureText(text)
+            if (measured > plane.width * 0.94f) paint.textSize *= plane.width * 0.94f / measured
+            native.drawText(text, plane.width / 2f, plane.height * 0.86f, paint)
+        }
+    }
+}
+
+/** Warna & kepekatan selaput suasana untuk satu jam. */
+private fun ambienceOf(hour: Int, isDay: Boolean): Pair<Color, Float> = when (hour) {
+    in 5..8 -> Color(0xFFFFD9A0) to 0.10f      // pagi hangat
+    in 9..15 -> Color(0xFFFFF6E2) to 0.16f     // siang terang
+    in 16..18 -> Color(0xFFFF9A5C) to 0.12f    // sore jingga
+    in 19..22 -> Color(0xFF2B3F8F) to 0.14f    // malam biru
     else -> Color(0xFF060A22) to 0.34f         // larut
 }
 
-/** Selaput tipis di atas scene: pagi hangat, malam kebiruan, larut lebih gelap. */
+/** Selaput tipis di atas scene: siang lebih terang, malam kebiruan. */
 @Composable
-private fun Ambience() {
-    val nowMs = rememberNowMs()
-    val hour = remember(nowMs) { LocalTime.now().hour }
-    val (tint, alpha) = ambienceOf(hour)
+private fun Ambience(hour: Int) {
+    val (tint, alpha) = ambienceOf(hour, hour in 6..17)
     Box(Modifier.fillMaxSize().background(tint.copy(alpha = alpha)))
 }
 

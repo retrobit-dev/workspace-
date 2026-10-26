@@ -16,13 +16,18 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "android/app/src/main/res/drawable-nodpi/scene.png"
 
 
+OUT_DAY = ROOT / "android/app/src/main/res/drawable-nodpi/scene_day.png"
+OUT_NIGHT = ROOT / "android/app/src/main/res/drawable-nodpi/scene_night.png"
+
+
 def main() -> None:
-    im, cream = scene_face.load_scene()
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    im.save(OUT, optimize=True)
-    print("scene", im.size, "->", OUT.relative_to(ROOT))
-    print("CLOCK_FACE   ", scene_face.clock_face(im), "#%02X%02X%02X" % cream)
-    print("CALENDAR_FACE", scene_face.calendar_face(im))
+    """Tulis dua versi suasana: langit malam dan langit siang."""
+    for mode, out in (("night", OUT_NIGHT), ("day", OUT_DAY)):
+        im = scene_face.load_scene(mode)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        im.save(out, optimize=True)
+        print(f"{mode:5s} {im.size} -> {out.relative_to(ROOT)}")
+    print("CALENDAR_FACE", scene_face.calendar_face())
 
 
 if __name__ == "__main__":

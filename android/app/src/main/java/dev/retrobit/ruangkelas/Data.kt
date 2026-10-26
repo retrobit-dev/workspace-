@@ -201,66 +201,86 @@ data class TileInfo(
  * aplikasi, dan foto user di kiri jam dinding membuka profil & pengaturan.
  */
 val TILES = listOf(
-    // --- meja kerja (meja diperlebar ke kiri) ---
-    TileInfo("Jurnal", Scr.JURNAL, "book", 690, 398, 250, 80),         // papan tombol laptop
-    TileInfo("Nilai", Scr.NILAI, "chart", 752, 296, 132, 102),          // tumpukan buku di meja
-    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 938, 462, 66, 44),   // kalkulator kanan laptop
-    TileInfo("Alat Tulis", Scr.KIT, "pencil", 966, 376, 46, 60),        // tempat pensil
-    TileInfo("Kalender", Scr.KALENDER, "calendar", 1066, 412, 104, 84), // kalender meja
-    TileInfo("Binder", Scr.BINDER, "folder", 700, 538, 140, 152),       // laci meja
+    // --- meja kerja ---
+    TileInfo("Jurnal", Scr.JURNAL, "book", 756, 314, 196, 126),          // laptop
+    TileInfo("Nilai", Scr.NILAI, "chart", 686, 306, 112, 92),            // tumpukan buku
+    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 905, 436, 74, 52),    // kalkulator kanan laptop
+    TileInfo("Alat Tulis", Scr.KIT, "pencil", 980, 372, 50, 66),         // tempat pensil
+    TileInfo("Kalender", Scr.KALENDER, "calendar", 1022, 392, 80, 90),   // kalender meja tebal
+    TileInfo("Binder", Scr.BINDER, "folder", 688, 536, 158, 158),        // laci meja
 
     // --- dinding ---
-    TileInfo("Absensi", Scr.ABSENSI, "check", 348, 118, 284, 364),      // papan tulis, utuh
-    TileInfo("Catatan", Scr.CATATAN, "pencil", 28, 240, 228, 240),      // papan pin di atas rak
-    TileInfo("Jadwal", Scr.JADWAL, "clock", 884, 72, 110, 122),         // jam dinding analog
-    TileInfo("Profil", Scr.PROFIL, "face", 852, 92, 74, 104),           // foto user: profil & pengaturan
+    TileInfo("Absensi", Scr.ABSENSI, "check", 334, 124, 252, 330),       // papan tulis
+    TileInfo("Catatan", Scr.CATATAN, "pencil", 70, 265, 168, 190),       // papan pin di atas rak
+    TileInfo("Jadwal", Scr.JADWAL, "clock", 794, 36, 178, 190),          // jam digital + bendera
+    TileInfo("Profil", Scr.PROFIL, "face", 712, 36, 76, 124),            // foto user
 
-    // --- sisi kiri ---
-    TileInfo("Binder", Scr.BINDER, "folder", 18, 442, 306, 262),        // rak buku penuh
-    TileInfo("Kelas", Scr.KELAS, "grid", 1088, 118, 212, 358),          // jendela (gorden = baterai)
+    // --- sisi kiri & kanan ---
+    TileInfo("Binder", Scr.BINDER, "folder", 60, 425, 255, 310),         // rak buku penuh
+    TileInfo("Kelas", Scr.KELAS, "grid", 1024, 95, 230, 300),            // jendela terbuka
+    TileInfo("File", Scr.HOME, "trash", 12, 646, 92, 122),               // tempat sampah
 
     // --- 5 bingkai aplikasi di atas papan pin ---
-    TileInfo("WhatsApp", Scr.KIT, "chat", 55, 214, 46, 88),
-    TileInfo("Vivaldi", Scr.KIT, "globe", 140, 173, 46, 88),
-    TileInfo("YouTube", Scr.KIT, "play", 224, 131, 46, 88),
-    TileInfo("Spotify", Scr.KIT, "music", 309, 88, 46, 88),
-    TileInfo("Sinaga Jateng", Scr.KIT, "shield", 394, 45, 46, 89)
+    TileInfo("WhatsApp", Scr.KIT, "chat", 70, 218, 48, 82),
+    TileInfo("Vivaldi", Scr.KIT, "globe", 144, 179, 48, 82),
+    TileInfo("Spotify", Scr.KIT, "music", 218, 141, 48, 82),
+    TileInfo("YouTube", Scr.KIT, "play", 292, 102, 48, 82),
+    TileInfo("Sinaga Jateng", Scr.KIT, "shield", 366, 63, 48, 83)
 )
 
-/** Permukaan jam analog di dinding (piksel gambar). */
-val CLOCK_FACE = intArrayOf(901, 88, 70, 96)
+/**
+ * Jam digital: sejajar dengan foto user, tingginya sama dengan bingkai foto.
+ * Bendera Indonesia menempel tepat di kanan jam, tinggi sama, lebar menyesuaikan.
+ */
+val CLOCK_RECT = intArrayOf(796, 38, 120, 124)
+
+/** Bendera: kiri-atas tepat di sudut kanan-atas jam, jadi menempel tanpa celah. */
+val FLAG_RECT = intArrayOf(916, 88, 52, 124)
+
+/** Papan tulis: judul "JADWAL MENGAJAR" di bagian atas, rata tengah. */
+val BOARD_QUAD = intArrayOf(344, 250, 574, 132, 344, 442)
 
 /**
  * Kertas kalender meja: bidang miring supaya tulisan ikut arah muka kalender.
  * Urutan: kiri-atas, kanan-atas, kiri-bawah, kanan-bawah (piksel gambar).
  */
-val CALENDAR_QUAD = intArrayOf(1084, 424, 1130, 445, 1075, 462, 1121, 483)
-
-/**
- * Layar jam digital yang menempel di dinding, tepat di bawah jam analog.
- * Bidangnya miring mengikuti muka panel (kiri-atas, kanan-atas, kiri-bawah).
- */
-val LED_QUAD = intArrayOf(887, 211, 971, 252, 887, 245)
+val CALENDAR_QUAD = intArrayOf(1043, 405, 1086, 425, 1030, 451, 1073, 470)
 
 /** Kertas di dalam lima bingkai (kiri-atas, kanan-atas, kiri-bawah). */
 val FRAME_QUADS = listOf(
-    intArrayOf(59, 237, 98, 217, 59, 299),
-    intArrayOf(143, 196, 183, 175, 143, 257),
-    intArrayOf(229, 152, 267, 134, 226, 215),
-    intArrayOf(311, 110, 352, 90, 311, 173),
-    intArrayOf(396, 68, 437, 47, 396, 131)
+    intArrayOf(77, 241, 107, 226, 77, 293),
+    intArrayOf(151, 202, 181, 187, 151, 254),
+    intArrayOf(225, 164, 255, 149, 225, 216),
+    intArrayOf(299, 124, 329, 110, 299, 177),
+    intArrayOf(374, 86, 404, 72, 373, 139)
 )
 
-/**
- * Gorden jendela dipakai sebagai penunjuk baterai: baterai penuh = gorden
- * tergulung (jendela terbuka), baterai menipis = gorden turun menutup jendela.
- *
- * Kaca jendela (kiri-atas, kanan-atas, kiri-bawah, kanan-bawah).
- */
-val WINDOW_QUAD = intArrayOf(1104, 176, 1200, 206, 1104, 448, 1200, 478)
+/** Kaca jendela (kiri-atas, kanan-atas, kiri-bawah, kanan-bawah). */
+val WINDOW_QUAD = intArrayOf(1062, 112, 1200, 178, 1062, 332, 1200, 398)
 
-/** Tepi bawah kain gorden saat menutup penuh, sedikit di bawah kaca. */
-val CURTAIN_BOTTOM = 512
+/** Rel gorden: dari titik kiri ke kanan, dipakai juga sebagai penunjuk baterai. */
+val RAIL_LINE = intArrayOf(960, 35, 1288, 198)
+
+/** Persentase baterai di dinding, tepat di atas rel, mengikuti arah dinding. */
+val BATTERY_TEXT_QUAD = intArrayOf(1002, 4, 1120, 34, 1002, 50)
+
+/** Area gorden kiri & kanan yang ikut bergoyang saat ada hembusan angin. */
+val CURTAIN_RECTS = listOf(
+    intArrayOf(962, 40, 62, 320),
+    intArrayOf(1236, 128, 62, 330)
+)
+
+/** Daun tanaman yang ikut bergoyang. */
+val LEAF_RECT = intArrayOf(1088, 470, 170, 200)
+
+/** Nama aplikasi di lima bingkai + paket Android-nya (untuk tautan pintasan). */
+val APP_PACKAGES = mapOf(
+    "WhatsApp" to "com.whatsapp",
+    "Vivaldi" to "com.vivaldi.browser",
+    "Spotify" to "com.spotify.music",
+    "YouTube" to "com.google.android.youtube",
+    "Sinaga Jateng" to "id.jateng.sinaga"
+)
 
 /* ---------------- ikon aplikasi di lima bingkai ---------------- */
 
@@ -289,13 +309,13 @@ val APP_ICONS = listOf(
     AppIcon("Vivaldi", "#E03A3A", listOf(
         shape("#FFFFFF", "0.22,0.22 0.40,0.22 0.50,0.62 0.60,0.22 0.78,0.22 0.58,0.80 0.42,0.80")
     )),
-    AppIcon("YouTube", "#D63B32", listOf(
-        shape("#FFFFFF", "0.24,0.22 0.24,0.78 0.80,0.50")
-    )),
     AppIcon("Spotify", "#1DB954", listOf(
         shape("#FFFFFF", "0.20,0.30 0.80,0.34 0.80,0.44 0.20,0.40"),
         shape("#FFFFFF", "0.22,0.48 0.78,0.52 0.78,0.60 0.22,0.56"),
         shape("#FFFFFF", "0.24,0.64 0.76,0.68 0.76,0.74 0.24,0.70")
+    )),
+    AppIcon("YouTube", "#D63B32", listOf(
+        shape("#FFFFFF", "0.24,0.22 0.24,0.78 0.80,0.50")
     )),
     AppIcon("Sinaga Jateng", "#1E2C63", listOf(
         shape("#FFFFFF", "0.50,0.16 0.80,0.28 0.80,0.54 0.50,0.82 0.20,0.54 0.20,0.28"),

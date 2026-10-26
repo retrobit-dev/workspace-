@@ -1,9 +1,15 @@
 """Bangun preview browser untuk launcher.
 
-Sumber kebenaran tetap Data.kt (TILES, CLOCK_FACE, CALENDAR_FACE, SCENE_W/H) supaya preview di
-browser punya area ketuk yang sama persis dengan APK Android.
+Sumber kebenaran tetap Data.kt (TILES, CLOCK_RECT, FLAG_RECT, BOARD_QUAD,
+CALENDAR_QUAD, FRAME_QUADS, RAIL_LINE, BATTERY_TEXT_QUAD, CURTAIN_RECTS,
+LEAF_RECT, APP_ICONS, SCENE_W/H) supaya area ketuk di browser sama persis
+dengan APK.
 
-  python3 tools/make_preview.py   ->  web/index.html + web/scene.png
+  python3 tools/make_preview.py   ->  web/index.html + web/scene_day.png + web/scene_night.png
+
+Siang/malam mengikuti jam browser: pukul 06–17 memakai scene_day.png, selebihnya
+scene_night.png. Semua tulisan digambar di SVG dengan matriks bidang, jadi ikut
+kemiringan benda seperti di APK.
 """
 import hashlib
 import re
@@ -15,8 +21,11 @@ import scene_face  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "android/app/src/main/java/dev/retrobit/ruangkelas/Data.kt"
-ART = ROOT / "art/workspace-iso-v2.png"
 WEB = ROOT / "web"
+
+
+def _ints(text):
+    return [int(v) for v in text.replace("\n", " ").split(",")]
 
 
 def parse_data():
@@ -33,62 +42,108 @@ def parse_data():
         tiles.append({"label": label, "x": int(x), "y": int(y), "w": int(w), "h": int(h)})
 
     def rect(name):
-        return [int(v) for v in re.search(
-            rf"val {name} = intArrayOf\(([^)]+)\)", src).group(1).split(",")
-        ]
+        return _ints(re.search(rf"val {name} = intArrayOf\(([^)]*)\)", src).group(1))
+
+    def list_of_quads(name):
+        block = src[src.index(f"val {name} = listOf("):]
+        block = block[: block.index("\n)\n")]
+        return [_ints(m) for m in re.findall(r"intArrayOf\(([-\d,\s]+)\)", block)]
 
     icons = []
     for name, bg, body in re.findall(
-        r'AppIcon\("([^"]+)",\s*"([^"]+)",\s*listOf\((.*?)\)\)', src, re.S
+        r'AppIcon\("([^"]+)",\s*"(#[0-9A-Fa-f]+)",\s*listOf\((.*?)\)\)', src, re.S
     ):
-        shapes = [{"color": c, "points": [float(v) for v in pts.replace(",", " ").split()]}
-                  for c, pts in re.findall(r'shape\("([^"]+)",\s*"([^"]+)"\)', body)]
+        shapes = [
+            {"color": c, "points": [float(v) for v in pts.replace(",", " ").split()]}
+            for c, pts in re.findall(r'shape\("([^"]+)",\s*"([^"]+)"\)', body)
+        ]
         icons.append({"name": name, "bg": bg, "shapes": shapes})
 
-    return (scene_w, scene_h, tiles, rect("CLOCK_FACE"), rect("CALENDAR_QUAD"),
-            rect("LED_QUAD"), rect("WINDOW_QUAD"),
-            [[int(v) for v in q.split(",")] for q in re.findall(
-                r'intArrayOf\(([\d,\s]+)\)', s_after(src, "val FRAME_QUADS"))],
-            icons)
+    return dict(
+        w=scene_w,
+        h=scene_h,
+        tiles=tiles,
+        clock=rect("CLOCK_RECT"),
+        flag=rect("FLAG_RECT"),
+        board=rect("BOARD_QUAD"),
+        cal=rect("CALENDAR_QUAD"),
+        rail=rect("RAIL_LINE"),
+        battery_text=rect("BATTERY_TEXT_QUAD"),
+        frames=list_of_quads("FRAME_QUADS"),
+        curtains=list_of_quads("CURTAIN_RECTS"),
+        leaf=rect("LEAF_RECT"),
+        icons=icons,
+    )
 
 
-def s_after(src, marker):
-    """Ambil potongan sumber setelah tanda tertentu (untuk blok FRAME_QUADS)."""
-    i = src.index(marker)
-    return src[i:src.index(")\n\n", i) + 1]
+# ------------------------------------------------------------------ gambar scene
+
+def make_scenes():
+    WEB.mkdir(exist_ok=True)
+    sizes = {}
+    for mode in ("night", "day"):
+        im = scene_face.load_scene(mode)
+        im.save(WEB / f"scene_{mode}.png", optimize=True)
+        sizes[mode] = im.size
+    return sizes
 
 
-def icon_svg(frames, icons, scene_w, scene_h):
-    """Ikon bingkai sebagai poligon SVG, langsung dalam koordinat scene."""
+# ------------------------------------------------------------------------- SVG
+
+def plane_matrix(quad):
+    """Matriks 2D yang memetakan kotak satuan ke bidang (kiri-atas, kanan-atas, kiri-bawah)."""
+    ax, ay, bx, by, cx, cy = quad[:6]
+    return ax, ay, bx - ax, by - ay, cx - ax, cy - ay
+
+
+def matrix_attr(quad):
+    ax, ay, ux, uy, vx, vy = plane_matrix(quad)
+    return f"matrix({ux:.3f},{uy:.3f},{vx:.3f},{vy:.3f},{ax:.3f},{ay:.3f})"
+
+
+def quad_polygon(quad):
+    ax, ay, bx, by, cx, cy = quad[:6]
+    return f"{ax},{ay} {bx},{by} {bx + cx - ax},{by + cy - ay} {cx},{cy}"
+
+
+def icon_svg(frames, icons):
     out = []
     for frame, icon in zip(frames, icons):
         ax, ay, bx, by, cx, cy = frame
         ux, uy = bx - ax, by - ay
         vx, vy = cx - ax, cy - ay
 
-        def to_scene(u, v):
-            return (ax + ux * u + vx * v, ay + uy * u + vy * v)
+        def p(u, v):
+            return ax + ux * u + vx * v, ay + uy * u + vy * v
 
-        corners = [to_scene(0, 0), to_scene(1, 0), to_scene(1, 1), to_scene(0, 1)]
+        corners = [p(0, 0), p(1, 0), p(1, 1), p(0, 1)]
         out.append('<polygon points="%s" fill="%s"/>' % (
-            " ".join(f"{x:.2f},{y:.2f}" for x, y in corners), icon["bg"]))
+            " ".join(f"{x:.1f},{y:.1f}" for x, y in corners), icon["bg"]))
         for part in icon["shapes"]:
             pts = part["points"]
             pairs = [(pts[i], pts[i + 1]) for i in range(0, len(pts) - 1, 2)]
             out.append('<polygon points="%s" fill="%s"/>' % (
-                " ".join(f"{x:.2f},{y:.2f}" for x, y in (to_scene(u, v) for u, v in pairs)),
+                " ".join(f"{x:.1f},{y:.1f}" for x, y in (p(u, v) for u, v in pairs)),
                 part["color"]))
     return "\n    ".join(out)
 
 
-def make_scene(scene_w, scene_h):
-    """Art sudah berukuran persis SCENE_W × SCENE_H — tanpa padding, tanpa skala."""
-    im, _ = scene_face.load_scene()
-    if im.size != (scene_w, scene_h):
-        raise SystemExit(f"art {im.size} != scene {(scene_w, scene_h)}")
-    WEB.mkdir(exist_ok=True)
-    im.save(WEB / "scene.png", optimize=True)
-    return im.size
+def sway_group(rects, scene_name, amp, dur):
+    """Kelompok gambar yang ikut bergoyang: scene di-klip ke kotak lalu digeser."""
+    groups = []
+    for i, (x, y, w, h) in enumerate(rects):
+        delay = i * 0.9
+        groups.append(f"""
+    <g clip-path="url(#c{i})">
+      <image class="sway-scene" href="{scene_name}" x="0" y="0" width="__W__" height="__H__">
+        <animateTransform attributeName="transform" type="translate"
+          values="{-amp},0; {amp},0; {-amp},0" dur="{dur}s"
+          begin="{delay}s" repeatCount="indefinite" calcMode="spline"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+      </image>
+    </g>
+    <clipPath id="c{i}"><rect x="{x}" y="{y}" width="{w}" height="{h}"/></clipPath>""")
+    return "\n".join(groups)
 
 
 HTML = """<!DOCTYPE html>
@@ -102,8 +157,8 @@ HTML = """<!DOCTYPE html>
 <title>Ruang Kelas</title>
 <style>
   :root{
-    --ink:#0E0D1A; --night:#15142A;
-    --cream2:#E3CDA6; --amber:#F2AB3F; --screen:#D7F7CD;
+    --ink:#0E0D1A; --night:#15142A; --cream:#F8E9C8; --cream2:#E3CDA6;
+    --amber:#F2AB3F; --screen:#D7F7CD;
     --ratio: __RATIO__;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -111,7 +166,7 @@ HTML = """<!DOCTYPE html>
   body{touch-action:manipulation;user-select:none;
     font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
 
-  /* letterbox: gambar selalu 16:10, sisa layar hitam — sama seperti APK */
+  /* letterbox: gambar selalu 1312:816, sisa layar hitam — sama seperti APK */
   #stage{
     position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     aspect-ratio:var(--ratio);
@@ -120,37 +175,14 @@ HTML = """<!DOCTYPE html>
   }
   #scene{position:absolute;inset:0;width:100%;height:100%;display:block;
     image-rendering:pixelated;pointer-events:none}
+  #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  #fx text{font-family:"Silkscreen","Courier New",monospace;font-weight:700;dominant-baseline:auto}
 
   .hotspot{position:absolute;border:0;padding:0;margin:0;background:transparent;
     cursor:pointer;outline:none;border-radius:0}
-  .hotspot.is-pressed{
-    background:rgba(242,171,63,.20);
-    box-shadow:0 0 0 3px var(--amber) inset;
-  }
+  .hotspot.is-pressed{background:rgba(242,171,63,.20);box-shadow:0 0 0 3px var(--amber) inset}
 
-  /* jam analog hidup di dinding: SVG di dalam kotak muka jam */
-  #clock{position:absolute;cursor:pointer}
-  #clock svg{display:block;width:100%;height:100%;overflow:visible}
-
-  /* kertas kalender: tulisan menempel pada bidang miringnya */
-  #cal{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;
-    flex-direction:column;align-items:center;justify-content:center;
-    color:#181430;font-weight:700;line-height:.95;letter-spacing:.5px;
-    pointer-events:none;white-space:nowrap}
-  #cal .m,#cal .w{opacity:.9}
-
-  /* layar jam digital: digit menempel pada bidang miring panel, tanpa kotak */
-  #led{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;
-    align-items:center;justify-content:center;background:transparent;
-    color:#D7F7CD;font-weight:700;line-height:1;letter-spacing:0;
-    pointer-events:none;white-space:nowrap;overflow:hidden}
-
-  /* lapisan vektor: ikon bingkai + gorden baterai, dalam koordinat scene */
-  #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-
-  /* selaput suasana: pagi hangat, malam kebiruan */
   #tint{position:absolute;inset:0;pointer-events:none}
-
   #scan{position:absolute;inset:0;pointer-events:none;
     background:repeating-linear-gradient(180deg,rgba(0,0,0,.10) 0 1px,transparent 1px 3px)}
 
@@ -160,47 +192,76 @@ HTML = """<!DOCTYPE html>
     opacity:0;transition:opacity .18s ease,transform .18s ease;pointer-events:none}
   #toast.show{opacity:1;transform:translate(-50%,0)}
 
-  /* hanya muncul kalau jendela masih tegak */
-  #rotate{
-    position:fixed;inset:0;display:none;flex-direction:column;
+  #rotate{position:fixed;inset:0;display:none;flex-direction:column;
     align-items:center;justify-content:center;gap:18px;
     background:var(--ink);color:var(--cream2);
     font-size:12px;letter-spacing:2px;text-align:center;padding:24px;z-index:10}
-  #rotate .icon{
-    width:56px;height:56px;border:3px solid var(--amber);
-    border-radius:8px;position:relative}
-  #rotate .icon::after{
-    content:"";position:absolute;inset:8px 16px;
-    border:3px solid var(--amber);border-radius:4px}
+  #rotate .icon{width:56px;height:56px;border:3px solid var(--amber);border-radius:8px;position:relative}
+  #rotate .icon::after{content:"";position:absolute;inset:8px 16px;border:3px solid var(--amber);border-radius:4px}
   #rotate small{color:#7D75A0;letter-spacing:1px;font-size:11px;line-height:1.7}
-  @media (orientation:portrait){
-    #rotate{display:flex}
-  }
+  @media (orientation:portrait){ #rotate{display:flex} }
 </style>
 </head>
 <body>
 <div id="stage">
-  <img id="scene" src="scene.png?v=__HASH__" alt="Workspace guru malam hari" draggable="false">
-  <div id="clock" role="img" aria-label="Jam analog">
-    <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-      <g stroke="#0E0D1A" stroke-linecap="round">
-        <line id="hh" x1="50" y1="50" x2="50" y2="26" stroke-width="8"></line>
-        <line id="mh" x1="50" y1="50" x2="50" y2="14" stroke-width="5.5"></line>
-        <line id="sh" x1="50" y1="50" x2="50" y2="6" stroke-width="2.2" stroke="#EF6A5B"></line>
-      </g>
-      <circle cx="50" cy="50" r="4.5" fill="#0E0D1A"></circle>
-    </svg>
-  </div>
-  <div id="cal" role="img" aria-label="Kalender hari ini">
-    <span class="m" id="cal-m">OKT</span>
-    <span class="d" id="cal-d">26</span>
-    <span class="w" id="cal-w">SEN</span>
-  </div>
-  <div id="led" role="img" aria-label="Jam digital"><span id="led-t">00:00:00</span></div>
+  <img id="scene" src="scene_night.png" alt="Workspace guru" draggable="false">
   <svg id="fx" viewBox="0 0 __SCENE_W__ __SCENE_H__" preserveAspectRatio="none">
+    <!-- angin: gorden & daun -->
+    __SWAY__
+
+    <!-- rel gorden = indikator baterai -->
+    <line id="rail" x1="__RAIL_X1__" y1="__RAIL_Y1__" x2="__RAIL_X2__" y2="__RAIL_Y2__"
+          stroke="#77B8D9" stroke-width="4.2" stroke-linecap="round"/>
+    <g id="rail-ticks" stroke="#0E0D1A" stroke-width="1.2"></g>
+
+    <!-- persentase baterai di dinding di atas rel -->
+    <g id="batt-g" transform="__BATT_MATRIX__">
+      <text id="batt" x="__BATT_W__" y="__BATT_H__" text-anchor="middle"
+            fill="#E3CDA6" font-size="__BATT_SIZE__">100%</text>
+    </g>
+
+    <!-- lima bingkai aplikasi -->
+    <g id="icons">
     __ICONS__
-    <polygon id="curtain" points="" fill="#8F6A72" fill-opacity=".95"/>
-    <g id="curtain-lines" stroke="#000" stroke-opacity=".2" stroke-width="1"></g>
+    </g>
+
+    <!-- judul papan tulis -->
+    <g id="board" transform="__BOARD_MATRIX__">
+      <text id="board-title" x="__BOARD_W__" y="__BOARD_TY__" text-anchor="middle"
+            fill="#181430" font-size="__BOARD_FS__" letter-spacing="1">JADWAL MENGAJAR</text>
+      <line x1="__BOARD_LX1__" y1="__BOARD_LY__" x2="__BOARD_LX2__" y2="__BOARD_LY__"
+            stroke="rgba(24,20,48,.35)" stroke-width="1.6"/>
+    </g>
+
+    <!-- jam digital + bendera -->
+    <g id="clock" transform="__CLOCK_MATRIX__">
+      <rect x="0" y="0" width="__CLOCK_W__" height="__CLOCK_H__" fill="#07060F"/>
+      <rect x="1.5" y="1.5" width="__CLOCK_W2__" height="__CLOCK_H2__"
+            fill="none" stroke="#2B2A46" stroke-width="2.2"/>
+      <text id="clock-time" x="__CLOCK_CX__" y="__CLOCK_TY1__" text-anchor="middle"
+            fill="#D7F7CD" font-size="__CLOCK_FS__">00:00</text>
+      <text id="clock-date" x="__CLOCK_CX__" y="__CLOCK_TY2__" text-anchor="middle"
+            fill="#9FD8B0" font-size="__CLOCK_FS2__">SEN 26 OKT</text>
+      <rect id="clock-sec" x="__CLOCK_BAR_X__" y="__CLOCK_BAR_Y__" width="0"
+            height="__CLOCK_BAR_H__" fill="#D7F7CD" opacity="0.6" data-full="__CLOCK_BAR_FULL__"/>
+    </g>
+    <g id="flag" transform="__FLAG_MATRIX__">
+      <rect x="0" y="0" width="__FLAG_W__" height="__FLAG_HALF__" fill="#CE1126"/>
+      <rect x="0" y="__FLAG_HALF__" width="__FLAG_W__" height="__FLAG_HALF__" fill="#F6F1E3"/>
+      <rect x="0" y="0" width="__FLAG_W__" height="__FLAG_H__"
+            fill="none" stroke="#2B2A46" stroke-width="2"/>
+    </g>
+
+    <!-- kalender: halaman bisa terlipat -->
+    <g id="cal" transform="__CAL_MATRIX__">
+      <rect id="cal-pad" x="0" y="__CAL_PAD_Y__" width="__CAL_W__" height="__CAL_PAD_H__" fill="#CBB68C"/>
+      <rect x="0" y="0" width="__CAL_W__" height="__CAL_H__" fill="#F3E7C8"/>
+      <g id="cal-page" style="transform:scaleY(1);transform-origin:50% 0%;transition:transform .26s linear">
+        <text id="cal-m" x="__CAL_CX__" y="__CAL_T1__" text-anchor="middle" fill="#181430" font-size="__CAL_FS__">OKT</text>
+        <text id="cal-d" x="__CAL_CX__" y="__CAL_T2__" text-anchor="middle" fill="#181430" font-size="__CAL_FS2__">26</text>
+        <text id="cal-w" x="__CAL_CX__" y="__CAL_T3__" text-anchor="middle" fill="#181430" font-size="__CAL_FS__">SEN</text>
+      </g>
+    </g>
   </svg>
   <div id="tint"></div>
   <div id="scan"></div>
@@ -215,22 +276,19 @@ HTML = """<!DOCTYPE html>
 
 <script>
 const SCENE = {w: __SCENE_W__, h: __SCENE_H__};
-const CLOCK_FACE = __CLOCK__;
-const CAL_QUAD = __CALQUAD__;
-const LED_QUAD = __LEDQUAD__;
-const WINDOW_QUAD = __WINDOWQUAD__;
 const TILES = __TILES__;
+const RAIL = __RAIL__;
 
 const stage = document.getElementById("stage");
-const clockEl = document.getElementById("clock");
-const calEl = document.getElementById("cal");
-const ledEl = document.getElementById("led");
-const ledText = document.getElementById("led-t");
-const curtainEl = document.getElementById("curtain");
-const curtainLines = document.getElementById("curtain-lines");
-const tintEl = document.getElementById("tint");
+const sceneEl = document.getElementById("scene");
 const toast = document.getElementById("toast");
+const railEl = document.getElementById("rail");
+const railTicks = document.getElementById("rail-ticks");
+const battEl = document.getElementById("batt");
+const tintEl = document.getElementById("tint");
+const calPage = document.getElementById("cal-page");
 let toastTimer = 0;
+let batteryLevel = 100;
 
 function pct(v, total) { return (v / total * 100).toFixed(4) + "%"; }
 
@@ -242,13 +300,15 @@ function place(el, x, y, w, h) {
 }
 
 function showToast(name) {
-  toast.textContent = name.toUpperCase() + " \u00b7 SEGERA HADIR";
+  toast.textContent = name.toUpperCase();
   toast.classList.add("show");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => toast.classList.remove("show"), 2000);
 }
 
-function open(name) { showToast(name); }
+function open(name) {
+  showToast("MEMBUKA " + name);
+}
 
 TILES.forEach((tile) => {
   const el = document.createElement("button");
@@ -264,125 +324,97 @@ TILES.forEach((tile) => {
   stage.appendChild(el);
 });
 
-place(clockEl, CLOCK_FACE[0], CLOCK_FACE[1], CLOCK_FACE[2], CLOCK_FACE[3]);
-clockEl.addEventListener("click", (e) => { e.stopPropagation(); open("Jadwal"); });
+// ---------------- rel gorden: tanda tiap 10% ----------------
+(function buildTicks() {
+  const ns = "http://www.w3.org/2000/svg";
+  for (let i = 1; i <= 9; i++) {
+    const t = i / 10;
+    const x = RAIL[0] + (RAIL[2] - RAIL[0]) * t;
+    const y = RAIL[1] + (RAIL[3] - RAIL[1]) * t;
+    const line = document.createElementNS(ns, "line");
+    line.setAttribute("x1", x); line.setAttribute("y1", y - 5);
+    line.setAttribute("x2", x); line.setAttribute("y2", y + 5);
+    line.dataset.index = i;
+    railTicks.appendChild(line);
+  }
+})();
 
-// tempelkan sebuah elemen pada bidang miring: quad = [kiri-atas, kanan-atas, kiri-bawah]
-function placeOnPlane(el, quad, u) {
-  const [ax, ay, bx, by, cx, cy] = quad;
-  const W = Math.hypot(bx - ax, by - ay);
-  const H = Math.hypot(cx - ax, cy - ay);
-  el.style.width = (u * W).toFixed(2) + "px";
-  el.style.height = (u * H).toFixed(2) + "px";
-  el.style.left = (u * ax).toFixed(2) + "px";
-  el.style.top = (u * ay).toFixed(2) + "px";
-  const a = (bx - ax) / W, b = (by - ay) / W, c = (cx - ax) / H, d = (cy - ay) / H;
-  el.style.transform = "matrix(" + [a, b, c, d, 0, 0].join(",") + ")";
-  return H;
+const BULAN = ["JAN","FEB","MAR","APR","MEI","JUN","JUL","AGU","SEP","OKT","NOV","DES"];
+const HARI = ["SEN","SEL","RAB","KAM","JUM","SAB","MIN"];
+
+function ambience(h) {
+  if (h >= 5 && h <= 8) return "rgba(255,217,160,.10)";
+  if (h >= 9 && h <= 15) return "rgba(255,246,226,.16)";
+  if (h >= 16 && h <= 18) return "rgba(255,154,92,.12)";
+  if (h >= 19 && h <= 22) return "rgba(43,63,143,.14)";
+  return "rgba(6,10,34,.34)";
 }
 
-// muka jam (krem + 12 tanda) sudah tergambar di scene.png;
-// di sini hanya jarum jam & menit yang diputar sesuai waktu perangkat
-const BULAN = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN",
-               "JUL", "AGU", "SEP", "OKT", "NOV", "DES"];
-const HARI = ["SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN"];
+function paintRail(day) {
+  const colour = batteryLevel <= 15 ? "#D9483B" : batteryLevel <= 40 ? "#E0A03A"
+    : day ? "#9FD8B0" : "#77B8D9";
+  railEl.setAttribute("stroke", colour);
+  [...railTicks.children].forEach((line) => {
+    const i = +line.dataset.index;
+    line.setAttribute("stroke", batteryLevel >= i * 10 ? "#0E0D1A" : "rgba(255,255,255,.4)");
+  });
+  battEl.textContent = batteryLevel + "%";
+  battEl.setAttribute("fill", batteryLevel <= 15 ? "#EF6A5B" : "#E3CDA6");
+}
 
-// jarum jam & menit mengikuti waktu perangkat; kalender mengikuti tanggal hari ini
+let lastDay = null;
+
 function tick() {
   const now = new Date();
-  const minute = now.getMinutes() + now.getSeconds() / 60;
-  const hour = (now.getHours() % 12) + minute / 60;
-  document.getElementById("hh")
-    .setAttribute("transform", "rotate(" + (hour * 30) + " 50 50)");
-  document.getElementById("mh")
-    .setAttribute("transform", "rotate(" + (minute * 6) + " 50 50)");
-  document.getElementById("sh")
-    .setAttribute("transform", "rotate(" + (now.getSeconds() * 6) + " 50 50)");
-  document.getElementById("cal-m").textContent = BULAN[now.getMonth()];
-  document.getElementById("cal-d").textContent = now.getDate();
-  document.getElementById("cal-w").textContent = HARI[(now.getDay() + 6) % 7];
-  ledText.textContent =
+  const day = now.getHours() >= 6 && now.getHours() <= 17;
+
+  if (day !== lastDay) {
+    const file = day ? "scene_day.png" : "scene_night.png";
+    sceneEl.src = file;
+    document.querySelectorAll(".sway-scene").forEach((img) => img.setAttribute("href", file));
+    lastDay = day;
+  }
+
+  document.getElementById("clock-time").textContent =
     String(now.getHours()).padStart(2, "0") + ":" +
-    String(now.getMinutes()).padStart(2, "0") + ":" +
-    String(now.getSeconds()).padStart(2, "0");
+    String(now.getMinutes()).padStart(2, "0");
+  const sec = document.getElementById("clock-sec");
+  sec.setAttribute("width", (parseFloat(sec.dataset.full || 0) * now.getSeconds() / 60).toFixed(2));
+  document.getElementById("clock-date").textContent =
+    HARI[(now.getDay() + 6) % 7] + " " + now.getDate() + " " + BULAN[now.getMonth()];
+
+  // kalender: kalau tanggal berganti, halaman dilipat dulu
+  const shown = document.getElementById("cal-d").textContent;
+  if (shown !== String(now.getDate())) {
+    calPage.style.transform = "scaleY(0)";
+    setTimeout(() => {
+      document.getElementById("cal-m").textContent = BULAN[now.getMonth()];
+      document.getElementById("cal-d").textContent = now.getDate();
+      document.getElementById("cal-w").textContent = HARI[(now.getDay() + 6) % 7];
+      calPage.style.transform = "scaleY(1)";
+    }, 280);
+  }
+
   tintEl.style.background = ambience(now.getHours());
-  drawCurtain();
+  paintRail(day);
 }
 
-/* ---- gorden jendela = penunjuk baterai ---- */
-let batteryLevel = 100;
+tick();
+setInterval(tick, 1000);
 
-function drawCurtain() {
-  const [ax, ay, bx, by, cx, cy, dx, dy] = WINDOW_QUAD;
-  const cover = Math.max(0, Math.min(1, (100 - batteryLevel) / 100));
-  if (cover <= 0.001) {
-    curtainEl.setAttribute("points", "");
-    curtainLines.innerHTML = "";
-    return;
-  }
-  const blx = ax + (cx - ax) * cover, bly = ay + (cy - ay) * cover;
-  const brx = bx + (dx - bx) * cover, bry = by + (dy - by) * cover;
-  curtainEl.setAttribute("points",
-    [ax, ay, bx, by, brx, bry, blx, bly].map((v) => v.toFixed(1)).join(" "));
-  curtainEl.setAttribute("fill", batteryLevel <= 15 ? "#8E4A4E" : batteryLevel <= 40 ? "#9A6567" : "#A9888A");
-  let g = "";
-  // lipatan kain: pita gelap-terang bergantian
-  for (let i = 0; i < 5; i += 2) {
-    const t0 = i / 5, t1 = (i + 1) / 5;
-    const p1 = [ax + (bx - ax) * t0, ay + (by - ay) * t0];
-    const p2 = [ax + (bx - ax) * t1, ay + (by - ay) * t1];
-    const p3 = [blx + (brx - blx) * t1, bly + (bry - bly) * t1];
-    const p4 = [blx + (brx - blx) * t0, bly + (bry - bly) * t0];
-    g += '<polygon points="' + [p1, p2, p3, p4].map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ") +
-         '" fill="#000" fill-opacity=".10"/>';
-  }
-  for (let i = 1; i <= 5; i++) {
-    const t = i / 6;
-    const x1 = ax + (bx - ax) * t, y1 = ay + (by - ay) * t;
-    const x2 = blx + (brx - blx) * t, y2 = bly + (bry - bly) * t;
-    g += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
-         '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
-  }
-  curtainLines.innerHTML = g;
-}
-
+// baterai: di browser memakai Battery Status API (kalau tersedia)
 if (navigator.getBattery) {
   navigator.getBattery().then((b) => {
-    const sync = () => { batteryLevel = Math.round(b.level * 100); drawCurtain(); };
+    const sync = () => {
+      batteryLevel = Math.round(b.level * 100);
+      paintRail(lastDay);
+    };
     sync();
     b.addEventListener("levelchange", sync);
   }).catch(() => {});
 }
 
-// suasana mengikuti jam: sama seperti ambienceOf() di Launcher.kt
-function ambience(h) {
-  if (h >= 4 && h <= 5) return "rgba(110,90,168,.10)";
-  if (h >= 6 && h <= 9) return "rgba(255,196,107,.06)";
-  if (h >= 10 && h <= 14) return "rgba(255,242,208,.03)";
-  if (h >= 15 && h <= 17) return "rgba(255,138,76,.10)";
-  if (h >= 18 && h <= 21) return "rgba(43,63,143,.12)";
-  return "rgba(6,10,34,.34)";
-}
-tick();
-setInterval(tick, 1000);
-
-// ukuran bidang & huruf mengikuti `unit` panggung, sama seperti di APK
-function fitFaces() {
-  const u = (stage.clientWidth || SCENE.w) / SCENE.w;
-  const calH = placeOnPlane(calEl, CAL_QUAD, u);
-  const ledH = placeOnPlane(ledEl, LED_QUAD, u);
-  const calFont = (f) => (calH * u * f).toFixed(2) + "px";
-  calEl.querySelector(".m").style.fontSize = calFont(0.22);
-  calEl.querySelector(".d").style.fontSize = calFont(0.46);
-  calEl.querySelector(".w").style.fontSize = calFont(0.22);
-  const ledW = parseFloat(ledEl.style.width);
-  ledEl.style.fontSize = Math.min(ledH * u * 0.80, (ledW * 0.76) / 5.0).toFixed(2) + "px";
-}
-fitFaces();
-window.addEventListener("resize", fitFaces);
-if (window.ResizeObserver) new ResizeObserver(fitFaces).observe(stage);
-
-// minta browser mengunci landscape (butuh fullscreen; kalau ditolak, abaikan saja)
+// minta browser mengunci landscape saat layar disentuh
 function lockLandscape() {
   try {
     if (screen.orientation && screen.orientation.lock) {
@@ -397,28 +429,106 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 """
 
 
-def main() -> None:
-    scene_w, scene_h, tiles, clock, cal_quad, led_rect, window_quad, frames, icons = parse_data()
-    size = make_scene(scene_w, scene_h)
-    scene_hash = hashlib.md5((WEB / "scene.png").read_bytes()).hexdigest()[:10]
+def build_html(data, scene_sizes):
+    w, h = data["w"], data["h"]
+    clock = data["clock"]
+    flag = data["flag"]
+    board = data["board"]
+    cal = data["cal"]
+    batt = data["battery_text"]
+
+    clock_plane = (clock[0], clock[1], clock[0] + clock[2], clock[1] + int(clock[2] * 0.42),
+                   clock[0], clock[1] + clock[3])
+    flag_plane = (flag[0], flag[1], flag[0] + flag[2], flag[1] + int(flag[2] * 0.42),
+                  flag[0], flag[1] + flag[3])
+
+    clock_w = ((clock_plane[2] - clock_plane[0]) ** 2 + (clock_plane[3] - clock_plane[1]) ** 2) ** 0.5
+    clock_h = ((clock_plane[4] - clock_plane[0]) ** 2 + (clock_plane[5] - clock_plane[1]) ** 2) ** 0.5
+    flag_w = ((flag_plane[2] - flag_plane[0]) ** 2 + (flag_plane[3] - flag_plane[1]) ** 2) ** 0.5
+    flag_h = ((flag_plane[4] - flag_plane[0]) ** 2 + (flag_plane[5] - flag_plane[1]) ** 2) ** 0.5
+
+    board_w = ((board[2] - board[0]) ** 2 + (board[3] - board[1]) ** 2) ** 0.5
+    board_h = ((board[4] - board[0]) ** 2 + (board[5] - board[1]) ** 2) ** 0.5
+
+    cal_w = ((cal[2] - cal[0]) ** 2 + (cal[3] - cal[1]) ** 2) ** 0.5
+    cal_h = ((cal[4] - cal[0]) ** 2 + (cal[5] - cal[1]) ** 2) ** 0.5
+
+    batt_w = ((batt[2] - batt[0]) ** 2 + (batt[3] - batt[1]) ** 2) ** 0.5
+    batt_h = ((batt[4] - batt[0]) ** 2 + (batt[5] - batt[1]) ** 2) ** 0.5
+
+    sway_scene = "scene_night.png"
+    sway = sway_group(data["curtains"] + [data["leaf"]], sway_scene, 2.2, 5.2)
 
     html = (
-        HTML.replace("__HASH__", scene_hash)
-        .replace("__RATIO__", f"{scene_w} / {scene_h}")
-        .replace("__SCENE_W__", str(scene_w))
-        .replace("__SCENE_H__", str(scene_h))
-        .replace("__CLOCK__", str(clock).replace(" ", ""))
-        .replace("__CALQUAD__", str(cal_quad).replace(" ", ""))
-        .replace("__LEDQUAD__", str(led_rect).replace(" ", ""))
-        .replace("__WINDOWQUAD__", str(window_quad).replace(" ", ""))
-        .replace("__ICONS__", icon_svg(frames, icons, scene_w, scene_h))
+        HTML.replace("__RATIO__", f"{w} / {h}")
+        .replace("__SCENE_W__", str(w))
+        .replace("__SCENE_H__", str(h))
         .replace("__TILES__", "[\n" + "".join(
             f'  {{label: "{t["label"]}", x: {t["x"]}, y: {t["y"]}, w: {t["w"]}, h: {t["h"]}}},\n'
-            for t in tiles
-        ) + "]")
+            for t in data["tiles"]) + "]")
+        .replace("__RAIL__", str(data["rail"]).replace(" ", ""))
+        .replace("__SWAY__", sway.replace("__W__", str(w)).replace("__H__", str(h)))
+        .replace("__ICONS__", icon_svg(data["frames"], data["icons"]))
+        # rel
+        .replace("__RAIL_X1__", str(data["rail"][0]))
+        .replace("__RAIL_Y1__", str(data["rail"][1]))
+        .replace("__RAIL_X2__", str(data["rail"][2]))
+        .replace("__RAIL_Y2__", str(data["rail"][3]))
+        # persentase baterai
+        .replace("__BATT_MATRIX__", matrix_attr(batt))
+        .replace("__BATT_W__", f"{batt_w / 2:.2f}")
+        .replace("__BATT_H__", f"{batt_h * 0.86:.2f}")
+        .replace("__BATT_SIZE__", f"{batt_h * 0.66:.2f}")
+        # papan tulis
+        .replace("__BOARD_MATRIX__", matrix_attr(board))
+        .replace("__BOARD_W__", f"{board_w / 2:.2f}")
+        .replace("__BOARD_TY__", f"{board_h * 0.16:.2f}")
+        .replace("__BOARD_FS__", f"{min(board_h * 0.115, board_w * 0.80 / 9.3):.2f}")
+        .replace("__BOARD_LX1__", f"{board_w * 0.18:.2f}")
+        .replace("__BOARD_LX2__", f"{board_w * 0.82:.2f}")
+        .replace("__BOARD_LY__", f"{board_h * 0.215:.2f}")
+        # jam digital
+        .replace("__CLOCK_MATRIX__", matrix_attr(clock_plane))
+        .replace("__CLOCK_W__", f"{clock_w:.2f}")
+        .replace("__CLOCK_H__", f"{clock_h:.2f}")
+        .replace("__CLOCK_W2__", f"{clock_w - 3:.2f}")
+        .replace("__CLOCK_H2__", f"{clock_h - 3:.2f}")
+        .replace("__CLOCK_CX__", f"{clock_w / 2:.2f}")
+        .replace("__CLOCK_TY1__", f"{clock_h * 0.46:.2f}")
+        .replace("__CLOCK_TY2__", f"{clock_h * 0.66:.2f}")
+        .replace("__CLOCK_FS__", f"{min(clock_h * 0.34, clock_w * 0.88 / 3.9):.2f}")
+        .replace("__CLOCK_FS2__", f"{min(clock_h * 0.15, clock_w * 0.92 / 7.9):.2f}")
+        .replace("__CLOCK_BAR_X__", f"{clock_w * 0.12:.2f}")
+        .replace("__CLOCK_BAR_Y__", f"{clock_h * 0.84:.2f}")
+        .replace("__CLOCK_BAR_H__", f"{clock_h * 0.035:.2f}")
+        .replace("__CLOCK_BAR_FULL__", f"{clock_w * 0.76:.2f}")
+        # bendera
+        .replace("__FLAG_MATRIX__", matrix_attr(flag_plane))
+        .replace("__FLAG_W__", f"{flag_w:.2f}")
+        .replace("__FLAG_H__", f"{flag_h:.2f}")
+        .replace("__FLAG_HALF__", f"{flag_h / 2:.2f}")
+        # kalender
+        .replace("__CAL_MATRIX__", matrix_attr(cal))
+        .replace("__CAL_W__", f"{cal_w:.2f}")
+        .replace("__CAL_H__", f"{cal_h:.2f}")
+        .replace("__CAL_PAD_Y__", f"{cal_h * 0.06:.2f}")
+        .replace("__CAL_PAD_H__", f"{cal_h * 1.13:.2f}")
+        .replace("__CAL_CX__", f"{cal_w / 2:.2f}")
+        .replace("__CAL_T1__", f"{cal_h * 0.30:.2f}")
+        .replace("__CAL_T2__", f"{cal_h * 0.74:.2f}")
+        .replace("__CAL_T3__", f"{cal_h * 0.99:.2f}")
+        .replace("__CAL_FS__", f"{cal_h * 0.22:.2f}")
+        .replace("__CAL_FS2__", f"{cal_h * 0.46:.2f}")
     )
     (WEB / "index.html").write_text(html)
-    print(f"scene {size} · {len(tiles)} objek · {WEB/'index.html'}")
+    return html
+
+
+def main() -> None:
+    data = parse_data()
+    sizes = make_scenes()
+    build_html(data, sizes)
+    print(f"scene {sizes} · {len(data['tiles'])} objek · {len(data['icons'])} bingkai · {WEB/'index.html'}")
 
 
 if __name__ == "__main__":

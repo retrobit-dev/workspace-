@@ -1,5 +1,12 @@
-// Cek preview tanpa browser: hotspot harus tepat di atas objeknya (koordinat Data.kt),
-// jam analog + layar jam digital + kalender hidup harus terisi dan menempel bidangnya.
+// Cek preview tanpa browser: hotspot & semua lapisan hidup harus memakai
+// koordinat yang sama dengan Data.kt (sumber kebenaran), plus aturan v7:
+//   · tidak ada jam analog, hanya jam digital
+//   · jam digital setinggi bingkai foto & sejajar dengannya
+//   · bendera Indonesia menempel tepat di kanan jam, tinggi sama
+//   · kalender punya halaman yang bisa terlipat
+//   · rel gorden = indikator baterai + persen di dinding
+//   · siang/malam mengikuti jam, gorden & daun bergoyang
+//
 //   node tools/check_preview.mjs
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
@@ -8,21 +15,36 @@ const SRC = new URL("../android/app/src/main/java/dev/retrobit/ruangkelas/Data.k
 const HTML = new URL("../web/index.html", import.meta.url);
 const data = readFileSync(SRC, "utf8");
 
-const tiles = [...data.matchAll(/TileInfo\("([^"]+)",\s*Scr\.\w+,\s*"[^"]*",\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)/g)]
-  .map((m) => ({ label: m[1], x: +m[2], y: +m[3], w: +m[4], h: +m[5] }));
+const sceneOf = (name) => +data.match(new RegExp(`const val ${name} = (\\d+)`))[1];
+const SCENE = { w: sceneOf("SCENE_W"), h: sceneOf("SCENE_H") };
+
 const rect = (name) => {
-  const m = data.match(new RegExp(`val ${name} = intArrayOf\\(([^)]+)\\)`));
+  const m = data.match(new RegExp(`val ${name} = intArrayOf\\(([^)]*)\\)`));
+  if (!m) throw new Error(`Data.kt tidak punya ${name}`);
   return m[1].split(",").map((v) => +v.trim());
 };
-const sceneOf = (name) => +data.match(new RegExp(`const val ${name} = (\\d+)`))[1];
 
-const SCENE = { w: sceneOf("SCENE_W"), h: sceneOf("SCENE_H") };
-const CLOCK = rect("CLOCK_FACE");
-const CAL_Q = rect("CALENDAR_QUAD");
-const LED_Q = rect("LED_QUAD");
-const WINDOW_Q = rect("WINDOW_QUAD");
-const FRAME_Q = [...(data.slice(data.indexOf("val FRAME_QUADS")).matchAll(/intArrayOf\((\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)/g))]
-  .map((m) => [+m[1], +m[2], +m[3], +m[4], +m[5], +m[6]]);
+const tiles = [...data.matchAll(/TileInfo\("([^"]+)",\s*Scr\.\w+,\s*"[^"]*",\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)/g)]
+  .map((m) => ({ label: m[1], x: +m[2], y: +m[3], w: +m[4], h: +m[5] }));
+
+const listOfQuads = (name) => {
+  const start = data.indexOf(`val ${name} = listOf(`);
+  const block = data.slice(start, data.indexOf("\n)", start));
+  return [...block.matchAll(/intArrayOf\(([-\d,\s]+)\)/g)].map((m) => m[1].split(",").map((v) => +v.trim()));
+};
+
+const frameQuads = listOfQuads("FRAME_QUADS");
+const curtainRects = listOfQuads("CURTAIN_RECTS");
+const icons = [...data.matchAll(/AppIcon\("([^"]+)",\s*"(#[0-9A-Fa-f]+)"/g)].map((m) => ({ name: m[1], bg: m[2] }));
+
+const CLOCK = rect("CLOCK_RECT");
+const FLAG = rect("FLAG_RECT");
+const BOARD = rect("BOARD_QUAD");
+const CAL = rect("CALENDAR_QUAD");
+const RAIL = rect("RAIL_LINE");
+const BATT = rect("BATTERY_TEXT_QUAD");
+const LEAF = rect("LEAF_RECT");
+const WINDOW_QUAD = rect("WINDOW_QUAD");
 
 let errors = 0;
 const fail = (msg) => { errors++; console.log("  ✗ " + msg); };
@@ -33,7 +55,7 @@ const { document } = dom.window;
 
 const hotspots = [...document.querySelectorAll(".hotspot")];
 if (hotspots.length !== tiles.length) fail(`jumlah hotspot ${hotspots.length} != ${tiles.length} tile`);
-if (tiles.length !== 17) fail(`TILES berisi ${tiles.length} objek, harusnya 17`);
+if (tiles.length !== 18) fail(`TILES berisi ${tiles.length} objek, harusnya 18`);
 
 tiles.forEach((tile, i) => {
   const el = hotspots[i];
@@ -49,77 +71,117 @@ tiles.forEach((tile, i) => {
   }
 });
 
-// jam analog: kotak lurus sesuai CLOCK_FACE
-const clockEl = document.getElementById("clock");
-const wantClock = {
-  left: (CLOCK[0] / SCENE.w) * 100, top: (CLOCK[1] / SCENE.h) * 100,
-  width: (CLOCK[2] / SCENE.w) * 100, height: (CLOCK[3] / SCENE.h) * 100,
-};
-for (const k of Object.keys(wantClock)) {
-  if (!close(clockEl.style[k], wantClock[k])) fail(`clock.${k}: ${clockEl.style[k]} != ${wantClock[k].toFixed(4)}%`);
+// ---- tidak ada jam analog ----
+["hh", "mh", "sh", "analog"].forEach((id) => {
+  if (document.getElementById(id)) fail(`#${id} (jam analog) masih ada`);
+});
+if (/analog/i.test(document.body.innerHTML)) fail("masih menyebut jam analog");
+
+// ---- jam digital: setinggi & sejajar bingkai foto ----
+const clockGroup = document.getElementById("clock");
+const m = (clockGroup.getAttribute("transform") || "").match(/matrix\(([^)]+)\)/);
+if (!m) fail("jam digital tidak memakai bidang miring");
+else {
+  const [a, b, c, d, e, f] = m[1].split(",").map(Number);
+  if (!close(e, CLOCK[0], 0.5) || !close(f, CLOCK[1], 0.5)) fail(`jam di (${e},${f}) != CLOCK_RECT (${CLOCK[0]},${CLOCK[1]})`);
+  if (!close(Math.hypot(c, d), CLOCK[3], 0.5)) fail(`tinggi jam ${Math.hypot(c, d).toFixed(1)} != ${CLOCK[3]}`);
+  // tinggi bingkai foto = tinggi hotspot "Profil"
+  const frameTile = tiles.find((t) => t.label === "Profil");
+  if (frameTile && Math.abs(Math.hypot(c, d) - frameTile.h) > 1.5)
+    fail(`tinggi jam ${Math.hypot(c, d).toFixed(1)} != tinggi bingkai foto ${frameTile.h}`);
+  if (Math.abs(a) < 20) fail("jam digital tidak mengikuti kemiringan dinding");
 }
 
-// bidang miring (kalender & layar LED): ukuran + matriks harus cocok dengan quad
-function checkPlane(el, name, q) {
-  if (!el) return fail(`#${name} tidak ada`);
-  const [ax, ay, bx, by, cx, cy] = q;
-  const W = Math.hypot(bx - ax, by - ay);
-  const H = Math.hypot(cx - ax, cy - ay);
-  const want = {
-    left: ax, top: ay, width: W, height: H,
-    a: (bx - ax) / W, b: (by - ay) / W, c: (cx - ax) / H, d: (cy - ay) / H,
-  };
-  const m = (el.style.transform.match(/matrix\(([^)]+)\)/) || [, ""])[1].split(",").map(Number);
-  if (!close(el.style.width, want.width, 0.05)) fail(`${name}.width: ${el.style.width} != ${want.width.toFixed(2)}px`);
-  if (!close(el.style.height, want.height, 0.05)) fail(`${name}.height: ${el.style.height} != ${want.height.toFixed(2)}px`);
-  if (!close(el.style.left, want.left, 0.05)) fail(`${name}.left: ${el.style.left} != ${want.left}px`);
-  if (!close(el.style.top, want.top, 0.05)) fail(`${name}.top: ${el.style.top} != ${want.top}px`);
-  ["a", "b", "c", "d"].forEach((k, i) => {
-    if (!close(m[i], want[k], 0.002)) fail(`${name}.matrix.${k}: ${m[i]} != ${want[k].toFixed(4)}`);
-  });
+// ---- bendera: menempel di kanan jam, tinggi sama ----
+const flagGroup = document.getElementById("flag");
+const fm = flagGroup && flagGroup.getAttribute("transform");
+if (!fm) fail("bendera tidak ditemukan");
+else {
+  const [fa, fb, , , fe, ff] = fm.match(/matrix\(([^)]+)\)/)[1].split(",").map(Number);
+  const clockRight = CLOCK[0] + CLOCK[2];
+  if (Math.abs(fe - clockRight) > 4) fail(`bendera kiri ${fe} tidak menempel di kanan jam ${clockRight}`);
+  if (Math.abs(fb / fa - 0.42) > 0.03) fail(`kemiringan bendera ${(fb / fa).toFixed(2)} != 0.42`);
+  // atas bendera = sudut kanan-atas jam (mengikuti kemiringan dinding)
+  const wantTop = CLOCK[1] + Math.round(0.42 * CLOCK[2]);
+  if (Math.abs(ff - wantTop) > 1.5) fail(`bendera atas ${ff} != sudut kanan-atas jam ${wantTop}`);
+  if (![...flagGroup.querySelectorAll("rect")].some((r) => r.getAttribute("fill") === "#CE1126"))
+    fail("bendera Indonesia (merah-putih) tidak ada");
+  if (Math.abs(FLAG[3] - CLOCK[3]) > 1) fail("tinggi bendera != tinggi jam");
 }
-checkPlane(document.getElementById("cal"), "cal", CAL_Q);
 
-checkPlane(document.getElementById("led"), "led", LED_Q);
+// ---- papan tulis: judul di atas, rata tengah ----
+const title = document.getElementById("board-title");
+if (!title) fail("judul papan tulis hilang");
+else {
+  if (!/jadwal mengajar/i.test(title.textContent)) fail(`judul papan "${title.textContent}"`);
+  if (title.getAttribute("text-anchor") !== "middle") fail("judul papan tidak rata tengah");
+  const boardW = Math.hypot(BOARD[2] - BOARD[0], BOARD[3] - BOARD[1]);
+  if (Math.abs(parseFloat(title.getAttribute("x")) * 2 - boardW) > 1.5)
+    fail("judul papan tidak di tengah lebar papan");
+  if (!document.querySelector("#board line")) fail("garis bawah judul papan hilang");
+}
 
-// ikon bingkai: lima latar + banyak sel
-const icons = document.querySelectorAll("#fx polygon");
-if (icons.length < 13) fail(`poligon ikon hanya ${icons.length} (harus 5 latar + 8 bentuk)`);
-if (FRAME_Q.length < 5) fail(`bingkai hanya ${FRAME_Q.length}`);
+// ---- kalender: halaman bisa terlipat ----
+const page = document.getElementById("cal-page");
+if (!page) fail("halaman kalender hilang");
+else if (!/scaleY|rotateX/.test(page.getAttribute("style") || "")) fail("halaman kalender tidak bisa terlipat");
 
-// gorden baterai ada di lapisan vektor
-if (!document.getElementById("curtain")) fail("poligon gorden baterai tidak ada");
+// ---- rel gorden = baterai ----
+if (!document.getElementById("rail")) fail("rel gorden baterai hilang");
+const ticks = document.querySelectorAll("#rail-ticks line");
+if (ticks.length !== 9) fail(`tanda rel ${ticks.length}, harusnya 9 (tiap 10%)`);
+if (!document.getElementById("batt")) fail("persentase baterai di dinding hilang");
+const battG = document.getElementById("batt-g").getAttribute("transform") || "";
+if (!/matrix/.test(battG)) fail("persentase baterai tidak mengikuti arah dinding");
+const battM = battG.match(/matrix\(([^)]+)\)/)[1].split(",").map(Number);
+if (!close(battM[4], BATT[0], 0.5) || !close(battM[5], BATT[1], 0.5)) fail("persen baterai tidak di BATTERY_TEXT_QUAD");
 
-if (!document.getElementById("hh").getAttribute("transform")) fail("jarum jam belum diset");
-if (!document.getElementById("mh").getAttribute("transform")) fail("jarum menit belum diset");
-if (!document.getElementById("sh").getAttribute("transform")) fail("jarum detik belum diset");
+// ---- angin: gorden & daun bergoyang ----
+if (!document.querySelector("#fx .sway-scene, #fx image")) fail("lapisan angin tidak ada");
+if (curtainRects.length !== 2) fail(`CURTAIN_RECTS harus 2, ada ${curtainRects.length}`);
+if (LEAF.length !== 4) fail("LEAF_RECT harus 4 angka");
 
-const led = document.getElementById("led-t").textContent.trim();
-if (!/^\d{2}:\d{2}:\d{2}$/.test(led)) fail(`jam digital "${led}" bukan HH:MM:SS`);
+// ---- ikon bingkai ----
+const polys = document.querySelectorAll("#fx #icons polygon");
+if (polys.length < frameQuads.length + 5) fail(`poligon ikon hanya ${polys.length}`);
+if (frameQuads.length !== 5) fail(`bingkai harus 5, ada ${frameQuads.length}`);
+if (icons.length !== 5) fail(`ikon aplikasi harus 5, ada ${icons.length}`);
+if (icons[2]?.name !== "Spotify" || icons[3]?.name !== "YouTube")
+  fail(`urutan bingkai 3-4 = ${icons[2]?.name}/${icons[3]?.name}, harusnya Spotify/YouTube`);
+
+// ---- scene siang & malam ----
+const scene = document.getElementById("scene");
+if (!/scene_(day|night)\.png/.test(scene.getAttribute("src") || "")) fail("scene tidak memakai scene_day/night");
+
+// ---- waktu & kalender hidup ----
+const clockText = document.getElementById("clock-time").textContent.trim();
+if (!/^\d{2}:\d{2}$/.test(clockText)) fail(`jam digital "${clockText}" bukan HH:MM`);
+if (!document.getElementById("clock-sec")) fail("bilah detik di panel jam hilang");
 const now = new Date();
 const hhmm = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
-if (!led.startsWith(hhmm)) fail(`jam digital ${led} != waktu sekarang ${hhmm}`);
-
-for (const id of ["cal-m", "cal-d", "cal-w"]) {
+if (!clockText.startsWith(hhmm)) fail(`jam digital ${clockText} != waktu sekarang ${hhmm}`);
+for (const id of ["clock-date", "cal-m", "cal-d", "cal-w", "batt"]) {
   if (!document.getElementById(id).textContent.trim()) fail(`${id} kosong`);
 }
-const day = +document.getElementById("cal-d").textContent;
-if (day !== now.getDate()) fail(`tanggal kalender ${day} != hari ini ${now.getDate()}`);
+if (+document.getElementById("cal-d").textContent !== now.getDate())
+  fail(`tanggal kalender ${document.getElementById("cal-d").textContent} != hari ini ${now.getDate()}`);
 if (!document.getElementById("tint").style.background) fail("selaput suasana belum diset");
-if (!document.getElementById("led-t").textContent.trim()) fail("teks jam digital kosong");
 
-const labels = [...hotspots].map((e) => e.dataset.label);
-["Kalkulator", "Alat Tulis", "Kalender", "Jadwal", "Profil"].forEach((k) => {
+// ---- label wajib ----
+const labels = hotspots.map((e) => e.dataset.label);
+["Kalkulator", "Alat Tulis", "Kalender", "Jadwal", "Profil", "File"].forEach((k) => {
   if (!labels.includes(k)) fail(`hotspot "${k}" hilang`);
 });
-["WhatsApp", "Vivaldi", "YouTube", "Spotify", "Sinaga Jateng"].forEach((k) => {
+["WhatsApp", "Vivaldi", "Spotify", "YouTube", "Sinaga Jateng"].forEach((k) => {
   if (!labels.includes(k)) fail(`bingkai aplikasi "${k}" hilang`);
 });
 if (labels.filter((l) => l === "Binder").length < 2) fail("hotspot rak & laci harus dua");
-if (FRAME_Q.length !== 5) fail(`bingkai harus 5, ada ${FRAME_Q.length}`);
-if (WINDOW_Q.length !== 8) fail("WINDOW_QUAD harus 8 angka");
+if (WINDOW_QUAD.length !== 8) fail("WINDOW_QUAD harus 8 angka");
+if (RAIL.length !== 4) fail("RAIL_LINE harus 4 angka");
+if (BATT.length !== 6) fail("BATTERY_TEXT_QUAD harus 6 angka");
+if (FLAG[3] !== CLOCK[3]) fail("FLAG_RECT harus setinggi CLOCK_RECT");
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · jam ${led} · kalender ${day}/${now.getDate()} · bidang miring cocok`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · ${icons.length} bingkai · jam ${clockText} · kalender ${now.getDate()} · rel baterai ${ticks.length} tanda`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);

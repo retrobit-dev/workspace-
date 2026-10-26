@@ -99,12 +99,14 @@ def main() -> None:
     # 2. ketuk objek di scene. Koordinat memakai piksel gambar 1312 x 816
     #    (sama dengan TILES di Data.kt), lalu dipetakan ke piksel layar.
     hotspots = [
-        ("launcher-ketuk-jurnal", 1005, 366),    # laptop
-        ("launcher-ketuk-kalkulator", 1061, 448),# kalkulator, di kanan laptop
-        ("launcher-ketuk-kalender", 1162, 425),  # kalender meja (tanggal hidup)
-        ("launcher-ketuk-binder", 1009, 530),    # laci
-        ("launcher-ketuk-profil", 975, 150),     # foto user di kiri jam dinding
-        ("launcher-ketuk-pintasan", 219, 376),   # bingkai aplikasi di atas rak
+        ("launcher-ketuk-jurnal", 854, 377),      # laptop
+        ("launcher-ketuk-kalkulator", 942, 462),  # kalkulator, di kanan laptop
+        ("launcher-ketuk-kalender", 1062, 437),   # kalender meja tebal (tanggal hidup)
+        ("launcher-ketuk-binder", 767, 615),      # laci meja
+        ("launcher-ketuk-profil", 750, 98),       # foto user di kiri jam dinding
+        ("launcher-ketuk-jadwal", 849, 100),      # jam digital + bendera
+        ("launcher-ketuk-sampah", 58, 707),       # tempat sampah -> file manager
+        ("launcher-ketuk-pintasan", 242, 182),    # bingkai aplikasi (Spotify)
     ]
     for name, px, py in hotspots:
         ox, oy, scale = scene_rect(w, h)
@@ -118,7 +120,7 @@ def main() -> None:
     time.sleep(2)
     launch()
     shot("launcher-letterbox")
-    tap_scene(1005, 366, w, 1200)   # laptop
+    tap_scene(854, 377, w, 1200)   # laptop
     shot("launcher-letterbox-ketuk")
     time.sleep(2)
     sh("adb shell wm size reset")
