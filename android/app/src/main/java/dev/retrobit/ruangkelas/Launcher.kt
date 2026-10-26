@@ -23,9 +23,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -35,7 +37,11 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import java.time.LocalDate
+import java.time.LocalTime
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
 /**
  * Geometri layar launcher.
@@ -117,13 +123,23 @@ fun LauncherScreen(
             )
         }
 
-        // jam LED hidup menimpa layar jam digital yang ada di gambar
-        LauncherClock(
+        // jam analog hidup di dinding: jarum jam & menit mengikuti waktu nyata
+        LiveWallClock(
             box = box,
             onTap = {
                 caption = "Jadwal"
                 captionTick++
                 onOpen(TILES.first { it.label == "Jadwal" })
+            }
+        )
+
+        // kalender meja menampilkan hari, tanggal, dan bulan hari ini
+        LiveCalendar(
+            box = box,
+            onTap = {
+                caption = "Kalender"
+                captionTick++
+                onOpen(TILES.first { it.label == "Kalender" })
             }
         )
 
@@ -183,30 +199,112 @@ private fun LauncherHotspot(
 }
 
 @Composable
-private fun LauncherClock(box: SceneBox, onTap: () -> Unit) {
-    val clock = rememberClock()
-    val x = CLOCK_SCREEN[0]
-    val y = CLOCK_SCREEN[1]
-    val w = CLOCK_SCREEN[2]
-    val h = CLOCK_SCREEN[3]
+private fun rememberNowMs(): Long {
+    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            now = System.currentTimeMillis()
+            delay(1000)
+        }
+    }
+    return now
+}
+
+/**
+ * Jam analog di dinding.
+ * Kertas jam di gambar ditutup oval krem, lalu 12 tanda jam dan dua jarum digambar
+ * ulang mengikuti waktu perangkat — jadi selalu menunjukkan jam sekarang.
+ */
+@Composable
+private fun LiveWallClock(box: SceneBox, onTap: () -> Unit) {
+    val nowMs = rememberNowMs()
+    val time = remember(nowMs) { LocalTime.now() }
+    val x = CLOCK_FACE[0]
+    val y = CLOCK_FACE[1]
+    val w = CLOCK_FACE[2]
+    val h = CLOCK_FACE[3]
 
     Box(
         Modifier
             .offset(x = box.x(x), y = box.y(y))
             .size(width = box.w(w), height = box.h(h))
-            .background(Color(0xFF0C1712))
+            .clickable { onTap() }
+    ) {
+        Canvas(Modifier.fillMaxSize()) {
+            // muka jam (krem + 12 tanda) sudah ada di gambar; di sini hanya jarumnya
+            val rx = size.width / 2f
+            val ry = size.height / 2f
+            val cx = rx
+            val cy = ry
+
+            fun hand(angleDeg: Double, length: Float, width: Float) {
+                val a = Math.toRadians(angleDeg - 90.0)
+                drawLine(
+                    color = Ink,
+                    start = Offset(cx, cy),
+                    end = Offset(cx + (cos(a) * rx * length).toFloat(), cy + (sin(a) * ry * length).toFloat()),
+                    strokeWidth = width,
+                    cap = StrokeCap.Round
+                )
+            }
+
+            val minute = time.minute + time.second / 60f
+            val hour = (time.hour % 12) + minute / 60f
+            hand(hour * 30.0, 0.48f, size.width * 0.10f)
+            hand(minute * 6.0, 0.72f, size.width * 0.070f)
+
+            drawCircle(color = Ink, radius = size.width * 0.055f, center = Offset(cx, cy))
+        }
+    }
+}
+
+private const val MONTHS_SHORT = "JAN,FEB,MAR,APR,MEI,JUN,JUL,AGU,SEP,OKT,NOV,DES"
+private const val DAYS_SHORT = "SEN,SEL,RAB,KAM,JUM,SAB,MIN"
+
+/**
+ * Kalender meja: kertasnya menampilkan bulan, tanggal, dan nama hari hari ini.
+ */
+@Composable
+private fun LiveCalendar(box: SceneBox, onTap: () -> Unit) {
+    val nowMs = rememberNowMs()
+    val today = remember(nowMs) { LocalDate.now() }
+    val month = MONTHS_SHORT.split(",")[today.monthValue - 1]
+    val weekday = DAYS_SHORT[today.dayOfWeek.value - 1]
+    val x = CALENDAR_FACE[0]
+    val y = CALENDAR_FACE[1]
+    val w = CALENDAR_FACE[2]
+    val h = CALENDAR_FACE[3]
+
+    Box(
+        Modifier
+            .offset(x = box.x(x), y = box.y(y))
+            .size(width = box.w(w), height = box.h(h))
             .clickable { onTap() },
         contentAlignment = Alignment.Center
     ) {
-        // ukuran huruf ikut skala gambar supaya tidak pernah pecah jadi dua baris
-        Text(
-            clock,
-            style = MaterialTheme.typography.labelLarge,
-            fontSize = (box.unit.value * 11f).coerceIn(6f, 18f).sp,
-            color = ScreenGreen,
-            maxLines = 1,
-            softWrap = false
-        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                month,
+                style = MaterialTheme.typography.labelMedium,
+                color = Ink,
+                fontSize = (box.unit.value * 7f).coerceIn(5f, 13f).sp,
+                maxLines = 1
+            )
+            Text(
+                "${today.dayOfMonth}",
+                style = MaterialTheme.typography.displayLarge,
+                color = Ink,
+                fontSize = (box.unit.value * 20f).coerceIn(12f, 40f).sp,
+                maxLines = 1
+            )
+            Text(
+                weekday,
+                style = MaterialTheme.typography.labelMedium,
+                color = Ink,
+                fontSize = (box.unit.value * 7f).coerceIn(5f, 13f).sp,
+                maxLines = 1
+            )
+        }
     }
 }
 

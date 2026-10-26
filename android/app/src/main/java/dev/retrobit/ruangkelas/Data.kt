@@ -194,26 +194,36 @@ data class TileInfo(
     val h: Int
 )
 
-/** 12 objek di gambar isometrik; rak & laci sama-sama menuju Binder. */
+/**
+ * 12 objek di gambar isometrik (koordinat = piksel gambar 1312 × 816).
+ *
+ * Papan pin dipindah ke atas rak buku, jam analog di dinding belakang laptop,
+ * tempat pensil di kiri kalender, kalkulator di kanan laptop.
+ */
 val TILES = listOf(
-    TileInfo("Jurnal", Scr.JURNAL, "book", 566, 236, 194, 178),
-    TileInfo("Nilai", Scr.NILAI, "chart", 462, 298, 116, 94),
-    TileInfo("Absensi", Scr.ABSENSI, "check", 291, 26, 269, 318),
-    TileInfo("Catatan", Scr.CATATAN, "pencil", 696, 41, 224, 284),
-    TileInfo("Jadwal", Scr.JADWAL, "clock", 768, 349, 80, 84),
-    TileInfo("Kalender", Scr.KALENDER, "calendar", 856, 353, 89, 79),
-    TileInfo("Binder", Scr.BINDER, "folder", 596, 479, 154, 126),
-    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 763, 423, 55, 69),
-    TileInfo("Kelas", Scr.KELAS, "grid", 996, 26, 239, 479),
-    TileInfo("Profil", Scr.PROFIL, "face", 381, 386, 164, 234),
-    TileInfo("Binder", Scr.BINDER, "folder", 1, 276, 249, 284)
+    TileInfo("Jurnal", Scr.JURNAL, "book", 565, 252, 205, 205),         // laptop
+    TileInfo("Nilai", Scr.NILAI, "chart", 455, 295, 130, 95),           // tumpukan buku
+    TileInfo("Absensi", Scr.ABSENSI, "check", 300, 18, 262, 330),       // papan tulis
+    TileInfo("Catatan", Scr.CATATAN, "pencil", 25, 22, 240, 292),       // papan pin di atas rak
+    TileInfo("Jadwal", Scr.JADWAL, "clock", 748, 96, 132, 142),         // jam analog di dinding
+    TileInfo("Kalender", Scr.KALENDER, "calendar", 862, 378, 108, 95),  // kalender meja
+    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 708, 428, 108, 72),  // kalkulator di kanan laptop
+    TileInfo("Binder", Scr.BINDER, "folder", 608, 508, 165, 112),       // laci meja
+    TileInfo("Binder", Scr.BINDER, "folder", 0, 315, 255, 290),         // rak buku di kiri
+    TileInfo("Kelas", Scr.KELAS, "grid", 988, 22, 252, 480),            // jendela
+    TileInfo("Profil", Scr.PROFIL, "face", 400, 388, 165, 268),         // kursi
+    // tempat pensil (kiri kalender) belum punya aplikasi sendiri
+    TileInfo("Alat Tulis", Scr.KIT, "pencil", 794, 340, 54, 86)
 )
 
-/** Layar jam LED di badan jam digital (piksel gambar). */
-val CLOCK_SCREEN = intArrayOf(786, 372, 60, 56)
+/** Permukaan jam analog di dinding (piksel gambar). */
+val CLOCK_FACE = intArrayOf(768, 113, 84, 114)
+
+/** Kertas kalender meja yang menampilkan tanggal hari ini (piksel gambar). */
+val CALENDAR_FACE = intArrayOf(870, 392, 65, 68)
 
 const val SCENE_W = 1312
-const val SCENE_H = 820
+const val SCENE_H = 816
 
 /* ---------------- state aplikasi ---------------- */
 

@@ -1,18 +1,20 @@
 """Bangun preview browser untuk launcher.
 
-Sumber kebenaran tetap Data.kt (TILES, CLOCK_SCREEN, SCENE_W/H) supaya preview di
+Sumber kebenaran tetap Data.kt (TILES, CLOCK_FACE, CALENDAR_FACE, SCENE_W/H) supaya preview di
 browser punya area ketuk yang sama persis dengan APK Android.
 
   python3 tools/make_preview.py   ->  web/index.html + web/scene.png
 """
 import re
+import sys
 from pathlib import Path
 
-from PIL import Image
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import scene_face  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "android/app/src/main/java/dev/retrobit/ruangkelas/Data.kt"
-ART = ROOT / "art/workspace-iso-raw.png"
+ART = ROOT / "art/workspace-iso-v2.png"
 WEB = ROOT / "web"
 
 
@@ -29,24 +31,22 @@ def parse_data():
     ):
         tiles.append({"label": label, "x": int(x), "y": int(y), "w": int(w), "h": int(h)})
 
-    clock = [int(v) for v in re.search(
-        r"val CLOCK_SCREEN = intArrayOf\(([^)]+)\)", src).group(1).split(",")
-    ]
-    return scene_w, scene_h, tiles, clock
+    def rect(name):
+        return [int(v) for v in re.search(
+            rf"val {name} = intArrayOf\(([^)]+)\)", src).group(1).split(",")
+        ]
+
+    return scene_w, scene_h, tiles, rect("CLOCK_FACE"), rect("CALENDAR_FACE")
 
 
 def make_scene(scene_w, scene_h):
-    im = Image.open(ART).convert("RGB")
-    w, h = im.size
-    canvas = Image.new("RGB", (scene_w, scene_h))
-    ox, oy = (scene_w - w) // 2, (scene_h - h) // 2
-    canvas.paste(im, (ox, oy))
-    if oy > 0:
-        canvas.paste(im.crop((0, 0, w, 1)).resize((scene_w, oy)), (0, 0))
-        canvas.paste(im.crop((0, h - 1, w, h)).resize((scene_w, scene_h - oy - h)), (0, oy + h))
+    """Art sudah berukuran persis SCENE_W × SCENE_H — tanpa padding, tanpa skala."""
+    im, _ = scene_face.load_scene()
+    if im.size != (scene_w, scene_h):
+        raise SystemExit(f"art {im.size} != scene {(scene_w, scene_h)}")
     WEB.mkdir(exist_ok=True)
-    canvas.save(WEB / "scene.png", optimize=True)
-    return canvas.size
+    im.save(WEB / "scene.png", optimize=True)
+    return im.size
 
 
 HTML = """<!DOCTYPE html>
@@ -84,10 +84,16 @@ HTML = """<!DOCTYPE html>
     box-shadow:0 0 0 3px var(--amber) inset;
   }
 
-  #clock{position:absolute;display:flex;align-items:center;justify-content:center;
-    background:#0C1712;color:var(--screen);
-    font-size:11px;letter-spacing:1px;cursor:pointer;
-    white-space:nowrap;overflow:hidden;line-height:1}
+  /* jam analog hidup di dinding: SVG di dalam kotak muka jam */
+  #clock{position:absolute;cursor:pointer}
+  #clock svg{display:block;width:100%;height:100%;overflow:visible}
+
+  /* kalender meja: bulan / tanggal / hari, mengikuti tanggal hari ini */
+  #cal{position:absolute;display:flex;flex-direction:column;align-items:center;
+    justify-content:center;gap:0;color:#0E0D1A;cursor:pointer;
+    font-weight:700;line-height:1;letter-spacing:.5px;overflow:hidden}
+  #cal .m,#cal .w{opacity:.85}
+  #cal .d{font-weight:700;letter-spacing:0}
 
   #scan{position:absolute;inset:0;pointer-events:none;
     background:repeating-linear-gradient(180deg,rgba(0,0,0,.10) 0 1px,transparent 1px 3px)}
@@ -119,7 +125,20 @@ HTML = """<!DOCTYPE html>
 <body>
 <div id="stage">
   <img id="scene" src="scene.png" alt="Workspace guru malam hari" draggable="false">
-  <div id="clock" aria-label="Jam digital"></div>
+  <div id="clock" role="img" aria-label="Jam analog">
+    <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+      <g stroke="#0E0D1A" stroke-linecap="round">
+        <line id="hh" x1="50" y1="50" x2="50" y2="26" stroke-width="8"></line>
+        <line id="mh" x1="50" y1="50" x2="50" y2="14" stroke-width="5.5"></line>
+      </g>
+      <circle cx="50" cy="50" r="4.5" fill="#0E0D1A"></circle>
+    </svg>
+  </div>
+  <div id="cal" role="img" aria-label="Kalender hari ini">
+    <span class="m" id="cal-m">OKT</span>
+    <span class="d" id="cal-d">26</span>
+    <span class="w" id="cal-w">SEN</span>
+  </div>
   <div id="scan"></div>
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -132,11 +151,13 @@ HTML = """<!DOCTYPE html>
 
 <script>
 const SCENE = {w: __SCENE_W__, h: __SCENE_H__};
-const CLOCK = __CLOCK__;
+const CLOCK_FACE = __CLOCK__;
+const CALENDAR_FACE = __CALENDAR__;
 const TILES = __TILES__;
 
 const stage = document.getElementById("stage");
 const clockEl = document.getElementById("clock");
+const calEl = document.getElementById("cal");
 const toast = document.getElementById("toast");
 let toastTimer = 0;
 
@@ -172,20 +193,40 @@ TILES.forEach((tile) => {
   stage.appendChild(el);
 });
 
-place(clockEl, CLOCK[0], CLOCK[1], CLOCK[2], CLOCK[3]);
+place(clockEl, CLOCK_FACE[0], CLOCK_FACE[1], CLOCK_FACE[2], CLOCK_FACE[3]);
+place(calEl, CALENDAR_FACE[0], CALENDAR_FACE[1], CALENDAR_FACE[2], CALENDAR_FACE[3]);
 clockEl.addEventListener("click", (e) => { e.stopPropagation(); open("Jadwal"); });
+calEl.addEventListener("click", (e) => { e.stopPropagation(); open("Kalender"); });
 
+// muka jam (krem + 12 tanda) sudah tergambar di scene.png;
+// di sini hanya jarum jam & menit yang diputar sesuai waktu perangkat
+const BULAN = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN",
+               "JUL", "AGU", "SEP", "OKT", "NOV", "DES"];
+const HARI = ["SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN"];
+
+// jarum jam & menit mengikuti waktu perangkat; kalender mengikuti tanggal hari ini
 function tick() {
   const now = new Date();
-  clockEl.textContent =
-    String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
+  const minute = now.getMinutes() + now.getSeconds() / 60;
+  const hour = (now.getHours() % 12) + minute / 60;
+  document.getElementById("hh")
+    .setAttribute("transform", "rotate(" + (hour * 30) + " 50 50)");
+  document.getElementById("mh")
+    .setAttribute("transform", "rotate(" + (minute * 6) + " 50 50)");
+  document.getElementById("cal-m").textContent = BULAN[now.getMonth()];
+  document.getElementById("cal-d").textContent = now.getDate();
+  document.getElementById("cal-w").textContent = HARI[(now.getDay() + 6) % 7];
 }
 tick();
 setInterval(tick, 1000);
 
-// ukuran huruf jam mengikuti lebar panggung, sama seperti di APK
+// ukuran teks kalender mengikuti `unit` panggung, sama seperti di APK
 function fitClock() {
-  clockEl.style.fontSize = Math.max(6, stage.clientWidth * 0.0112) + "px";
+  const u = (stage.clientWidth || SCENE.w) / SCENE.w;
+  const px = (v) => Math.max(4, u * v).toFixed(2) + "px";
+  calEl.style.fontSize = px(7);
+  const d = calEl.querySelector(".d");
+  d.style.fontSize = px(20);
 }
 fitClock();
 window.addEventListener("resize", fitClock);
@@ -207,7 +248,7 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 
 
 def main() -> None:
-    scene_w, scene_h, tiles, clock = parse_data()
+    scene_w, scene_h, tiles, clock, calendar = parse_data()
     size = make_scene(scene_w, scene_h)
 
     html = (
@@ -215,6 +256,7 @@ def main() -> None:
         .replace("__SCENE_W__", str(scene_w))
         .replace("__SCENE_H__", str(scene_h))
         .replace("__CLOCK__", str(clock).replace(" ", ""))
+        .replace("__CALENDAR__", str(calendar).replace(" ", ""))
         .replace("__TILES__", "[\n" + "".join(
             f'  {{label: "{t["label"]}", x: {t["x"]}, y: {t["y"]}, w: {t["w"]}, h: {t["h"]}}},\n'
             for t in tiles

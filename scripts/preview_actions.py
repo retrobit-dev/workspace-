@@ -75,7 +75,7 @@ def screen_size():
     return (int(m.group(1)), int(m.group(2))) if m else (2560, 1600)
 
 
-def scene_rect(sw: int, sh: int, scene_w=1312, scene_h=820):
+def scene_rect(sw: int, sh: int, scene_w=1312, scene_h=816):
     """Letterbox: gambar 16:10 di tengah layar, sisanya hitam."""
     scale = min(sw / scene_w, sh / scene_h)
     bw, bh = scene_w * scale, scene_h * scale
@@ -96,14 +96,14 @@ def main() -> None:
     shot("launcher")
     crashes()
 
-    # 2. ketuk objek di scene. Koordinat memakai piksel gambar 1312 x 820
+    # 2. ketuk objek di scene. Koordinat memakai piksel gambar 1312 x 816
     #    (sama dengan TILES di Data.kt), lalu dipetakan ke piksel layar.
-    SW, SH = 1312, 820
     hotspots = [
-        ("launcher-ketuk-jurnal", 663, 325),     # laptop
-        ("launcher-ketuk-binder", 673, 542),     # laci
-        ("launcher-ketuk-kalender", 900, 392),   # kalender meja
-        ("launcher-ketuk-profil", 463, 503),     # kursi
+        ("launcher-ketuk-jurnal", 615, 350),     # laptop
+        ("launcher-ketuk-kalkulator", 752, 441), # kalkulator, di kanan laptop
+        ("launcher-ketuk-kalender", 898, 426),   # kalender meja (tanggal hidup)
+        ("launcher-ketuk-binder", 655, 565),     # laci
+        ("launcher-ketuk-profil", 367, 480),     # kursi
     ]
     for name, px, py in hotspots:
         ox, oy, scale = scene_rect(w, h)
@@ -117,7 +117,7 @@ def main() -> None:
     time.sleep(2)
     launch()
     shot("launcher-letterbox")
-    tap_scene(663, 325, w, 1200)   # laptop
+    tap_scene(615, 350, w, 1200)   # laptop
     shot("launcher-letterbox-ketuk")
     time.sleep(2)
     sh("adb shell wm size reset")

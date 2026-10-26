@@ -1,33 +1,27 @@
-"""Siapkan gambar workspace isometrik untuk launcher.
+"""Siapkan gambar workspace isometrik untuk launcher Android.
 
-- potong/pad ke rasio 16:10 (2560 x 1600 tablet)
-- simpan ke android/app/src/main/res/drawable-nodpi/scene.png
-- cetak ukuran supaya konstanta SCENE_W/SCENE_H di Data.kt bisa dicek
+Gambar dipakai apa adanya (1312 × 816) supaya koordinat di Data.kt sama persis
+dengan piksel gambar — tanpa padding, tanpa penskalaan.
+
+  python3 tools/make_scene.py
 """
-from PIL import Image
+import sys
+from pathlib import Path
 
-SRC = "art/workspace-iso-raw.png"
-OUT = "android/app/src/main/res/drawable-nodpi/scene.png"
-TARGET_W, TARGET_H = 1312, 820  # 16:10
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import scene_face  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "android/app/src/main/res/drawable-nodpi/scene.png"
 
 
 def main() -> None:
-    im = Image.open(SRC).convert("RGB")
-    w, h = im.size
-
-    canvas = Image.new("RGB", (TARGET_W, TARGET_H))
-    # tempel di tengah, pinggir diisi warna tepi supaya tidak ada garis aneh
-    ox, oy = (TARGET_W - w) // 2, (TARGET_H - h) // 2
-    canvas.paste(im, (ox, oy))
-
-    if oy > 0:
-        top = im.crop((0, 0, w, 1)).resize((TARGET_W, oy))
-        bottom = im.crop((0, h - 1, w, h)).resize((TARGET_W, TARGET_H - oy - h))
-        canvas.paste(top, (0, 0))
-        canvas.paste(bottom, (0, oy + h))
-
-    canvas.save(OUT, optimize=True)
-    print("scene", canvas.size, "->", OUT)
+    im, cream = scene_face.load_scene()
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    im.save(OUT, optimize=True)
+    print("scene", im.size, "->", OUT.relative_to(ROOT))
+    print("CLOCK_FACE   ", scene_face.clock_face(im), "#%02X%02X%02X" % cream)
+    print("CALENDAR_FACE", scene_face.calendar_face(im))
 
 
 if __name__ == "__main__":
