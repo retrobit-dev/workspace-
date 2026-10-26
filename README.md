@@ -45,27 +45,29 @@ prototype/
 
 Scene malam digambar ulang khusus landscape, lalu diturunkan ke grid 32 piksel:
 
-- **Jam digital** di atas meja (kotak hijau) → **Jadwal**
+- **Jam digital** di atas meja → **Jadwal** — pada grid 32 px digit "88:88" hilang, jadi
+  jamnya diganti **display LED hidup** (teks Silkscreen + glow) yang menimpa badan jam di scene,
+  selalu menampilkan waktu nyata dan tetap bisa diketuk
 - **Kalender meja** tepat di sebelah kanan jam → **Kalender**
 - **Laci meja** di bawah meja → **Binder materi**
 - Laptop → Jurnal · papan tulis → Absensi · papan pin → Catatan · buku → Nilai
-- Nampan di bawah meja → Kalkulator · jendela → Kelas · kursi → Profil · rak → Binder
+- Pen cup / tempat pensil → Kalkulator · jendela → Kelas · kursi → Profil · rak → Binder
 
 Koordinat tap (satuan grid 51 × 32, `x · y · w × h`):
 
 | Objek | Tujuan | x | y | w | h |
 |---|---|---|---|---|---|
-| laptop | Jurnal | 14 | 15 | 8 | 5 |
-| buku | Nilai | 6 | 18 | 7 | 4 |
-| papan tulis | Absensi | 25 | 6 | 16 | 10 |
-| papan pin | Catatan | 41 | 6 | 10 | 9 |
-| jam digital | Jadwal | 24 | 15 | 7 | 6 |
-| kalender meja | Kalender | 31 | 15 | 6 | 7 |
-| laci | Binder | 27 | 23 | 11 | 9 |
-| nampan | Kalkulator | 16 | 23 | 8 | 4 |
-| jendela | Kelas | 0 | 1 | 9 | 23 |
-| kursi | Profil | 41 | 15 | 9 | 9 |
-| rak | Binder | 12 | 5 | 12 | 9 |
+| laptop | Jurnal | 12 | 15 | 10 | 6 |
+| buku | Nilai | 5 | 19 | 6 | 4 |
+| papan tulis | Absensi | 25 | 6 | 15 | 9 |
+| papan pin | Catatan | 40 | 6 | 8 | 9 |
+| jam digital (LED hidup) | Jadwal | 23 | 15 | 8 | 6 |
+| kalender meja | Kalender | 31 | 15 | 6 | 6 |
+| laci | Binder | 27 | 24 | 10 | 8 |
+| pen cup | Kalkulator | 20 | 15 | 3 | 6 |
+| jendela | Kelas | 1 | 1 | 8 | 20 |
+| kursi | Profil | 43 | 14 | 8 | 10 |
+| rak binder | Binder | 10 | 6 | 11 | 4 |
 
 Aktifkan **Inspeksi tile** untuk melihat batas tap di scene. Di Compose, koordinat ini
 dipakai apa adanya dengan `BoxWithConstraints` (persen dari lebar/tinggi gambar).

@@ -156,17 +156,17 @@ const SCENE = {
 
 /* rect = [x, y, w, h] dalam satuan grid art 51 × 32 */
 const TILES = [
-  { id: "laptop",     label: "Jurnal",   target: "jurnal",     icon: "book",     rect: [14, 15, 8, 5] },
-  { id: "buku",       label: "Nilai",    target: "nilai",      icon: "chart",    rect: [6, 18, 7, 4] },
-  { id: "papan",      label: "Absensi",  target: "absensi",    icon: "check",    rect: [25, 6, 16, 10] },
-  { id: "pinboard",   label: "Catatan",  target: "catatan",    icon: "pencil",   rect: [41, 6, 10, 9] },
-  { id: "jam",        label: "Jadwal",   target: "jadwal",     icon: "clock",    rect: [24, 15, 7, 6] },
-  { id: "kalender",   label: "Kalender", target: "kalender",   icon: "calendar", rect: [31, 15, 6, 7] },
-  { id: "laci",       label: "Binder",   target: "binder",     icon: "folder",   rect: [27, 23, 11, 9] },
-  { id: "kalkulator", label: "Kalkulator", target: "kalkulator", icon: "calc",   rect: [16, 23, 8, 4] },
-  { id: "jendela",    label: "Kelas",    target: "kelas",      icon: "grid",     rect: [0, 1, 9, 23] },
-  { id: "kursi",      label: "Profil",   target: "profil",     icon: "face",     rect: [41, 15, 9, 9] },
-  { id: "rak",        label: "Arsip",    target: "binder",     icon: "folder",   rect: [12, 5, 12, 9] }
+  { id: "laptop",     label: "Jurnal",     target: "jurnal",     icon: "book",     rect: [12, 15, 10, 6] },
+  { id: "buku",       label: "Nilai",      target: "nilai",      icon: "chart",    rect: [5, 19, 6, 4] },
+  { id: "papan",      label: "Absensi",    target: "absensi",    icon: "check",    rect: [25, 6, 15, 9] },
+  { id: "pinboard",   label: "Catatan",    target: "catatan",    icon: "pencil",   rect: [40, 6, 8, 9] },
+  { id: "jam",        label: "Jadwal",     target: "jadwal",     icon: "clock",    rect: [23, 15, 8, 6], led: true },
+  { id: "kalender",   label: "Kalender",   target: "kalender",   icon: "calendar", rect: [31, 15, 6, 6] },
+  { id: "laci",       label: "Binder",     target: "binder",     icon: "folder",   rect: [27, 24, 10, 8] },
+  { id: "kalkulator", label: "Kalkulator", target: "kalkulator", icon: "calc",     rect: [20, 15, 3, 6] },
+  { id: "jendela",    label: "Kelas",      target: "kelas",      icon: "grid",     rect: [1, 1, 8, 20] },
+  { id: "kursi",      label: "Profil",     target: "profil",     icon: "face",     rect: [43, 14, 8, 10] },
+  { id: "rak",        label: "Arsip",      target: "binder",     icon: "folder",   rect: [10, 6, 11, 4] }
 ];
 
 
@@ -449,9 +449,18 @@ function renderTiles() {
     const top = (y / SCENE.h) * 100;
     const width = (w / SCENE.w) * 100;
     const height = (h / SCENE.h) * 100;
+    const style = `left:${left.toFixed(3)}%;top:${top.toFixed(3)}%;width:${width.toFixed(3)}%;height:${height.toFixed(3)}%`;
+
+    if (t.led) {
+      return `<button class="tile tile-led" data-goto="${t.target}" data-label="${t.label}"
+                style="${style}" aria-label="${t.label} jam digital">
+                <span class="led-case"><span class="led-digits" id="sceneLed">09:12</span></span>
+                <span class="tile-label">${t.label.toUpperCase()}</span>
+              </button>`;
+    }
+
     return `<button class="tile" data-goto="${t.target}" data-label="${t.label}"
-              style="left:${left.toFixed(3)}%;top:${top.toFixed(3)}%;width:${width.toFixed(3)}%;height:${height.toFixed(3)}%"
-              aria-label="${t.label}">
+              style="${style}" aria-label="${t.label}">
               <span class="tile-dot"><span class="ico" data-icon="${t.icon}" data-size="11"></span></span>
               <span class="tile-label">${t.label.toUpperCase()}</span>
             </button>`;
@@ -482,6 +491,9 @@ function renderClock() {
 
   const tag = $("#sceneTag");
   if (tag) tag.textContent = `RUANG KERJA · ${hhmm}`;
+
+  const led = $("#sceneLed");
+  if (led) led.textContent = hhmm;
 }
 
 function startClock() {
