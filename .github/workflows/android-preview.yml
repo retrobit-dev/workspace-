@@ -71,23 +71,37 @@ jobs:
             gh api -X POST "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" -f body="$(head -c 60000 /tmp/emu.md)" || true
           }
 
+          IMG="system-images;android-33;google_apis;x86_64"
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          sdkmanager "platform-tools" "emulator" "system-images;android-33;google_apis;x86_64" || { emit "sdkmanager gagal"; exit 1; }
+          sdkmanager "platform-tools" "emulator" "$IMG" || { emit "sdkmanager gagal"; exit 1; }
 
-          echo no | avdmanager create avd -n tab -k "system-images;android-33;google_apis;x86_64" -d "pixel_tablet" --force || { emit "avdmanager gagal"; exit 1; }
+          avdmanager list device | head -40
+          echo no | avdmanager create avd -n tab -k "$IMG" --force || { emit "avdmanager gagal"; exit 1; }
+          ls -la "$HOME/.android/avd" || true
 
-          nohup $ANDROID_SDK_ROOT/emulator/emulator -avd tab -no-window -no-audio -no-boot-anim \
-            -gpu swiftshader_indirect -no-snapshot -no-metrics > /tmp/emulator.log 2>&1 &
+          CFG="$HOME/.android/avd/tab.avd/config.ini"
+          if [ -f "$CFG" ]; then
+            sed -i '/hw.lcd.width/d;/hw.lcd.height/d;/hw.lcd.density/d' "$CFG"
+            printf 'hw.lcd.width=2560\nhw.lcd.height=1600\nhw.lcd.density=320\n' >> "$CFG"
+            echo "--- config.ini ---"; cat "$CFG"
+          else
+            echo "config.ini tidak ada"; ls -la "$HOME/.android/avd" || true
+          fi
+
+          nohup emulator -avd tab -no-window -no-audio -no-boot-anim \
+            -gpu swiftshader_indirect -no-snapshot -no-metrics -no-boot-anim > /tmp/emulator.log 2>&1 &
+          EMU_PID=$!
           adb start-server
 
-          for i in $(seq 1 90); do
+          for i in $(seq 1 60); do
             BOOT=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
             [ "$BOOT" = "1" ] && break
+            kill -0 $EMU_PID 2>/dev/null || { echo "emulator mati"; break; }
             sleep 5
           done
           adb devices -l
-          if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" != "1" ]; then
-            echo "--- emulator.log ---"; tail -60 /tmp/emulator.log
+          if [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; then
+            echo "--- emulator.log ---"; tail -80 /tmp/emulator.log
             emit "emulator tidak boot"
             exit 1
           fi
