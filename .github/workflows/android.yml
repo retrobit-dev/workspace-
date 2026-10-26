@@ -80,25 +80,6 @@ jobs:
               --notes "APK debug siap dipasang di tablet Android. Unduh RuangKelas-0.15.2-debug.apk lalu buka di perangkat (izinkan instalasi dari sumber ini)."
           gh release upload "$TAG" dist/RuangKelas-0.15.2-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
 
-      - name: Pulihkan asset rilis 0.15.1 (one-off, tertimpa run sebelumnya)
-        if: github.event_name != 'pull_request'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          LOG=/tmp/restore.log
-          {
-            set -x
-            git fetch -q origin 2a09ae71d0180ef926d7d348298723b677d06178
-            git show 2a09ae71d0180ef926d7d348298723b677d06178:dist/RuangKelas-0.15.1-debug.apk > /tmp/RuangKelas-0.15.1-debug.apk
-            test -s /tmp/RuangKelas-0.15.1-debug.apk
-            ls -l /tmp/RuangKelas-0.15.1-debug.apk
-            gh release upload v0.15.1-android /tmp/RuangKelas-0.15.1-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
-          } > "$LOG" 2>&1 || {
-            gh api -X POST "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" -f body="restore 0.15.1 gagal: $(tail -c 3000 "$LOG")" || true
-            exit 1
-          }
-          echo "asset 0.15.1 dipulihkan"
-
       - name: Commit APK ke dist/
         if: github.event_name != 'pull_request'
         env:
