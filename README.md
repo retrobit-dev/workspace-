@@ -5,14 +5,14 @@ satu layar berisi gambar workspace isometrik ukuran penuh. Tanpa sidebar, tanpa 
 tanpa header, tanpa panel. Setiap objek di gambar bisa diketuk untuk membuka aplikasi
 bawaannya — aplikasi itu dibuat menyusul, satu per satu.
 
-**Status: v0.12.0 — ruangan ditata ulang: papan tulis utuh, meja menempel dinding,
-pot tanaman di kanan meja, rak bawah penuh buku, lima bingkai aplikasi di atas rak buku,
-foto user di kiri jam dinding, dan jam digital dinding di bawah jam analog.
-Tanggal kalender mengikuti arah muka kalender, dan suasana mengikuti jam perangkat.**
+**Status: v0.14.0 — papan pin tetap di atas rak buku, papan tulis searah rak, meja
+diperlebar ke kiri, lima bingkai aplikasi (WhatsApp, Vivaldi, YouTube, Spotify,
+Sinaga Jateng) di atas papan pin, jam digital dinding yang menempel muka panelnya,
+dan gorden jendela yang berperan sebagai penunjuk baterai.**
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.12.0-debug.apk`](dist/RuangKelas-0.12.0-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.14.0-debug.apk`](dist/RuangKelas-0.14.0-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain) |
@@ -21,7 +21,7 @@ Tanggal kalender mengikuti arah muka kalender, dan suasana mengikuti jam perangk
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.12.0-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.14.0-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -52,17 +52,23 @@ Koordinat ketuk disimpan di `Data.kt` (`TILES`, satuan piksel gambar 1312 × 816
 | Jam dinding analog | Jadwal — jarum jam, menit, detik mengikuti waktu nyata |
 | Foto user (kiri jam) | Profil & pengaturan launcher |
 | Jendela | Kelas |
-| 5 bingkai di atas rak buku | Pintasan aplikasi (Jurnal, Nilai, Absensi, Kalender, Kalkulator) |
+| 5 bingkai di atas papan pin | Pintasan: WhatsApp, Vivaldi, YouTube, Spotify, Sinaga Jateng |
 
 Jam dinding, layar jam digital, dan kalender bukan gambar mati. Gambar aslinya
 dibersihkan dulu oleh `tools/scene_face.py` (jarum jam dihapus, tanda jam digambar
 ulang di piksel asli), lalu aplikasi menggambar:
 
 - tiga jarum jam analog dari `LocalTime.now()` di `CLOCK_FACE`,
-- `jam:menit:detik` di layar LED dinding, dan
+- `jam:menit:detik` di layar jam digital dinding (mengikuti muka panel), dan
 - hari/tanggal/bulan di kertas kalender.
 
-Kalender dan layar LED digambar **menempel pada bidangnya** (miring mengikuti muka
+**Gorden jendela = penunjuk baterai.** Baterai penuh → gorden tergulung dan jendela
+terbuka; makin sedikit baterai, makin turun kain menutup jendela, dan warnanya memerah
+di bawah 40% serta 15%. Persentasenya diambil dari `BatteryManager` (mendengar
+`ACTION_BATTERY_CHANGED`), dan di browser memakai Battery Status API. Lihat
+[`docs/screens/baterai-gorden.png`](docs/screens/baterai-gorden.png).
+
+Kalender dan layar jam digital digambar **menempel pada bidangnya** (miring mengikuti muka
 benda) memakai `Matrix.setPolyToPoly` dari `CALENDAR_QUAD` dan `LED_QUAD`, bukan teks
 datar. Selain itu `Ambience()` menambahkan selaput warna tipis sesuai jam perangkat:
 subuh ungu, pagi hangat, siang terang, sore jingga, malam biru, larut lebih gelap.
@@ -81,7 +87,8 @@ npm run preview:build   # bangun ulang web/ dari art + TILES
 ```
 
 `web/index.html` dibuat oleh `tools/make_preview.py` yang membaca `TILES`,
-`CLOCK_FACE`, `CALENDAR_QUAD`, `LED_QUAD`, dan `SCENE_W/H` langsung dari `Data.kt` — jadi area
+`CLOCK_FACE`, `CALENDAR_QUAD`, `LED_QUAD`, `FRAME_QUADS`, `APP_ICONS`, dan `SCENE_W/H`
+langsung dari `Data.kt` — jadi area
 ketuk di browser identik dengan di APK. Gambar penuh layar, tanpa sidebar/tab/header,
 objek menyala saat ditekan, jam analog (SVG) berputar mengikuti waktu, kalender
 menampilkan tanggal hari ini, dan label "SEGERA HADIR" muncul saat objek diketuk.
@@ -92,7 +99,8 @@ setiap hotspot berada tepat di atas objeknya dan muka jam/kalender terisi.
 ## Struktur
 
 ```
-art/workspace-iso-v5.png          gambar isometrik terkini 1312 × 816 (tata letak 0.12.0)
+art/workspace-iso-v6.png          gambar isometrik terkini 1312 × 816 (tata letak 0.14.0)
+art/workspace-iso-v5.png          gambar sebelumnya (arsip)
 art/workspace-iso-v4.png          percobaan sebelumnya (arsip)
 art/workspace-iso-v3.png          gambar sebelumnya (arsip)
 art/workspace-iso-v2.png          gambar pertama (arsip)
@@ -116,6 +124,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.12.0-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.14.0-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.

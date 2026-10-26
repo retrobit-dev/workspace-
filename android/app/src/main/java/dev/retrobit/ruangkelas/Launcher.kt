@@ -338,9 +338,9 @@ private fun LiveFaces(box: SceneBox, level: Int) {
         paint.color = ScreenGreen.toArgb()
         paint.typeface = typeface
         paint.textAlign = Paint.Align.CENTER
-        paint.textSize = led.height * 0.86f
+        paint.textSize = led.height * 0.84f
         val measured = paint.measureText(digital)
-        if (measured > led.width * 0.92f) paint.textSize *= led.width * 0.92f / measured
+        if (measured > led.width * 0.84f) paint.textSize *= led.width * 0.84f / measured
         drawOnPlane(led, paint, digital, led.height * 0.78f)
 
         // ---------- kalender: bulan, tanggal, hari ----------

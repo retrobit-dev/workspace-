@@ -376,7 +376,7 @@ function fitFaces() {
   calEl.querySelector(".d").style.fontSize = calFont(0.46);
   calEl.querySelector(".w").style.fontSize = calFont(0.22);
   const ledW = parseFloat(ledEl.style.width);
-  ledEl.style.fontSize = Math.min(ledH * u * 0.86, (ledW * 0.92) / 5.0).toFixed(2) + "px";
+  ledEl.style.fontSize = Math.min(ledH * u * 0.84, (ledW * 0.84) / 5.0).toFixed(2) + "px";
 }
 fitFaces();
 window.addEventListener("resize", fitFaces);
