@@ -58,7 +58,6 @@ Koordinat ketuk disimpan di `Data.kt` (`TILES`, satuan piksel gambar 1312 × 816
 | Papan tulis | Absensi |
 | Papan pin (atas rak) | Buku Catatan |
 | Jam digital dinding | Jadwal — jam:menit, tanggal, dan bilah detik yang berjalan |
-| Bendera Indonesia (kanan jam) | Indonesia — penanda zona waktu bawaan |
 | Foto user (kiri jam) | Profil & pengaturan launcher |
 | Jendela | Kelas |
 | Tempat sampah (sudut kiri bawah) | File manager: aplikasi berkas bawaan, atau pemilih dokumen Android |
@@ -71,7 +70,6 @@ mati: `Launcher.kt` menggambarnya di atas scene setiap detik.
   sama** (124 px). Isinya `jam:menit` besar, tanggal kecil (`SEN 26 OKT`), dan bilah
   detik tipis di tepi bawah panel. Mengetuknya membuka `Jadwal`; ke depan jam ini yang
   akan menampung alarm, pengatur waktu, dan jam dunia.
-- **Bendera Indonesia** (`FLAG_RECT`) menempel tepat di kanan jam, tinggi sama, dengan
   sudut kirinya bertemu sudut kanan-atas jam. Menandai Indonesia sebagai zona bawaan.
 - **Papan tulis** (`BOARD_QUAD`) diberi judul **"Jadwal Mengajar"** rata tengah di bagian
   atas, dengan garis tipis di bawahnya. Tempat jadwal pelajaran nanti.
