@@ -43,7 +43,7 @@ Koordinat ketuk disimpan di `Data.kt` (`TILES`, satuan piksel gambar 1312 × 816
 | Tumpukan buku | Nilai |
 | Papan tulis | Absensi |
 | Papan pin (di atas rak buku) | Buku Catatan |
-| Jam dinding analog | Jadwal — jarum jam & menit mengikuti waktu nyata |
+| Jam dinding analog | Jadwal — jarum jam, menit, dan detik mengikuti waktu nyata |
 | Kalender meja | Kalender — mencetak hari, tanggal, dan bulan hari ini |
 | Kalkulator (kanan laptop) | Kalkulator |
 | Tempat pensil (kiri kalender) | Alat Tulis |
@@ -53,7 +53,8 @@ Koordinat ketuk disimpan di `Data.kt` (`TILES`, satuan piksel gambar 1312 × 816
 
 Jam dinding dan kalender bukan gambar mati. Gambar aslinya dibersihkan dulu oleh
 `tools/scene_face.py` (jarum jam dihapus, tanda jam digambar ulang di piksel asli),
-lalu aplikasi menimpa muka jam dengan dua jarum asli dari `LocalTime.now()` dan
+lalu aplikasi menimpa muka jam dengan tiga jarum asli (jam, menit, detik merah)
+dari `LocalTime.now()` dan
 menulis `LocalDate.now()` pada kertas kalender — posisinya diambil dari `CLOCK_FACE`
 dan `CALENDAR_FACE`.
 

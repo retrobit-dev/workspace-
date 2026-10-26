@@ -1,7 +1,8 @@
 """Siapkan gambar workspace isometrik untuk launcher Android.
 
 Gambar dipakai apa adanya (1312 × 816) supaya koordinat di Data.kt sama persis
-dengan piksel gambar — tanpa padding, tanpa penskalaan.
+dengan piksel gambar — tanpa padding, tanpa penskalaan. Muka jam dibersihkan dan
+tanda jamnya digambar ulang oleh `tools/scene_face.py` (jarumnya digambar aplikasi).
 
   python3 tools/make_scene.py
 """
