@@ -397,39 +397,46 @@ private fun NewAgendaDialog(state: AppState, onClose: () -> Unit) {
 /* ================= KALKULATOR ================= */
 
 fun evalExpr(raw: String): Double? {
-    val clean = raw.replace("×", "*").replace("÷", "/")
+    // buang operator yang menggantung di akhir supaya ekspresi setengah jadi tetap aman
+    var clean = raw.replace("×", "*").replace("÷", "/").trim()
+    while (clean.isNotEmpty() && clean.last() !in "0123456789.") {
+        clean = clean.dropLast(1)
+    }
+    if (clean.isEmpty()) return null
+
     val tokens = Regex("""(\d+\.?\d*|\.\d+|[+\-*/])""").findAll(clean).map { it.value }.toList()
     if (tokens.isEmpty()) return null
     tokens.forEachIndexed { i, t ->
         val isNum = t[0].isDigit() || t[0] == '.'
         if (isNum != (i % 2 == 0)) return null
     }
+
     val nums = mutableListOf<Double>()
     val ops = mutableListOf<String>()
     tokens.forEachIndexed { i, t ->
         if (i % 2 == 0) nums.add(t.toDoubleOrNull() ?: return null) else ops.add(t)
     }
+    if (nums.isEmpty()) return null
+    if (ops.size != nums.size - 1) return null
+
     var i = 0
     while (i < ops.size) {
         if (ops[i] == "*" || ops[i] == "/") {
             val a = nums[i]
             val b = nums[i + 1]
-            val r = if (ops[i] == "*") a * b else {
-                if (b == 0.0) return null
-                a / b
-            }
-            nums[i] = r
+            if (ops[i] == "/" && b == 0.0) return null
+            nums[i] = if (ops[i] == "*") a * b else a / b
             nums.removeAt(i + 1)
             ops.removeAt(i)
         } else {
             i++
         }
     }
-    var acc = nums.firstOrNull() ?: return null
-    ops.forEachIndexed { k, op ->
-        acc = if (op == "+") acc + nums[k + 1] else acc - nums[k + 1]
+    var acc = nums.first()
+    for (k in ops.indices) {
+        acc = if (ops[k] == "+") acc + nums[k + 1] else acc - nums[k + 1]
     }
-    return acc
+    return if (acc.isNaN() || acc.isInfinite()) null else acc
 }
 
 fun fmtNum(v: Double): String {
@@ -582,15 +589,30 @@ private fun CalcHitung(state: AppState) {
 }
 
 fun pressKey(expr: String, key: String): String {
+    val ops = "+-*/"
+    val last = expr.lastOrNull()
+    fun needsOperand() = expr.isEmpty() || (last != null && last in ops)
+
     return when (key) {
         "AC" -> ""
-        "DEL" -> if (expr.isNotEmpty()) expr.dropLast(1) else ""
+        "DEL" -> expr.dropLast(1)
         "=" -> expr
-        "÷" -> if (expr.isEmpty()) "" else expr + "/"
-        "×" -> if (expr.isEmpty()) "" else expr + "*"
-        "−" -> expr + "-"
-        "%" -> if (expr.isEmpty()) "" else expr + "/100"
-        else -> expr + key
+        "+", "−", "×", "÷" -> {
+            val symbol = when (key) {
+                "−" -> "-"
+                "×" -> "*"
+                "÷" -> "/"
+                else -> "+"
+            }
+            when {
+                expr.isEmpty() -> if (symbol == "-") "-" else ""
+                last != null && last in ops -> expr.dropLast(1) + symbol
+                else -> expr + symbol
+            }
+        }
+        "%" -> if (needsOperand()) expr else "$expr/100"
+        "." -> if (last == '.' || (last != null && last.isDigit() && expr.substringAfterLast(Regex("[+\-*/]")).contains('.'))) expr else expr + "."
+        else -> if (last == '.' ) expr + key else expr + key
     }
 }
 

@@ -81,7 +81,7 @@ def crashes() -> None:
     out = sh("adb logcat -d -b crash")
     if out.strip():
         print("--- CRASH LOG ---", flush=True)
-        print(out[-4000:], flush=True)
+        print(out[:6000], flush=True)
     else:
         print("tidak ada crash", flush=True)
 
@@ -102,7 +102,7 @@ def main() -> None:
 
     # 2. Kalkulator: 78 + 85 x 2
     launch("KALKULATOR")
-    for key in ["7", "8", "+", "8", "5", "×", "2"]:
+    for key in ["2", "5", "×", "3", "6", "−", "4", "0"]:
         print("key", key, tap_text(key), flush=True)
     shot("aksi-kalkulator")
     crashes()
