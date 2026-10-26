@@ -8,6 +8,7 @@ tetap dipertahankan. Hasilnya muka jam bersih yang siap ditimpa jarum asli.
 Dipakai oleh `tools/make_scene.py` (aset Android) dan `tools/make_preview.py`
 (preview browser) supaya keduanya memakai gambar yang sama.
 """
+import colorsys
 import math
 from pathlib import Path
 
@@ -68,11 +69,57 @@ def grade(im):
     return ImageEnhance.Color(im.point(lut * 3)).enhance(GRADE_SAT)
 
 
+BG_LUMA_FLOOR = 45    # hanya permukaan latar yang cukup terang ikut diturunkan
+BG_BASE = 22.0        # lantai/dinding paling gelap setelah diturunkan
+BG_SLOPE = 0.37       # seberapa banyak kecerahan latar dipadatkan
+BG_SAT = 0.72         # latar dibuat kalem, tidak ungu menyala
+BG_DARK_LUMA = 25     # di bawah ini latar digeser sedikit ke atas
+BG_DARK_GAIN = 1.25
+BG_DARK_ADD = 7.0
+
+
+def restyle_background(im):
+    """Samakan latar (dinding + lantai) dengan acuan: biru-tuli gelap, kalem.
+
+    Hanya piksel kebiruan yang terang (lantai, panel dinding) yang dipadatkan;
+    objek hangat (kayu, lampu, kertas) dan bayangan gelap tidak diusik, jadi tidak
+    ada kotak-kotak bekas masking.
+    """
+    px = im.load()
+    w, h = im.size
+    cache = {}
+    for y in range(h):
+        for x in range(w):
+            p = px[x, y]
+            c = cache.get(p)
+            if c is None:
+                r, g, b = p
+                luma = 0.299 * r + 0.587 * g + 0.114 * b
+                hh, s, _v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+                if b > r and luma < BG_DARK_LUMA:
+                    # dinding/bayangan yang nyaris hitam dinaikkan sedikit supaya
+                    # panel dinding masih terbaca seperti di acuan
+                    k = (luma * BG_DARK_GAIN + BG_DARK_ADD) / max(luma, 1.0)
+                    c = (min(255, int(r * k)), min(255, int(g * k)), min(255, int(b * k)))
+                elif b > r + 20 and s >= 0.30 and luma >= BG_LUMA_FLOOR:
+                    nl = BG_BASE + BG_SLOPE * luma
+                    k = nl / luma
+                    nr, ng, nb = r * k, g * k, b * k
+                    hh2, _, _ = colorsys.rgb_to_hsv(nr / 255, ng / 255, nb / 255)
+                    rr, gg, bb = colorsys.hsv_to_rgb(hh2, s * BG_SAT, max(nr, ng, nb) / 255)
+                    c = (int(rr * 255), int(gg * 255), int(bb * 255))
+                else:
+                    c = p
+                cache[p] = c
+            px[x, y] = c
+    return im
+
+
 def load_scene():
     """Gambar scene siap pakai: warna digrade, muka jam dikosongkan."""
     raw = Image.open(ART).convert("RGB")
     spans = cream_mask(raw, CLOCK_BOX)          # deteksi di gambar asli
-    im = grade(raw)
+    im = restyle_background(grade(raw))
     cream = _avg_cream(im, spans)
     px = im.load()
     for y, (a, b) in spans.items():
