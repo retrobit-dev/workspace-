@@ -258,8 +258,9 @@ private fun LiveWallClock(box: SceneBox, onTap: () -> Unit) {
     }
 }
 
-private const val MONTHS_SHORT = "JAN,FEB,MAR,APR,MEI,JUN,JUL,AGU,SEP,OKT,NOV,DES"
-private const val DAYS_SHORT = "SEN,SEL,RAB,KAM,JUM,SAB,MIN"
+private val MONTHS_SHORT = listOf("JAN", "FEB", "MAR", "APR", "MEI", "JUN",
+    "JUL", "AGU", "SEP", "OKT", "NOV", "DES")
+private val DAYS_SHORT = listOf("SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN")
 
 /**
  * Kalender meja: kertasnya menampilkan bulan, tanggal, dan nama hari hari ini.
@@ -268,7 +269,7 @@ private const val DAYS_SHORT = "SEN,SEL,RAB,KAM,JUM,SAB,MIN"
 private fun LiveCalendar(box: SceneBox, onTap: () -> Unit) {
     val nowMs = rememberNowMs()
     val today = remember(nowMs) { LocalDate.now() }
-    val month = MONTHS_SHORT.split(",")[today.monthValue - 1]
+    val month = MONTHS_SHORT[today.monthValue - 1]
     val weekday = DAYS_SHORT[today.dayOfWeek.value - 1]
     val x = CALENDAR_FACE[0]
     val y = CALENDAR_FACE[1]
