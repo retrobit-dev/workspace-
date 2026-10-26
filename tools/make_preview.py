@@ -46,7 +46,7 @@ def parse_data():
         icons.append({"name": name, "bg": bg, "shapes": shapes})
 
     return (scene_w, scene_h, tiles, rect("CLOCK_FACE"), rect("CALENDAR_QUAD"),
-            rect("LED_RECT"), rect("WINDOW_QUAD"),
+            rect("LED_QUAD"), rect("WINDOW_QUAD"),
             [[int(v) for v in q.split(",")] for q in re.findall(
                 r'intArrayOf\(([\d,\s]+)\)', s_after(src, "val FRAME_QUADS"))],
             icons)
@@ -139,10 +139,11 @@ HTML = """<!DOCTYPE html>
     pointer-events:none;white-space:nowrap}
   #cal .m,#cal .w{opacity:.9}
 
-  /* layar jam digital di dinding, di bawah jam analog (kotak tegak lurus) */
-  #led{position:absolute;display:flex;align-items:center;justify-content:center;
-    background:#07060F;color:#D7F7CD;font-weight:700;line-height:1;
-    letter-spacing:0;pointer-events:none;white-space:nowrap;overflow:hidden}
+  /* layar jam digital: digit menempel pada bidang miring panel, tanpa kotak */
+  #led{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;
+    align-items:center;justify-content:center;background:transparent;
+    color:#D7F7CD;font-weight:700;line-height:1;letter-spacing:0;
+    pointer-events:none;white-space:nowrap;overflow:hidden}
 
   /* lapisan vektor: ikon bingkai + gorden baterai, dalam koordinat scene */
   #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
@@ -216,7 +217,7 @@ HTML = """<!DOCTYPE html>
 const SCENE = {w: __SCENE_W__, h: __SCENE_H__};
 const CLOCK_FACE = __CLOCK__;
 const CAL_QUAD = __CALQUAD__;
-const LED_RECT = __LEDRECT__;
+const LED_QUAD = __LEDQUAD__;
 const WINDOW_QUAD = __WINDOWQUAD__;
 const TILES = __TILES__;
 
@@ -323,10 +324,20 @@ function drawCurtain() {
   const brx = bx + (dx - bx) * cover, bry = by + (dy - by) * cover;
   curtainEl.setAttribute("points",
     [ax, ay, bx, by, brx, bry, blx, bly].map((v) => v.toFixed(1)).join(" "));
-  curtainEl.setAttribute("fill", batteryLevel <= 15 ? "#8C3B45" : batteryLevel <= 40 ? "#8A525A" : "#8F6A72");
+  curtainEl.setAttribute("fill", batteryLevel <= 15 ? "#8E4A4E" : batteryLevel <= 40 ? "#9A6567" : "#A9888A");
   let g = "";
-  for (let i = 1; i <= 3; i++) {
-    const t = i / 4;
+  // lipatan kain: pita gelap-terang bergantian
+  for (let i = 0; i < 5; i += 2) {
+    const t0 = i / 5, t1 = (i + 1) / 5;
+    const p1 = [ax + (bx - ax) * t0, ay + (by - ay) * t0];
+    const p2 = [ax + (bx - ax) * t1, ay + (by - ay) * t1];
+    const p3 = [blx + (brx - blx) * t1, bly + (bry - bly) * t1];
+    const p4 = [blx + (brx - blx) * t0, bly + (bry - bly) * t0];
+    g += '<polygon points="' + [p1, p2, p3, p4].map((p) => p.map((v) => v.toFixed(1)).join(",")).join(" ") +
+         '" fill="#000" fill-opacity=".10"/>';
+  }
+  for (let i = 1; i <= 5; i++) {
+    const t = i / 6;
     const x1 = ax + (bx - ax) * t, y1 = ay + (by - ay) * t;
     const x2 = blx + (brx - blx) * t, y2 = bly + (bry - bly) * t;
     g += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
@@ -359,14 +370,13 @@ setInterval(tick, 1000);
 function fitFaces() {
   const u = (stage.clientWidth || SCENE.w) / SCENE.w;
   const calH = placeOnPlane(calEl, CAL_QUAD, u);
-  place(ledEl, LED_RECT[0], LED_RECT[1], LED_RECT[2], LED_RECT[3]);
+  const ledH = placeOnPlane(ledEl, LED_QUAD, u);
   const calFont = (f) => (calH * u * f).toFixed(2) + "px";
   calEl.querySelector(".m").style.fontSize = calFont(0.22);
   calEl.querySelector(".d").style.fontSize = calFont(0.46);
   calEl.querySelector(".w").style.fontSize = calFont(0.22);
   const ledW = parseFloat(ledEl.style.width);
-  const ledH = parseFloat(ledEl.style.height);
-  ledEl.style.fontSize = Math.min(ledH * 0.60, (ledW * 0.86) / 5.0).toFixed(2) + "px";
+  ledEl.style.fontSize = Math.min(ledH * u * 0.86, (ledW * 0.92) / 5.0).toFixed(2) + "px";
 }
 fitFaces();
 window.addEventListener("resize", fitFaces);
@@ -399,7 +409,7 @@ def main() -> None:
         .replace("__SCENE_H__", str(scene_h))
         .replace("__CLOCK__", str(clock).replace(" ", ""))
         .replace("__CALQUAD__", str(cal_quad).replace(" ", ""))
-        .replace("__LEDRECT__", str(led_rect).replace(" ", ""))
+        .replace("__LEDQUAD__", str(led_rect).replace(" ", ""))
         .replace("__WINDOWQUAD__", str(window_quad).replace(" ", ""))
         .replace("__ICONS__", icon_svg(frames, icons, scene_w, scene_h))
         .replace("__TILES__", "[\n" + "".join(

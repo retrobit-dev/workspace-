@@ -331,28 +331,17 @@ private fun LiveFaces(box: SceneBox, level: Int) {
         drawCircle(color = Coral, radius = w * 0.025f, center = Offset(cx, cy))
 
         // ---------- layar jam digital (jam:menit:detik) ----------
-        // kotaknya tegak lurus layar, jadi memakai kotak biasa — bukan bidang miring.
-        val lx = box.x(LED_RECT[0]).toPx()
-        val ly = box.y(LED_RECT[1]).toPx()
-        val lw = box.w(LED_RECT[2]).toPx()
-        val lh = box.h(LED_RECT[3]).toPx()
-        drawRect(color = Color(0xFF07060F), topLeft = Offset(lx, ly), size = Size(lw, lh))
-
+        // digit digambar mengikuti bidang panel; tanpa kotak tambahan supaya
+        // tidak ada bagian yang menonjol keluar dari panel kayu.
+        val led = planeOf(box, LED_QUAD, this)
         val digital = "%02d:%02d:%02d".format(time.hour, time.minute, time.second)
         paint.color = ScreenGreen.toArgb()
         paint.typeface = typeface
         paint.textAlign = Paint.Align.CENTER
-        paint.textSize = lh * 0.60f
+        paint.textSize = led.height * 0.86f
         val measured = paint.measureText(digital)
-        if (measured > lw * 0.86f) paint.textSize *= lw * 0.86f / measured
-        drawIntoCanvas { canvas ->
-            canvas.nativeCanvas.drawText(
-                digital,
-                lx + lw / 2f,
-                ly + lh / 2f - (paint.ascent() + paint.descent()) / 2f,
-                paint
-            )
-        }
+        if (measured > led.width * 0.92f) paint.textSize *= led.width * 0.92f / measured
+        drawOnPlane(led, paint, digital, led.height * 0.78f)
 
         // ---------- kalender: bulan, tanggal, hari ----------
         val cal = planeOf(box, CALENDAR_QUAD, this)
@@ -429,10 +418,11 @@ private fun DrawScope.drawBatteryCurtain(box: SceneBox, level: Int) {
     val bottomL = lerp(tl, bl, cover)
     val bottomR = lerp(tr, br, cover)
 
+    // warna mengikuti kain gorden di gambar, memerah saat baterai kritis
     val fabric = when {
-        level <= 15 -> Color(0xFF8C3B45)
-        level <= 40 -> Color(0xFF8A525A)
-        else -> Color(0xFF8F6A72)
+        level <= 15 -> Color(0xFF8E4A4E)
+        level <= 40 -> Color(0xFF9A6567)
+        else -> Color(0xFFA9888A)
     }
     val cloth = Path().apply {
         moveTo(tl.x, tl.y); lineTo(tr.x, tr.y)
@@ -440,10 +430,22 @@ private fun DrawScope.drawBatteryCurtain(box: SceneBox, level: Int) {
     }
     drawPath(cloth, fabric.copy(alpha = 0.95f))
 
-    for (i in 1..3) {
-        val t = i / 4f
+    // lipatan kain: pita gelap-terang bergantian supaya terbaca sebagai gorden
+    for (i in 0 until 5) {
+        if (i % 2 != 0) continue
+        val t0 = i / 5f
+        val t1 = (i + 1) / 5f
+        val band = Path().apply {
+            val a = lerp(tl, tr, t0); val b = lerp(tl, tr, t1)
+            val c = lerp(bottomL, bottomR, t1); val e = lerp(bottomL, bottomR, t0)
+            moveTo(a.x, a.y); lineTo(b.x, b.y); lineTo(c.x, c.y); lineTo(e.x, e.y); close()
+        }
+        drawPath(band, Color(0x1A000000))
+    }
+    for (i in 1..5) {
+        val t = i / 6f
         drawLine(
-            color = Color(0x33000000),
+            color = Color(0x26000000),
             start = lerp(tl, tr, t),
             end = lerp(bottomL, bottomR, t),
             strokeWidth = max(1f, box.unit.toPx() * 0.8f)

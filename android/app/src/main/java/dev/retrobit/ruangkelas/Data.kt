@@ -236,8 +236,11 @@ val CLOCK_FACE = intArrayOf(901, 88, 70, 96)
  */
 val CALENDAR_QUAD = intArrayOf(1084, 424, 1130, 445, 1075, 462, 1121, 483)
 
-/** Layar jam digital yang menempel di dinding, tepat di bawah jam analog. */
-val LED_RECT = intArrayOf(889, 218, 80, 63)
+/**
+ * Layar jam digital yang menempel di dinding, tepat di bawah jam analog.
+ * Bidangnya miring mengikuti muka panel (kiri-atas, kanan-atas, kiri-bawah).
+ */
+val LED_QUAD = intArrayOf(887, 211, 971, 252, 887, 245)
 
 /** Kertas di dalam lima bingkai (kiri-atas, kanan-atas, kiri-bawah). */
 val FRAME_QUADS = listOf(

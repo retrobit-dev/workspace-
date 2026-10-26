@@ -19,9 +19,9 @@ const sceneOf = (name) => +data.match(new RegExp(`const val ${name} = (\\d+)`))[
 const SCENE = { w: sceneOf("SCENE_W"), h: sceneOf("SCENE_H") };
 const CLOCK = rect("CLOCK_FACE");
 const CAL_Q = rect("CALENDAR_QUAD");
-const LED_R = rect("LED_RECT");
+const LED_Q = rect("LED_QUAD");
 const WINDOW_Q = rect("WINDOW_QUAD");
-const FRAME_Q = [...data.matchAll(/intArrayOf\((\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)/g)]
+const FRAME_Q = [...(data.slice(data.indexOf("val FRAME_QUADS")).matchAll(/intArrayOf\((\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)/g))]
   .map((m) => [+m[1], +m[2], +m[3], +m[4], +m[5], +m[6]]);
 
 let errors = 0;
@@ -80,19 +80,7 @@ function checkPlane(el, name, q) {
 }
 checkPlane(document.getElementById("cal"), "cal", CAL_Q);
 
-// layar jam digital: kotak tegak lurus (bukan bidang miring)
-const ledBox = document.getElementById("led");
-if (!ledBox) fail("#led tidak ada");
-else {
-  const want = {
-    left: (LED_R[0] / SCENE.w) * 100, top: (LED_R[1] / SCENE.h) * 100,
-    width: (LED_R[2] / SCENE.w) * 100, height: (LED_R[3] / SCENE.h) * 100,
-  };
-  for (const k of Object.keys(want)) {
-    if (!close(ledBox.style[k], want[k])) fail(`led.${k}: ${ledBox.style[k]} != ${want[k].toFixed(4)}%`);
-  }
-  if ((ledBox.style.transform || "") !== "") fail("led masih memakai transform miring");
-}
+checkPlane(document.getElementById("led"), "led", LED_Q);
 
 // ikon bingkai: lima latar + banyak sel
 const icons = document.querySelectorAll("#fx polygon");
