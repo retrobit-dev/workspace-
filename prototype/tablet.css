@@ -763,3 +763,19 @@ body.scanlines .tablet-screen::after { opacity: 1; }
 
 /* mode inspeksi: LED tetap terlihat tapi kotak tap jelas */
 .scene.inspect .tile-led { background: rgba(242, 171, 63, 0.14); box-shadow: inset 0 0 0 2px rgba(242, 171, 63, 0.95); }
+
+/* ---------- elemen yang kini bisa diklik -------------------------------- */
+
+.journal-item:hover { background: var(--panel); }
+.lesson:hover { background: rgba(255, 255, 255, 0.04); }
+.lesson.is-now:hover { background: rgba(242, 171, 63, 0.14); }
+.note:hover { background: var(--panel); }
+.ctx-event:hover { background: rgba(255, 255, 255, 0.05); }
+.nm:hover { color: var(--amber) !important; }
+.badge:hover { background: var(--panel-2); }
+.today:hover { background: var(--panel); }
+.stat[data-goto]:hover { background: var(--panel); }
+.journal-item:focus-visible,
+.lesson:focus-visible,
+.ctx-event:focus-visible,
+.today:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }

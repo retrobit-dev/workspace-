@@ -546,7 +546,7 @@ function renderContext() {
     agenda.innerHTML = events.length
       ? events.sort((a, b) => (a.time > b.time ? 1 : -1)).map((e) => {
           const kind = EVENT_KIND[e.jenis] || EVENT_KIND.kegiatan;
-          return `<div class="ctx-event">
+          return `<div class="ctx-event" data-date-ctx="${e.date}" role="button" tabindex="0" style="cursor:pointer">
               <span class="t">${e.time}</span>
               <span class="b"><b>${e.title}</b><span>${kind.label}</span></span>
             </div>`;
@@ -578,7 +578,7 @@ function renderJurnal() {
     const tone = i % 4 === 1 ? "b" : i % 4 === 2 ? "c" : i % 4 === 3 ? "d" : "";
     const d = dateParts(j.date);
     return `
-      <article class="journal-item">
+      <article class="journal-item" data-journal="${j.id}" role="button" tabindex="0" style="cursor:pointer">
         <div class="date-badge"><b>${d.num}</b><span>${d.mon}</span></div>
         <div class="journal-body">
           <div class="line1">
@@ -616,7 +616,7 @@ function renderCatatan() {
   }
 
   list.innerHTML = rows.map((n) => `
-    <article class="note ${NOTE_COLOR[n.color] || ""}">
+    <article class="note ${NOTE_COLOR[n.color] || ""}" data-note="${n.id}" style="cursor:pointer">
       <button class="pin" data-pin="${n.id}" aria-pressed="${!!n.pinned}" aria-label="Sematkan catatan">
         <span class="ico" data-icon="pin" data-size="13"></span>
       </button>
@@ -687,7 +687,7 @@ function renderAbsensi() {
   $("#studentList").innerHTML = STUDENTS.map((nama, i) => `
     <div class="student-row">
       <span class="num">${String(i + 1).padStart(2, "0")}</span>
-      <span class="nm">${nama}</span>
+      <button class="nm" data-student="${i}" style="border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;padding:0">${nama}</button>
       <span class="status-group" data-index="${i}">
         ${Object.keys(STATUS_LABEL).map((k) => `
           <button class="st ${statuses[i] === k ? STATUS_CLASS[k] : ""}"
@@ -730,8 +730,8 @@ function updateSummary() {
 function renderJadwal() {
   const lessons = JADWAL[state.day] || [];
   $("#lessonList").innerHTML = lessons.length
-    ? lessons.map((l) => `
-        <div class="lesson ${l.now ? "is-now" : ""}">
+    ? lessons.map((l, i) => `
+        <div class="lesson ${l.now ? "is-now" : ""}" data-lesson="${i}" role="button" tabindex="0" style="cursor:pointer">
           <div class="clock">${l.time}<span>${l.end}</span></div>
           <div class="body">
             <h4>IPA · ${l.kelas}</h4>
@@ -1152,6 +1152,97 @@ function submitDialog() {
   if (result !== false) closeDialog();
 }
 
+/* --------------------------- dialog detail ----------------------------- */
+
+function journalDialog(j) {
+  const d = dateParts(j.date);
+  const pct = Math.round((j.hadir / j.total) * 100);
+  openDialog("DETAIL JURNAL " + j.kelas, [], null, null, `
+    <div class="result-box" style="margin-bottom:10px">
+      <span class="big" style="font-size:26px">${pct}%</span>
+      <span class="info">
+        <b>${j.materi}</b>
+        <span>${d.num} ${d.mon} · JAM KE-${j.jam} · ${j.time}</span>
+        <span>${j.hadir} DARI ${j.total} SISWA HADIR</span>
+      </span>
+    </div>
+    <p style="font-size:13px;line-height:1.65;margin:0 0 12px">${j.note}</p>
+    <div class="dialog-actions">
+      <button class="btn ghost" data-close-dialog>Batal</button>
+      <button class="btn ghost" data-goto="absensi">Absensi</button>
+      <button class="btn" id="journalDelete">Hapus Catatan</button>
+    </div>`);
+
+  $("#journalDelete").addEventListener("click", () => {
+    state.jurnal = state.jurnal.filter((x) => x.id !== j.id);
+    renderJurnal(); renderHomeMeta(); persist(); closeDialog(); toast("CATATAN JURNAL DIHAPUS");
+  });
+}
+
+function lessonDialog(l) {
+  openDialog(`IPA · ${l.kelas}`, [], null, null, `
+    <div class="result-box" style="margin-bottom:10px">
+      <span class="big" style="font-size:24px">${l.time}</span>
+      <span class="info">
+        <b>${l.room} · ${l.materi}</b>
+        <span>${state.day.toUpperCase()} · ${l.time}–${l.end}</span>
+        <span>${l.now ? "SEDANG BERLANGSUNG" : "AKAN DATANG"}</span>
+      </span>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn ghost" data-close-dialog>Batal</button>
+      <button class="btn ghost" data-goto="absensi">Absensi</button>
+      <button class="btn" id="lessonJurnal">Catat Jurnal</button>
+    </div>`);
+
+  $("#lessonJurnal").addEventListener("click", () => {
+    closeDialog();
+    openJournal();
+    $("#fKelas").value = l.kelas;
+    $("#fMateri").value = l.materi;
+  });
+}
+
+function studentDialog(i) {
+  const nama = STUDENTS[i];
+  const status = state.absensi[state.absClass][i];
+  const nilai = state.nilai[state.absClass][i];
+  const total = nilai ? naOf(nilai) : null;
+  openDialog(nama.toUpperCase(), [], null, null, `
+    <div class="result-box" style="margin-bottom:10px">
+      <span class="big ${total !== null && total < KKM ? "bad" : ""}" style="font-size:26px">${total ?? "—"}</span>
+      <span class="info">
+        <b>KELAS ${state.absClass} · NA IPA</b>
+        <span>TUGAS ${nilai ? nilai.tugas : "—"} · UTS ${nilai ? nilai.uts : "—"} · UAS ${nilai ? nilai.uas : "—"}</span>
+        <span>STATUS HARI INI: ${STATUS_LABEL[status].toUpperCase()}</span>
+      </span>
+    </div>
+    <div class="dialog-actions">
+      <button class="btn ghost" data-close-dialog>Batal</button>
+      <button class="btn ghost" id="studentHadir">Tandai Hadir</button>
+      <button class="btn" data-goto="nilai">Buka Nilai</button>
+    </div>`);
+
+  $("#studentHadir").addEventListener("click", () => {
+    state.absensi[state.absClass][i] = "H";
+    renderAbsensi(); persist(); closeDialog(); toast(`${nama.toUpperCase()} DITANDAI HADIR`);
+  });
+}
+
+function badgeDialog(label) {
+  const unlocked = ["100 JURNAL", "30 HARI", "SIGAP"].includes(label);
+  openDialog("LENCANA " + label, [], null, null, `
+    <div class="result-box" style="margin-bottom:10px">
+      <span class="big ${unlocked ? "" : "bad"}" style="font-size:24px">${unlocked ? "★" : "?"}</span>
+      <span class="info">
+        <b>${unlocked ? "SUDAH TERBUKA" : "BELUM TERBUKA"}</b>
+        <span>${unlocked ? "Lencana ini bertahan selama semester berjalan." : "Selesaikan targetnya untuk membuka lencana."}</span>
+        <span>3 DARI 8 LENCANA TERBUKA</span>
+      </span>
+    </div>
+    <div class="dialog-actions"><button class="btn" data-close-dialog>Mengerti</button></div>`);
+}
+
 /* -------------------------------- sheet -------------------------------- */
 
 function openJournal() { $("#journalSheet").classList.add("open"); setTimeout(() => $("#fMateri")?.focus(), 60); }
@@ -1335,6 +1426,13 @@ function initEvents() {
       if (note) { note.pinned = !note.pinned; renderCatatan(); persist(); toast(note.pinned ? "CATATAN DISEMATKAN" : "SEMATAN DILEPAS"); }
       return;
     }
+    const card = e.target.closest("[data-note]");
+    if (card && !e.target.closest(".pin, [data-note-del], [data-note-edit], .btn")) {
+      const note = state.notes.find((n) => n.id === Number(card.dataset.note));
+      if (note) noteDialog(note);
+      return;
+    }
+
     const edit = e.target.closest("[data-note-edit]");
     if (edit) {
       const note = state.notes.find((n) => n.id === Number(edit.dataset.noteEdit));
@@ -1369,11 +1467,21 @@ function initEvents() {
   });
 
   $("#studentList").addEventListener("click", (e) => {
+    const nameBtn = e.target.closest("[data-student]");
+    if (nameBtn) { studentDialog(Number(nameBtn.dataset.student)); return; }
+
     const btn = e.target.closest(".st");
     if (!btn) return;
     const index = Number(btn.closest(".status-group").dataset.index);
     state.absensi[state.absClass][index] = btn.dataset.status;
     renderAbsensi();
+  });
+
+  $("#journalList").addEventListener("click", (e) => {
+    const item = e.target.closest("[data-journal]");
+    if (!item) return;
+    const j = state.jurnal.find((x) => x.id === Number(item.dataset.journal));
+    if (j) journalDialog(j);
   });
 
   $("#saveAbsensi").addEventListener("click", () => {
@@ -1411,6 +1519,13 @@ function initEvents() {
   });
 
   /* jadwal */
+  $("#lessonList").addEventListener("click", (e) => {
+    const row = e.target.closest("[data-lesson]");
+    if (!row) return;
+    const lesson = (JADWAL[state.day] || [])[Number(row.dataset.lesson)];
+    if (lesson) lessonDialog(lesson);
+  });
+
   $("#dayTabs").addEventListener("click", (e) => {
     const btn = e.target.closest("button");
     if (!btn) return;
@@ -1511,6 +1626,23 @@ function initEvents() {
     if (!card) return;
     const doc = state.docs.find((d) => d.id === Number(card.dataset.doc));
     if (doc) docDialog(doc);
+  });
+
+  /* agenda di panel konteks */
+  $("#ctxAgenda").addEventListener("click", (e) => {
+    const ev = e.target.closest("[data-date-ctx]");
+    if (!ev) return;
+    state.calSelected = ev.dataset.dateCtx;
+    const d = new Date(`${state.calSelected}T00:00:00`);
+    state.calMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    showScreen("kalender");
+    renderKalender();
+  });
+
+  /* lencana profil */
+  $$("#phoneScreen .badge").forEach((b) => {
+    b.style.cursor = "pointer";
+    b.addEventListener("click", () => badgeDialog(b.textContent.replace(/\s+/g, " ").trim()));
   });
 
   /* kelas cepat (panel konteks) */

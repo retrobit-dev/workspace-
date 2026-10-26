@@ -1,9 +1,10 @@
 {
   "name": "ruang-kelas",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
-  "description": "Prototipe UI/UX aplikasi native Android (tablet landscape) untuk guru, bergaya pixel art 32 px.",
+  "description": "Preview HTML interaktif (satu file) aplikasi guru tablet landscape bergaya pixel art 32 px.",
   "scripts": {
-    "start": "python3 -m http.server 4173 --bind 0.0.0.0 --directory prototype"
+    "start": "python3 -m http.server 4173 --bind 0.0.0.0 --directory prototype",
+    "build": "node build.js"
   }
 }

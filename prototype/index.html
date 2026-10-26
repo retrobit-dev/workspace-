@@ -185,7 +185,7 @@
                     </div>
 
                     <div class="quick-stats">
-                      <div class="stat amber"><b>3</b><span>Kelas hari ini</span></div>
+                      <button class="stat amber" data-goto="jadwal"><b>3</b><span>Kelas hari ini</span></button>
                       <button class="stat mint" data-goto="kelas"><b>96</b><span>Total siswa</span></button>
                       <button class="stat sky" data-goto="catatan"><b id="noteCount">6</b><span>Catatan aktif</span></button>
                       <button class="stat" data-goto="binder"><b id="docCount">7</b><span>Dokumen binder</span></button>
@@ -238,7 +238,7 @@
                           <h3>Berikutnya</h3>
                           <button class="more" data-goto="jadwal">JADWAL →</button>
                         </div>
-                        <div class="today">
+                        <div class="today" data-goto="jadwal" role="button" tabindex="0" style="cursor:pointer">
                           <span class="time">09:15</span>
                           <span class="bar"></span>
                           <span class="info"><b>IPA · Kelas 8A</b><span>LAB SAINS · 09:15–10:35</span></span>
@@ -595,9 +595,9 @@
                           </div>
                         </div>
                         <div class="quick-stats" style="margin:0 0 4px">
-                          <div class="stat amber"><b>128</b><span>Jurnal</span></div>
-                          <div class="stat mint"><b>740</b><span>XP</span></div>
-                          <div class="stat sky"><b>4</b><span>Kelas</span></div>
+                          <button class="stat amber" data-goto="jurnal"><b>128</b><span>Jurnal</span></button>
+                          <button class="stat mint" data-goto="binder"><b>740</b><span>XP</span></button>
+                          <button class="stat sky" data-goto="kelas"><b>4</b><span>Kelas</span></button>
                         </div>
                         <div class="section-head"><h3>Lencana</h3><span class="more" style="cursor:default">3 / 8</span></div>
                         <div class="badge-grid">

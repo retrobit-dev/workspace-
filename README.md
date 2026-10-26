@@ -24,9 +24,30 @@ npm start          # python3 -m http.server 4173 → http://localhost:4173
 Atau buka `prototype/index.html` langsung (font & gambar lokal, tanpa internet).
 Toggle **Fokus tablet** di panel kiri menyembunyikan panel kontrol agar tampil penuh seperti di perangkat.
 
+## Preview satu file (paling praktis)
+
+`preview-ruang-kelas.html` adalah **satu file HTML mandiri** — CSS, JS, 6 font,
+2 scene, dan 11 tile sudah tertanam sebagai data URI. Bisa dikirim lewat WhatsApp/
+Google Drive, lalu dibuka langsung di browser tablet tanpa internet dan tanpa server.
+
+```bash
+node build.js     # atau: npm run build
+```
+
+Membuka file itu, seluruh elemen bisa diketuk: 11 objek di scene, rail 11 tujuan,
+kartu tool, kartu catatan, item jurnal (dialog detail + hapus), baris jadwal
+(dialog + "Catat Jurnal" yang otomatis mengisi form), nama siswa (dialog siswa),
+agenda di panel kanan (lompat ke tanggal), lencana, dan semua tombol aksi.
+Setiap aksi punya umpan balik toast, dan data tersimpan di `localStorage`.
+
+> Di server preview, file yang sama juga dilayani di `/preview-ruang-kelas.html`.
+> Ubah `prototype/` lalu jalankan `node build.js` lagi untuk memperbarui versi mandiri.
+
 ## Struktur
 
 ```
+preview-ruang-kelas.html       # hasil build: satu file, semua aset tertanam
+build.js                       # penggabung prototype/ → preview satu file
 prototype/
 ├── index.html                 # 11 layar, rail, panel konteks, Design Kit
 ├── styles.css                 # token desain + komponen dasar
