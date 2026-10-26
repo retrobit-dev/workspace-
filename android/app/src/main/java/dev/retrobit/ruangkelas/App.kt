@@ -52,7 +52,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             RuangKelasTheme {
-                val state = remember { AppState(applicationContext) }
+                val startScreen = intent?.getStringExtra("screen")
+                val state = remember {
+                    AppState(applicationContext).also { st ->
+                        if (!startScreen.isNullOrBlank()) {
+                            runCatching { st.screen = Scr.valueOf(startScreen.uppercase()) }
+                        }
+                    }
+                }
                 Root(state)
             }
         }
