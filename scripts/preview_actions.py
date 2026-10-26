@@ -86,6 +86,11 @@ def crashes() -> None:
         print("tidak ada crash", flush=True)
 
 
+def type_ascii(text: str) -> None:
+    """Ketik lewat adb input text (%s untuk spasi)."""
+    sh("adb shell input text " + repr(text).replace(" ", "%s"))
+
+
 def main() -> None:
     # 1. Jurnal: dialog -> isi materi -> simpan
     launch("JURNAL")
@@ -107,7 +112,30 @@ def main() -> None:
     shot("aksi-kalkulator")
     crashes()
 
-    # 3. Absensi: tandai sakit dua siswa
+    # 3. Catatan: tulis catatan baru (judul + isi)
+    launch("CATATAN")
+    tap_text("TULIS CATATAN")
+    tap_cls("EditText", 0)
+    sh('adb shell input text "Ide%skuis%scepat"')
+    time.sleep(0.8)
+    tap_cls("EditText", 1)
+    sh('adb shell input text "Tiga%ssoal%slisan%sdi%sakhir%spelajaran."')
+    time.sleep(0.8)
+    shot("aksi-form-catatan")
+    tap_text("SIMPAN", 0)
+    time.sleep(1.5)
+    shot("aksi-catatan-baru")
+    crashes()
+
+    # 4. Kalender: pilih tanggal lain lalu buka dialog agenda
+    launch("KALENDER")
+    tap_text("AGENDA", 0)
+    time.sleep(1.5)
+    shot("aksi-dialog-agenda")
+    tap_text("BATAL", 0)
+    crashes()
+
+    # 5. Absensi: tandai sakit dua siswa
     launch("ABSENSI")
     tap_text("S", 0)
     tap_text("S", 1)

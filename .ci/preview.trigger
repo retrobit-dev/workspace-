@@ -1,1 +1,1 @@
-run 02:40:49 calcfix2
+run 02:47:15 aksi2
