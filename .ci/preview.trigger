@@ -29,3 +29,4 @@ run 0.15.4: bukti emulator siang v2 — lampu mati tanpa artefak
 20261026T163302Z ulang-preview
 20261026T164722Z preview-art-bersih
 20261026T172031Z preview-0.15.7
+20261026T172851Z preview-0.15.7-retrigger
