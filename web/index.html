@@ -46,11 +46,13 @@
     pointer-events:none;white-space:nowrap}
   #cal .m,#cal .w{opacity:.9}
 
-  /* layar jam digital di dinding, di bawah jam analog */
-  #led{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;
-    align-items:center;justify-content:center;color:#D7F7CD;
-    font-weight:700;line-height:1;letter-spacing:1px;
-    pointer-events:none;white-space:nowrap}
+  /* layar jam digital di dinding, di bawah jam analog (kotak tegak lurus) */
+  #led{position:absolute;display:flex;align-items:center;justify-content:center;
+    background:#07060F;color:#D7F7CD;font-weight:700;line-height:1;
+    letter-spacing:0;pointer-events:none;white-space:nowrap;overflow:hidden}
+
+  /* lapisan vektor: ikon bingkai + gorden baterai, dalam koordinat scene */
+  #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 
   /* selaput suasana: pagi hangat, malam kebiruan */
   #tint{position:absolute;inset:0;pointer-events:none}
@@ -84,7 +86,7 @@
 </head>
 <body>
 <div id="stage">
-  <img id="scene" src="scene.png?v=0e1ba293cd" alt="Workspace guru malam hari" draggable="false">
+  <img id="scene" src="scene.png?v=ea6277f768" alt="Workspace guru malam hari" draggable="false">
   <div id="clock" role="img" aria-label="Jam analog">
     <svg viewBox="0 0 100 100" preserveAspectRatio="none">
       <g stroke="#0E0D1A" stroke-linecap="round">
@@ -101,6 +103,23 @@
     <span class="w" id="cal-w">SEN</span>
   </div>
   <div id="led" role="img" aria-label="Jam digital"><span id="led-t">00:00:00</span></div>
+  <svg id="fx" viewBox="0 0 1312 816" preserveAspectRatio="none">
+    <polygon points="59.00,237.00 98.00,217.00 98.00,279.00 59.00,299.00" fill="#1FBF5B"/>
+    <polygon points="66.80,244.16 90.20,232.16 90.20,259.44 76.94,266.24 70.70,280.60 71.09,269.24 66.80,271.44" fill="#FFFFFF"/>
+    <polygon points="143.00,196.00 183.00,175.00 183.00,236.00 143.00,257.00" fill="#E03A3A"/>
+    <polygon points="151.80,204.80 159.00,201.02 163.00,223.32 167.00,196.82 174.20,193.04 166.20,232.62 159.80,235.98" fill="#FFFFFF"/>
+    <polygon points="229.00,152.00 267.00,134.00 264.00,197.00 226.00,215.00" fill="#D63B32"/>
+    <polygon points="237.46,161.54 235.78,196.82 257.90,169.10" fill="#FFFFFF"/>
+    <polygon points="311.00,110.00 352.00,90.00 352.00,153.00 311.00,173.00" fill="#1DB954"/>
+    <polygon points="319.20,124.90 343.80,115.42 343.80,121.72 319.20,131.20" fill="#FFFFFF"/>
+    <polygon points="320.02,135.84 342.98,127.16 342.98,132.20 320.02,140.88" fill="#FFFFFF"/>
+    <polygon points="320.84,145.52 342.16,137.64 342.16,141.42 320.84,149.30" fill="#FFFFFF"/>
+    <polygon points="396.00,68.00 437.00,47.00 437.00,110.00 396.00,131.00" fill="#1E2C63"/>
+    <polygon points="416.50,67.58 428.80,68.84 428.80,85.22 416.50,109.16 404.20,97.82 404.20,81.44" fill="#FFFFFF"/>
+    <polygon points="416.50,76.40 423.06,78.08 423.06,86.90 416.50,99.08 409.94,93.62 409.94,84.80" fill="#1E2C63"/>
+    <polygon id="curtain" points="" fill="#8F6A72" fill-opacity=".95"/>
+    <g id="curtain-lines" stroke="#000" stroke-opacity=".2" stroke-width="1"></g>
+  </svg>
   <div id="tint"></div>
   <div id="scan"></div>
   <div id="toast" role="status" aria-live="polite"></div>
@@ -114,27 +133,28 @@
 
 <script>
 const SCENE = {w: 1312, h: 816};
-const CLOCK_FACE = [1067,108,71,93];
-const CAL_QUAD = [1144,394,1186,420,1130,428,1172,454];
-const LED_QUAD = [1042,237,1157,276,1042,279,1157,318];
+const CLOCK_FACE = [901,88,70,96];
+const CAL_QUAD = [1084,424,1130,445,1075,462,1121,483];
+const LED_RECT = [889,218,80,63];
+const WINDOW_QUAD = [1104,176,1200,206,1104,448,1200,478];
 const TILES = [
-  {label: "Jurnal", x: 925, y: 290, w: 160, h: 152},
-  {label: "Nilai", x: 870, y: 268, w: 105, h: 115},
-  {label: "Kalkulator", x: 1020, y: 418, w: 82, h: 60},
-  {label: "Alat Tulis", x: 1075, y: 345, w: 50, h: 80},
-  {label: "Kalender", x: 1122, y: 384, w: 80, h: 82},
-  {label: "Binder", x: 945, y: 483, w: 128, h: 95},
-  {label: "Absensi", x: 450, y: 145, w: 365, h: 220},
-  {label: "Catatan", x: 365, y: 28, w: 165, h: 235},
-  {label: "Jadwal", x: 1050, y: 92, w: 105, h: 125},
-  {label: "Profil", x: 930, y: 80, w: 90, h: 140},
-  {label: "Binder", x: 25, y: 310, w: 375, h: 350},
-  {label: "Kelas", x: 1235, y: 85, w: 77, h: 390},
-  {label: "Jurnal", x: 55, y: 396, w: 59, h: 79},
-  {label: "Nilai", x: 122, y: 368, w: 59, h: 81},
-  {label: "Absensi", x: 189, y: 336, w: 60, h: 80},
-  {label: "Kalender", x: 242, y: 307, w: 60, h: 80},
-  {label: "Kalkulator", x: 298, y: 280, w: 54, h: 70},
+  {label: "Jurnal", x: 690, y: 398, w: 250, h: 80},
+  {label: "Nilai", x: 752, y: 296, w: 132, h: 102},
+  {label: "Kalkulator", x: 938, y: 462, w: 66, h: 44},
+  {label: "Alat Tulis", x: 966, y: 376, w: 46, h: 60},
+  {label: "Kalender", x: 1066, y: 412, w: 104, h: 84},
+  {label: "Binder", x: 700, y: 538, w: 140, h: 152},
+  {label: "Absensi", x: 348, y: 118, w: 284, h: 364},
+  {label: "Catatan", x: 28, y: 240, w: 228, h: 240},
+  {label: "Jadwal", x: 884, y: 72, w: 110, h: 122},
+  {label: "Profil", x: 852, y: 92, w: 74, h: 104},
+  {label: "Binder", x: 18, y: 442, w: 306, h: 262},
+  {label: "Kelas", x: 1088, y: 118, w: 212, h: 358},
+  {label: "WhatsApp", x: 55, y: 214, w: 46, h: 88},
+  {label: "Vivaldi", x: 140, y: 173, w: 46, h: 88},
+  {label: "YouTube", x: 224, y: 131, w: 46, h: 88},
+  {label: "Spotify", x: 309, y: 88, w: 46, h: 88},
+  {label: "Sinaga Jateng", x: 394, y: 45, w: 46, h: 89},
 ];
 
 const stage = document.getElementById("stage");
@@ -142,6 +162,8 @@ const clockEl = document.getElementById("clock");
 const calEl = document.getElementById("cal");
 const ledEl = document.getElementById("led");
 const ledText = document.getElementById("led-t");
+const curtainEl = document.getElementById("curtain");
+const curtainLines = document.getElementById("curtain-lines");
 const tintEl = document.getElementById("tint");
 const toast = document.getElementById("toast");
 let toastTimer = 0;
@@ -220,6 +242,42 @@ function tick() {
     String(now.getMinutes()).padStart(2, "0") + ":" +
     String(now.getSeconds()).padStart(2, "0");
   tintEl.style.background = ambience(now.getHours());
+  drawCurtain();
+}
+
+/* ---- gorden jendela = penunjuk baterai ---- */
+let batteryLevel = 100;
+
+function drawCurtain() {
+  const [ax, ay, bx, by, cx, cy, dx, dy] = WINDOW_QUAD;
+  const cover = Math.max(0, Math.min(1, (100 - batteryLevel) / 100));
+  if (cover <= 0.001) {
+    curtainEl.setAttribute("points", "");
+    curtainLines.innerHTML = "";
+    return;
+  }
+  const blx = ax + (cx - ax) * cover, bly = ay + (cy - ay) * cover;
+  const brx = bx + (dx - bx) * cover, bry = by + (dy - by) * cover;
+  curtainEl.setAttribute("points",
+    [ax, ay, bx, by, brx, bry, blx, bly].map((v) => v.toFixed(1)).join(" "));
+  curtainEl.setAttribute("fill", batteryLevel <= 15 ? "#8C3B45" : batteryLevel <= 40 ? "#8A525A" : "#8F6A72");
+  let g = "";
+  for (let i = 1; i <= 3; i++) {
+    const t = i / 4;
+    const x1 = ax + (bx - ax) * t, y1 = ay + (by - ay) * t;
+    const x2 = blx + (brx - blx) * t, y2 = bly + (bry - bly) * t;
+    g += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
+         '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
+  }
+  curtainLines.innerHTML = g;
+}
+
+if (navigator.getBattery) {
+  navigator.getBattery().then((b) => {
+    const sync = () => { batteryLevel = Math.round(b.level * 100); drawCurtain(); };
+    sync();
+    b.addEventListener("levelchange", sync);
+  }).catch(() => {});
 }
 
 // suasana mengikuti jam: sama seperti ambienceOf() di Launcher.kt
@@ -238,14 +296,14 @@ setInterval(tick, 1000);
 function fitFaces() {
   const u = (stage.clientWidth || SCENE.w) / SCENE.w;
   const calH = placeOnPlane(calEl, CAL_QUAD, u);
-  const ledH = placeOnPlane(ledEl, LED_QUAD, u);
+  place(ledEl, LED_RECT[0], LED_RECT[1], LED_RECT[2], LED_RECT[3]);
   const calFont = (f) => (calH * u * f).toFixed(2) + "px";
   calEl.querySelector(".m").style.fontSize = calFont(0.22);
   calEl.querySelector(".d").style.fontSize = calFont(0.46);
   calEl.querySelector(".w").style.fontSize = calFont(0.22);
   const ledW = parseFloat(ledEl.style.width);
-  ledEl.style.fontSize =
-    Math.min(ledH * u * 0.62, (ledW * 0.86) / 5.0).toFixed(2) + "px";
+  const ledH = parseFloat(ledEl.style.height);
+  ledEl.style.fontSize = Math.min(ledH * 0.60, (ledW * 0.86) / 5.0).toFixed(2) + "px";
 }
 fitFaces();
 window.addEventListener("resize", fitFaces);

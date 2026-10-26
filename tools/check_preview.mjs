@@ -19,7 +19,10 @@ const sceneOf = (name) => +data.match(new RegExp(`const val ${name} = (\\d+)`))[
 const SCENE = { w: sceneOf("SCENE_W"), h: sceneOf("SCENE_H") };
 const CLOCK = rect("CLOCK_FACE");
 const CAL_Q = rect("CALENDAR_QUAD");
-const LED_Q = rect("LED_QUAD");
+const LED_R = rect("LED_RECT");
+const WINDOW_Q = rect("WINDOW_QUAD");
+const FRAME_Q = [...data.matchAll(/intArrayOf\((\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)/g)]
+  .map((m) => [+m[1], +m[2], +m[3], +m[4], +m[5], +m[6]]);
 
 let errors = 0;
 const fail = (msg) => { errors++; console.log("  ✗ " + msg); };
@@ -76,7 +79,28 @@ function checkPlane(el, name, q) {
   });
 }
 checkPlane(document.getElementById("cal"), "cal", CAL_Q);
-checkPlane(document.getElementById("led"), "led", LED_Q);
+
+// layar jam digital: kotak tegak lurus (bukan bidang miring)
+const ledBox = document.getElementById("led");
+if (!ledBox) fail("#led tidak ada");
+else {
+  const want = {
+    left: (LED_R[0] / SCENE.w) * 100, top: (LED_R[1] / SCENE.h) * 100,
+    width: (LED_R[2] / SCENE.w) * 100, height: (LED_R[3] / SCENE.h) * 100,
+  };
+  for (const k of Object.keys(want)) {
+    if (!close(ledBox.style[k], want[k])) fail(`led.${k}: ${ledBox.style[k]} != ${want[k].toFixed(4)}%`);
+  }
+  if ((ledBox.style.transform || "") !== "") fail("led masih memakai transform miring");
+}
+
+// ikon bingkai: lima latar + banyak sel
+const icons = document.querySelectorAll("#fx polygon");
+if (icons.length < 13) fail(`poligon ikon hanya ${icons.length} (harus 5 latar + 8 bentuk)`);
+if (FRAME_Q.length < 5) fail(`bingkai hanya ${FRAME_Q.length}`);
+
+// gorden baterai ada di lapisan vektor
+if (!document.getElementById("curtain")) fail("poligon gorden baterai tidak ada");
 
 if (!document.getElementById("hh").getAttribute("transform")) fail("jarum jam belum diset");
 if (!document.getElementById("mh").getAttribute("transform")) fail("jarum menit belum diset");
@@ -94,12 +118,18 @@ for (const id of ["cal-m", "cal-d", "cal-w"]) {
 const day = +document.getElementById("cal-d").textContent;
 if (day !== now.getDate()) fail(`tanggal kalender ${day} != hari ini ${now.getDate()}`);
 if (!document.getElementById("tint").style.background) fail("selaput suasana belum diset");
+if (!document.getElementById("led-t").textContent.trim()) fail("teks jam digital kosong");
 
 const labels = [...hotspots].map((e) => e.dataset.label);
 ["Kalkulator", "Alat Tulis", "Kalender", "Jadwal", "Profil"].forEach((k) => {
   if (!labels.includes(k)) fail(`hotspot "${k}" hilang`);
 });
-if (labels.filter((l) => l === "Kalender").length < 2) fail("pintasan bingkai kalender tidak ada");
+["WhatsApp", "Vivaldi", "YouTube", "Spotify", "Sinaga Jateng"].forEach((k) => {
+  if (!labels.includes(k)) fail(`bingkai aplikasi "${k}" hilang`);
+});
+if (labels.filter((l) => l === "Binder").length < 2) fail("hotspot rak & laci harus dua");
+if (FRAME_Q.length !== 5) fail(`bingkai harus 5, ada ${FRAME_Q.length}`);
+if (WINDOW_Q.length !== 8) fail("WINDOW_QUAD harus 8 angka");
 
 console.log(errors === 0
   ? `PREVIEW OK · ${hotspots.length} hotspot · jam ${led} · kalender ${day}/${now.getDate()} · bidang miring cocok`

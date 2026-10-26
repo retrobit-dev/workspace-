@@ -1,8 +1,14 @@
 package dev.retrobit.ruangkelas
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.Path
+import android.os.BatteryManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -96,6 +103,7 @@ fun LauncherScreen(
     state: AppState,
     onOpen: (TileInfo) -> Unit = {}
 ) {
+    val battery = rememberBatteryLevel()
     var caption by remember { mutableStateOf("") }
     var captionTick by remember { mutableStateOf(0) }
 
@@ -130,8 +138,8 @@ fun LauncherScreen(
             )
         }
 
-        // muka jam (analog + digital) dan kalender menggambar di atas gambar
-        LiveFaces(box = box)
+        // muka jam (analog + digital), kalender, ikon bingkai, dan gorden baterai
+        LiveFaces(box = box, level = battery)
 
         // suasana mengikuti jam perangkat
         Ambience()
@@ -141,7 +149,7 @@ fun LauncherScreen(
                 tile = tile,
                 box = box,
                 onTap = {
-                    caption = tile.label
+                    caption = if (tile.label == "Kelas") "${tile.label} · BATERAI $battery%" else tile.label
                     captionTick++
                     onOpen(tile)
                 }
@@ -189,6 +197,34 @@ private fun LauncherHotspot(
             )
             .clickable(interactionSource = source, indication = null) { onTap() }
     )
+}
+
+/**
+ * Persentase baterai perangkat, dipakai gorden jendela sebagai penunjuk.
+ * Mendengar ACTION_BATTERY_CHANGED, jadi angkanya ikut berubah saat dicas/dipakai.
+ */
+@Composable
+private fun rememberBatteryLevel(): Int {
+    val ctx = LocalContext.current
+    var level by remember { mutableStateOf(readBattery(ctx)) }
+    DisposableEffect(ctx) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                val l = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
+                if (l >= 0 && scale > 0) level = l * 100 / scale
+            }
+        }
+        ctx.registerReceiver(receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        onDispose { runCatching { ctx.unregisterReceiver(receiver) } }
+    }
+    return level
+}
+
+private fun readBattery(ctx: Context): Int {
+    val bm = ctx.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+    val level = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 100
+    return if (level in 0..100) level else 100
 }
 
 @Composable
@@ -249,7 +285,7 @@ private val FaceInk = Color(0xFF181430)
  * jadi ikut arah muka benda — bukan datar di atas gambar.
  */
 @Composable
-private fun LiveFaces(box: SceneBox) {
+private fun LiveFaces(box: SceneBox, level: Int) {
     val nowMs = rememberNowMs()
     val time = remember(nowMs) { LocalTime.now() }
     val today = remember(nowMs) { LocalDate.now() }
@@ -294,14 +330,28 @@ private fun LiveFaces(box: SceneBox) {
         drawCircle(color = Coral, radius = w * 0.025f, center = Offset(cx, cy))
 
         // ---------- layar jam digital (jam:menit:detik) ----------
-        val led = planeOf(box, LED_QUAD, this)
+        // kotaknya tegak lurus layar, jadi memakai kotak biasa — bukan bidang miring.
+        val lx = box.x(LED_RECT[0]).toPx()
+        val ly = box.y(LED_RECT[1]).toPx()
+        val lw = box.w(LED_RECT[2]).toPx()
+        val lh = box.h(LED_RECT[3]).toPx()
+        drawRect(color = Color(0xFF07060F), topLeft = Offset(lx, ly), size = Size(lw, lh))
+
         val digital = "%02d:%02d:%02d".format(time.hour, time.minute, time.second)
         paint.color = ScreenGreen.toArgb()
         paint.typeface = typeface
-        paint.textSize = led.height * 0.62f
+        paint.textAlign = Paint.Align.CENTER
+        paint.textSize = lh * 0.60f
         val measured = paint.measureText(digital)
-        if (measured > led.width * 0.86f) paint.textSize *= led.width * 0.86f / measured
-        drawOnPlane(led, paint, digital, led.height * 0.68f)
+        if (measured > lw * 0.86f) paint.textSize *= lw * 0.86f / measured
+        drawIntoCanvas { canvas ->
+            canvas.nativeCanvas.drawText(
+                digital,
+                lx + lw / 2f,
+                ly + lh / 2f - (paint.ascent() + paint.descent()) / 2f,
+                paint
+            )
+        }
 
         // ---------- kalender: bulan, tanggal, hari ----------
         val cal = planeOf(box, CALENDAR_QUAD, this)
@@ -320,7 +370,90 @@ private fun LiveFaces(box: SceneBox) {
 
         paint.textSize = cal.height * 0.22f
         drawOnPlane(cal, paint, weekday, cal.height * 0.99f)
+
+        // ---------- ikon aplikasi di lima bingkai ----------
+        APP_ICONS.forEachIndexed { i, icon ->
+            val q = FRAME_QUADS.getOrNull(i) ?: return@forEachIndexed
+            val plane = planeOf(box, q, this)
+            drawRect(
+                color = icon.bg.toPixelColor(),
+                topLeft = plane.tl,
+                size = Size(plane.width, plane.height)
+            )
+            icon.shapes.forEach { part -> drawIconShape(plane, part) }
+        }
+
+        // ---------- gorden jendela sebagai penunjuk baterai ----------
+        drawBatteryCurtain(box, level)
     }
+}
+
+/** "#RRGGBB" -> Color. */
+private fun String.toPixelColor(): Color =
+    Color(0xFF000000L or (removePrefix("#").toLongOrNull(16) ?: 0xFFFFFFL))
+
+/** Satu potongan ikon, digambar mengikuti vektor bidang bingkai (jadi ikut miring). */
+private fun DrawScope.drawIconShape(plane: Plane, part: IconShape) {
+    val u = plane.tr - plane.tl           // arah kanan kertas
+    val v = plane.bl - plane.tl           // arah bawah kertas
+    val pts = part.points
+    if (pts.size < 6) return
+    val cell = Path()
+    for (i in pts.indices step 2) {
+        val x = plane.tl.x + u.x * pts[i] + v.x * pts[i + 1]
+        val y = plane.tl.y + u.y * pts[i] + v.y * pts[i + 1]
+        if (i == 0) cell.moveTo(x, y) else cell.lineTo(x, y)
+    }
+    cell.close()
+    drawPath(cell, part.color.toPixelColor())
+}
+
+/**
+ * Gorden sebagai penunjuk baterai.
+ * Baterai penuh → gorden tergulung, jendela terbuka. Baterai menipis → kain
+ * turun menutup kaca. Warnanya ikut berubah saat baterai rendah.
+ */
+private fun DrawScope.drawBatteryCurtain(box: SceneBox, level: Int) {
+    if (level >= 100) return
+    val q = WINDOW_QUAD
+    val cover = (100 - level) / 100f
+
+    fun pt(i: Int) = Offset(box.x(q[i]).toPx(), box.y(q[i + 1]).toPx())
+    val tl = pt(0)
+    val tr = pt(2)
+    val bl = pt(4)
+    val br = pt(6)
+
+    fun lerp(a: Offset, b: Offset, t: Float) = Offset(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t)
+    val bottomL = lerp(tl, bl, cover)
+    val bottomR = lerp(tr, br, cover)
+
+    val fabric = when {
+        level <= 15 -> Color(0xFF8C3B45)
+        level <= 40 -> Color(0xFF8A525A)
+        else -> Color(0xFF8F6A72)
+    }
+    val cloth = Path().apply {
+        moveTo(tl.x, tl.y); lineTo(tr.x, tr.y)
+        lineTo(bottomR.x, bottomR.y); lineTo(bottomL.x, bottomL.y); close()
+    }
+    drawPath(cloth, fabric.copy(alpha = 0.95f))
+
+    for (i in 1..3) {
+        val t = i / 4f
+        drawLine(
+            color = Color(0x33000000),
+            start = lerp(tl, tr, t),
+            end = lerp(bottomL, bottomR, t),
+            strokeWidth = max(1f, box.unit.toPx() * 0.8f)
+        )
+    }
+    drawLine(
+        color = Color(0x66000000),
+        start = bottomL,
+        end = bottomR,
+        strokeWidth = max(1.5f, box.unit.toPx() * 1.4f)
+    )
 }
 
 /** Warna selaput suasana untuk satu jam tertentu. */

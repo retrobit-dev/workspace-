@@ -37,8 +37,48 @@ def parse_data():
             rf"val {name} = intArrayOf\(([^)]+)\)", src).group(1).split(",")
         ]
 
-    return (scene_w, scene_h, tiles, rect("CLOCK_FACE"),
-            rect("CALENDAR_QUAD"), rect("LED_QUAD"))
+    icons = []
+    for name, bg, body in re.findall(
+        r'AppIcon\("([^"]+)",\s*"([^"]+)",\s*listOf\((.*?)\)\)', src, re.S
+    ):
+        shapes = [{"color": c, "points": [float(v) for v in pts.replace(",", " ").split()]}
+                  for c, pts in re.findall(r'shape\("([^"]+)",\s*"([^"]+)"\)', body)]
+        icons.append({"name": name, "bg": bg, "shapes": shapes})
+
+    return (scene_w, scene_h, tiles, rect("CLOCK_FACE"), rect("CALENDAR_QUAD"),
+            rect("LED_RECT"), rect("WINDOW_QUAD"),
+            [[int(v) for v in q.split(",")] for q in re.findall(
+                r'intArrayOf\(([\d,\s]+)\)', s_after(src, "val FRAME_QUADS"))],
+            icons)
+
+
+def s_after(src, marker):
+    """Ambil potongan sumber setelah tanda tertentu (untuk blok FRAME_QUADS)."""
+    i = src.index(marker)
+    return src[i:src.index(")\n\n", i) + 1]
+
+
+def icon_svg(frames, icons, scene_w, scene_h):
+    """Ikon bingkai sebagai poligon SVG, langsung dalam koordinat scene."""
+    out = []
+    for frame, icon in zip(frames, icons):
+        ax, ay, bx, by, cx, cy = frame
+        ux, uy = bx - ax, by - ay
+        vx, vy = cx - ax, cy - ay
+
+        def to_scene(u, v):
+            return (ax + ux * u + vx * v, ay + uy * u + vy * v)
+
+        corners = [to_scene(0, 0), to_scene(1, 0), to_scene(1, 1), to_scene(0, 1)]
+        out.append('<polygon points="%s" fill="%s"/>' % (
+            " ".join(f"{x:.2f},{y:.2f}" for x, y in corners), icon["bg"]))
+        for part in icon["shapes"]:
+            pts = part["points"]
+            pairs = [(pts[i], pts[i + 1]) for i in range(0, len(pts) - 1, 2)]
+            out.append('<polygon points="%s" fill="%s"/>' % (
+                " ".join(f"{x:.2f},{y:.2f}" for x, y in (to_scene(u, v) for u, v in pairs)),
+                part["color"]))
+    return "\n    ".join(out)
 
 
 def make_scene(scene_w, scene_h):
@@ -99,11 +139,13 @@ HTML = """<!DOCTYPE html>
     pointer-events:none;white-space:nowrap}
   #cal .m,#cal .w{opacity:.9}
 
-  /* layar jam digital di dinding, di bawah jam analog */
-  #led{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;
-    align-items:center;justify-content:center;color:#D7F7CD;
-    font-weight:700;line-height:1;letter-spacing:1px;
-    pointer-events:none;white-space:nowrap}
+  /* layar jam digital di dinding, di bawah jam analog (kotak tegak lurus) */
+  #led{position:absolute;display:flex;align-items:center;justify-content:center;
+    background:#07060F;color:#D7F7CD;font-weight:700;line-height:1;
+    letter-spacing:0;pointer-events:none;white-space:nowrap;overflow:hidden}
+
+  /* lapisan vektor: ikon bingkai + gorden baterai, dalam koordinat scene */
+  #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 
   /* selaput suasana: pagi hangat, malam kebiruan */
   #tint{position:absolute;inset:0;pointer-events:none}
@@ -154,6 +196,11 @@ HTML = """<!DOCTYPE html>
     <span class="w" id="cal-w">SEN</span>
   </div>
   <div id="led" role="img" aria-label="Jam digital"><span id="led-t">00:00:00</span></div>
+  <svg id="fx" viewBox="0 0 __SCENE_W__ __SCENE_H__" preserveAspectRatio="none">
+    __ICONS__
+    <polygon id="curtain" points="" fill="#8F6A72" fill-opacity=".95"/>
+    <g id="curtain-lines" stroke="#000" stroke-opacity=".2" stroke-width="1"></g>
+  </svg>
   <div id="tint"></div>
   <div id="scan"></div>
   <div id="toast" role="status" aria-live="polite"></div>
@@ -169,7 +216,8 @@ HTML = """<!DOCTYPE html>
 const SCENE = {w: __SCENE_W__, h: __SCENE_H__};
 const CLOCK_FACE = __CLOCK__;
 const CAL_QUAD = __CALQUAD__;
-const LED_QUAD = __LEDQUAD__;
+const LED_RECT = __LEDRECT__;
+const WINDOW_QUAD = __WINDOWQUAD__;
 const TILES = __TILES__;
 
 const stage = document.getElementById("stage");
@@ -177,6 +225,8 @@ const clockEl = document.getElementById("clock");
 const calEl = document.getElementById("cal");
 const ledEl = document.getElementById("led");
 const ledText = document.getElementById("led-t");
+const curtainEl = document.getElementById("curtain");
+const curtainLines = document.getElementById("curtain-lines");
 const tintEl = document.getElementById("tint");
 const toast = document.getElementById("toast");
 let toastTimer = 0;
@@ -255,6 +305,42 @@ function tick() {
     String(now.getMinutes()).padStart(2, "0") + ":" +
     String(now.getSeconds()).padStart(2, "0");
   tintEl.style.background = ambience(now.getHours());
+  drawCurtain();
+}
+
+/* ---- gorden jendela = penunjuk baterai ---- */
+let batteryLevel = 100;
+
+function drawCurtain() {
+  const [ax, ay, bx, by, cx, cy, dx, dy] = WINDOW_QUAD;
+  const cover = Math.max(0, Math.min(1, (100 - batteryLevel) / 100));
+  if (cover <= 0.001) {
+    curtainEl.setAttribute("points", "");
+    curtainLines.innerHTML = "";
+    return;
+  }
+  const blx = ax + (cx - ax) * cover, bly = ay + (cy - ay) * cover;
+  const brx = bx + (dx - bx) * cover, bry = by + (dy - by) * cover;
+  curtainEl.setAttribute("points",
+    [ax, ay, bx, by, brx, bry, blx, bly].map((v) => v.toFixed(1)).join(" "));
+  curtainEl.setAttribute("fill", batteryLevel <= 15 ? "#8C3B45" : batteryLevel <= 40 ? "#8A525A" : "#8F6A72");
+  let g = "";
+  for (let i = 1; i <= 3; i++) {
+    const t = i / 4;
+    const x1 = ax + (bx - ax) * t, y1 = ay + (by - ay) * t;
+    const x2 = blx + (brx - blx) * t, y2 = bly + (bry - bly) * t;
+    g += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) +
+         '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
+  }
+  curtainLines.innerHTML = g;
+}
+
+if (navigator.getBattery) {
+  navigator.getBattery().then((b) => {
+    const sync = () => { batteryLevel = Math.round(b.level * 100); drawCurtain(); };
+    sync();
+    b.addEventListener("levelchange", sync);
+  }).catch(() => {});
 }
 
 // suasana mengikuti jam: sama seperti ambienceOf() di Launcher.kt
@@ -273,14 +359,14 @@ setInterval(tick, 1000);
 function fitFaces() {
   const u = (stage.clientWidth || SCENE.w) / SCENE.w;
   const calH = placeOnPlane(calEl, CAL_QUAD, u);
-  const ledH = placeOnPlane(ledEl, LED_QUAD, u);
+  place(ledEl, LED_RECT[0], LED_RECT[1], LED_RECT[2], LED_RECT[3]);
   const calFont = (f) => (calH * u * f).toFixed(2) + "px";
   calEl.querySelector(".m").style.fontSize = calFont(0.22);
   calEl.querySelector(".d").style.fontSize = calFont(0.46);
   calEl.querySelector(".w").style.fontSize = calFont(0.22);
   const ledW = parseFloat(ledEl.style.width);
-  ledEl.style.fontSize =
-    Math.min(ledH * u * 0.62, (ledW * 0.86) / 5.0).toFixed(2) + "px";
+  const ledH = parseFloat(ledEl.style.height);
+  ledEl.style.fontSize = Math.min(ledH * 0.60, (ledW * 0.86) / 5.0).toFixed(2) + "px";
 }
 fitFaces();
 window.addEventListener("resize", fitFaces);
@@ -302,7 +388,7 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 
 
 def main() -> None:
-    scene_w, scene_h, tiles, clock, cal_quad, led_quad = parse_data()
+    scene_w, scene_h, tiles, clock, cal_quad, led_rect, window_quad, frames, icons = parse_data()
     size = make_scene(scene_w, scene_h)
     scene_hash = hashlib.md5((WEB / "scene.png").read_bytes()).hexdigest()[:10]
 
@@ -313,7 +399,9 @@ def main() -> None:
         .replace("__SCENE_H__", str(scene_h))
         .replace("__CLOCK__", str(clock).replace(" ", ""))
         .replace("__CALQUAD__", str(cal_quad).replace(" ", ""))
-        .replace("__LEDQUAD__", str(led_quad).replace(" ", ""))
+        .replace("__LEDRECT__", str(led_rect).replace(" ", ""))
+        .replace("__WINDOWQUAD__", str(window_quad).replace(" ", ""))
+        .replace("__ICONS__", icon_svg(frames, icons, scene_w, scene_h))
         .replace("__TILES__", "[\n" + "".join(
             f'  {{label: "{t["label"]}", x: {t["x"]}, y: {t["y"]}, w: {t["w"]}, h: {t["h"]}}},\n'
             for t in tiles

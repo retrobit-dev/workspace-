@@ -201,47 +201,104 @@ data class TileInfo(
  * aplikasi, dan foto user di kiri jam dinding membuka profil & pengaturan.
  */
 val TILES = listOf(
-    // --- meja kerja ---
-    TileInfo("Jurnal", Scr.JURNAL, "book", 925, 290, 160, 152),         // laptop
-    TileInfo("Nilai", Scr.NILAI, "chart", 870, 268, 105, 115),          // tumpukan buku di meja
-    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 1020, 418, 82, 60),  // kalkulator kanan laptop
-    TileInfo("Alat Tulis", Scr.KIT, "pencil", 1075, 345, 50, 80),       // tempat pensil
-    TileInfo("Kalender", Scr.KALENDER, "calendar", 1122, 384, 80, 82),  // kalender meja
-    TileInfo("Binder", Scr.BINDER, "folder", 945, 483, 128, 95),        // laci meja
+    // --- meja kerja (meja diperlebar ke kiri) ---
+    TileInfo("Jurnal", Scr.JURNAL, "book", 690, 398, 250, 80),         // papan tombol laptop
+    TileInfo("Nilai", Scr.NILAI, "chart", 752, 296, 132, 102),          // tumpukan buku di meja
+    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 938, 462, 66, 44),   // kalkulator kanan laptop
+    TileInfo("Alat Tulis", Scr.KIT, "pencil", 966, 376, 46, 60),        // tempat pensil
+    TileInfo("Kalender", Scr.KALENDER, "calendar", 1066, 412, 104, 84), // kalender meja
+    TileInfo("Binder", Scr.BINDER, "folder", 700, 538, 140, 152),       // laci meja
 
     // --- dinding ---
-    TileInfo("Absensi", Scr.ABSENSI, "check", 450, 145, 365, 220),      // papan tulis, utuh
-    TileInfo("Catatan", Scr.CATATAN, "pencil", 365, 28, 165, 235),      // papan pin
-    TileInfo("Jadwal", Scr.JADWAL, "clock", 1050, 92, 105, 125),        // jam dinding analog
-    TileInfo("Profil", Scr.PROFIL, "face", 930, 80, 90, 140),           // foto user: profil & pengaturan
+    TileInfo("Absensi", Scr.ABSENSI, "check", 348, 118, 284, 364),      // papan tulis, utuh
+    TileInfo("Catatan", Scr.CATATAN, "pencil", 28, 240, 228, 240),      // papan pin di atas rak
+    TileInfo("Jadwal", Scr.JADWAL, "clock", 884, 72, 110, 122),         // jam dinding analog
+    TileInfo("Profil", Scr.PROFIL, "face", 852, 92, 74, 104),           // foto user: profil & pengaturan
 
     // --- sisi kiri ---
-    TileInfo("Binder", Scr.BINDER, "folder", 25, 310, 375, 350),        // rak buku penuh
-    TileInfo("Kelas", Scr.KELAS, "grid", 1235, 85, 77, 390),            // jendela
+    TileInfo("Binder", Scr.BINDER, "folder", 18, 442, 306, 262),        // rak buku penuh
+    TileInfo("Kelas", Scr.KELAS, "grid", 1088, 118, 212, 358),          // jendela (gorden = baterai)
 
-    // --- 5 bingkai aplikasi di atas rak buku ---
-    TileInfo("Jurnal", Scr.JURNAL, "book", 55, 396, 59, 79),
-    TileInfo("Nilai", Scr.NILAI, "chart", 122, 368, 59, 81),
-    TileInfo("Absensi", Scr.ABSENSI, "check", 189, 336, 60, 80),
-    TileInfo("Kalender", Scr.KALENDER, "calendar", 242, 307, 60, 80),
-    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 298, 280, 54, 70)
+    // --- 5 bingkai aplikasi di atas papan pin ---
+    TileInfo("WhatsApp", Scr.KIT, "chat", 55, 214, 46, 88),
+    TileInfo("Vivaldi", Scr.KIT, "globe", 140, 173, 46, 88),
+    TileInfo("YouTube", Scr.KIT, "play", 224, 131, 46, 88),
+    TileInfo("Spotify", Scr.KIT, "music", 309, 88, 46, 88),
+    TileInfo("Sinaga Jateng", Scr.KIT, "shield", 394, 45, 46, 89)
 )
 
 /** Permukaan jam analog di dinding (piksel gambar). */
-val CLOCK_FACE = intArrayOf(1067, 108, 71, 93)
-
-/** Kertas kalender meja yang menampilkan tanggal hari ini (piksel gambar). */
-val CALENDAR_FACE = intArrayOf(1131, 393, 54, 62)
+val CLOCK_FACE = intArrayOf(901, 88, 70, 96)
 
 /**
- * Bidang miring supaya tulisan ikut arah permukaannya.
+ * Kertas kalender meja: bidang miring supaya tulisan ikut arah muka kalender.
  * Urutan: kiri-atas, kanan-atas, kiri-bawah, kanan-bawah (piksel gambar).
  */
-val CALENDAR_QUAD = intArrayOf(1144, 394, 1186, 420, 1130, 428, 1172, 454)
+val CALENDAR_QUAD = intArrayOf(1084, 424, 1130, 445, 1075, 462, 1121, 483)
 
-/** Layar jam digital yang menempel di dinding, di bawah jam analog. */
-val LED_QUAD = intArrayOf(1042, 237, 1157, 276, 1042, 279, 1157, 318)
+/** Layar jam digital yang menempel di dinding, tepat di bawah jam analog. */
+val LED_RECT = intArrayOf(889, 218, 80, 63)
 
+/** Kertas di dalam lima bingkai (kiri-atas, kanan-atas, kiri-bawah). */
+val FRAME_QUADS = listOf(
+    intArrayOf(59, 237, 98, 217, 59, 299),
+    intArrayOf(143, 196, 183, 175, 143, 257),
+    intArrayOf(229, 152, 267, 134, 226, 215),
+    intArrayOf(311, 110, 352, 90, 311, 173),
+    intArrayOf(396, 68, 437, 47, 396, 131)
+)
+
+/**
+ * Gorden jendela dipakai sebagai penunjuk baterai: baterai penuh = gorden
+ * tergulung (jendela terbuka), baterai menipis = gorden turun menutup jendela.
+ *
+ * Kaca jendela (kiri-atas, kanan-atas, kiri-bawah, kanan-bawah).
+ */
+val WINDOW_QUAD = intArrayOf(1104, 176, 1200, 206, 1104, 448, 1200, 478)
+
+/** Tepi bawah kain gorden saat menutup penuh, sedikit di bawah kaca. */
+val CURTAIN_BOTTOM = 512
+
+/* ---------------- ikon aplikasi di lima bingkai ---------------- */
+
+/**
+ * Satu potongan ikon: warna ("#RRGGBB") + titik-titik poligon dalam koordinat
+ * ternormalisasi 0..1 pada kertas bingkai (0,0 = kiri-atas kertas).
+ * Semua digambar mengikuti kemiringan bingkai, jadi ikon tidak pernah "datar".
+ */
+data class IconShape(val color: String, val points: FloatArray)
+
+data class AppIcon(val name: String, val bg: String, val shapes: List<IconShape>)
+
+private fun shape(color: String, points: String): IconShape =
+    IconShape(color, points.trim().split(" ").flatMap { pair ->
+        pair.split(",").map { it.toFloat() }
+    }.toFloatArray())
+
+/**
+ * Lima bingkai di atas papan pin = pintasan aplikasi.
+ * Bentuknya sengaja tebal & sederhana supaya tetap terbaca di bingkai kecil.
+ */
+val APP_ICONS = listOf(
+    AppIcon("WhatsApp", "#1FBF5B", listOf(
+        shape("#FFFFFF", "0.20,0.18 0.80,0.18 0.80,0.62 0.46,0.62 0.30,0.80 0.31,0.62 0.20,0.62")
+    )),
+    AppIcon("Vivaldi", "#E03A3A", listOf(
+        shape("#FFFFFF", "0.22,0.22 0.40,0.22 0.50,0.62 0.60,0.22 0.78,0.22 0.58,0.80 0.42,0.80")
+    )),
+    AppIcon("YouTube", "#D63B32", listOf(
+        shape("#FFFFFF", "0.24,0.22 0.24,0.78 0.80,0.50")
+    )),
+    AppIcon("Spotify", "#1DB954", listOf(
+        shape("#FFFFFF", "0.20,0.30 0.80,0.34 0.80,0.44 0.20,0.40"),
+        shape("#FFFFFF", "0.22,0.48 0.78,0.52 0.78,0.60 0.22,0.56"),
+        shape("#FFFFFF", "0.24,0.64 0.76,0.68 0.76,0.74 0.24,0.70")
+    )),
+    AppIcon("Sinaga Jateng", "#1E2C63", listOf(
+        shape("#FFFFFF", "0.50,0.16 0.80,0.28 0.80,0.54 0.50,0.82 0.20,0.54 0.20,0.28"),
+        shape("#1E2C63", "0.50,0.30 0.66,0.38 0.66,0.52 0.50,0.66 0.34,0.52 0.34,0.38")
+    ))
+)
 const val SCENE_W = 1312
 const val SCENE_H = 816
 
