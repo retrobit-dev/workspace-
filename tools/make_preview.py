@@ -37,7 +37,8 @@ def parse_data():
             rf"val {name} = intArrayOf\(([^)]+)\)", src).group(1).split(",")
         ]
 
-    return scene_w, scene_h, tiles, rect("CLOCK_FACE"), rect("CALENDAR_FACE")
+    return (scene_w, scene_h, tiles, rect("CLOCK_FACE"),
+            rect("CALENDAR_QUAD"), rect("LED_QUAD"))
 
 
 def make_scene(scene_w, scene_h):
@@ -91,12 +92,21 @@ HTML = """<!DOCTYPE html>
   #clock{position:absolute;cursor:pointer}
   #clock svg{display:block;width:100%;height:100%;overflow:visible}
 
-  /* kalender meja: bulan / tanggal / hari, mengikuti tanggal hari ini */
-  #cal{position:absolute;display:flex;flex-direction:column;align-items:center;
-    justify-content:center;gap:0;color:#0E0D1A;cursor:pointer;
-    font-weight:700;line-height:1;letter-spacing:.5px;overflow:hidden}
-  #cal .m,#cal .w{opacity:.85}
-  #cal .d{font-weight:700;letter-spacing:0}
+  /* kertas kalender: tulisan menempel pada bidang miringnya */
+  #cal{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;
+    flex-direction:column;align-items:center;justify-content:center;
+    color:#181430;font-weight:700;line-height:.95;letter-spacing:.5px;
+    pointer-events:none;white-space:nowrap}
+  #cal .m,#cal .w{opacity:.9}
+
+  /* layar jam digital di dinding, di bawah jam analog */
+  #led{position:absolute;left:0;top:0;transform-origin:0 0;display:flex;
+    align-items:center;justify-content:center;color:#D7F7CD;
+    font-weight:700;line-height:1;letter-spacing:1px;
+    pointer-events:none;white-space:nowrap}
+
+  /* selaput suasana: pagi hangat, malam kebiruan */
+  #tint{position:absolute;inset:0;pointer-events:none}
 
   #scan{position:absolute;inset:0;pointer-events:none;
     background:repeating-linear-gradient(180deg,rgba(0,0,0,.10) 0 1px,transparent 1px 3px)}
@@ -143,6 +153,8 @@ HTML = """<!DOCTYPE html>
     <span class="d" id="cal-d">26</span>
     <span class="w" id="cal-w">SEN</span>
   </div>
+  <div id="led" role="img" aria-label="Jam digital"><span id="led-t">00:00:00</span></div>
+  <div id="tint"></div>
   <div id="scan"></div>
   <div id="toast" role="status" aria-live="polite"></div>
 </div>
@@ -156,12 +168,16 @@ HTML = """<!DOCTYPE html>
 <script>
 const SCENE = {w: __SCENE_W__, h: __SCENE_H__};
 const CLOCK_FACE = __CLOCK__;
-const CALENDAR_FACE = __CALENDAR__;
+const CAL_QUAD = __CALQUAD__;
+const LED_QUAD = __LEDQUAD__;
 const TILES = __TILES__;
 
 const stage = document.getElementById("stage");
 const clockEl = document.getElementById("clock");
 const calEl = document.getElementById("cal");
+const ledEl = document.getElementById("led");
+const ledText = document.getElementById("led-t");
+const tintEl = document.getElementById("tint");
 const toast = document.getElementById("toast");
 let toastTimer = 0;
 
@@ -198,9 +214,21 @@ TILES.forEach((tile) => {
 });
 
 place(clockEl, CLOCK_FACE[0], CLOCK_FACE[1], CLOCK_FACE[2], CLOCK_FACE[3]);
-place(calEl, CALENDAR_FACE[0], CALENDAR_FACE[1], CALENDAR_FACE[2], CALENDAR_FACE[3]);
 clockEl.addEventListener("click", (e) => { e.stopPropagation(); open("Jadwal"); });
-calEl.addEventListener("click", (e) => { e.stopPropagation(); open("Kalender"); });
+
+// tempelkan sebuah elemen pada bidang miring: quad = [kiri-atas, kanan-atas, kiri-bawah]
+function placeOnPlane(el, quad, u) {
+  const [ax, ay, bx, by, cx, cy] = quad;
+  const W = Math.hypot(bx - ax, by - ay);
+  const H = Math.hypot(cx - ax, cy - ay);
+  el.style.width = (u * W).toFixed(2) + "px";
+  el.style.height = (u * H).toFixed(2) + "px";
+  el.style.left = (u * ax).toFixed(2) + "px";
+  el.style.top = (u * ay).toFixed(2) + "px";
+  const a = (bx - ax) / W, b = (by - ay) / W, c = (cx - ax) / H, d = (cy - ay) / H;
+  el.style.transform = "matrix(" + [a, b, c, d, 0, 0].join(",") + ")";
+  return H;
+}
 
 // muka jam (krem + 12 tanda) sudah tergambar di scene.png;
 // di sini hanya jarum jam & menit yang diputar sesuai waktu perangkat
@@ -222,21 +250,41 @@ function tick() {
   document.getElementById("cal-m").textContent = BULAN[now.getMonth()];
   document.getElementById("cal-d").textContent = now.getDate();
   document.getElementById("cal-w").textContent = HARI[(now.getDay() + 6) % 7];
+  ledText.textContent =
+    String(now.getHours()).padStart(2, "0") + ":" +
+    String(now.getMinutes()).padStart(2, "0") + ":" +
+    String(now.getSeconds()).padStart(2, "0");
+  tintEl.style.background = ambience(now.getHours());
+}
+
+// suasana mengikuti jam: sama seperti ambienceOf() di Launcher.kt
+function ambience(h) {
+  if (h >= 4 && h <= 5) return "rgba(110,90,168,.10)";
+  if (h >= 6 && h <= 9) return "rgba(255,196,107,.06)";
+  if (h >= 10 && h <= 14) return "rgba(255,242,208,.03)";
+  if (h >= 15 && h <= 17) return "rgba(255,138,76,.10)";
+  if (h >= 18 && h <= 21) return "rgba(43,63,143,.12)";
+  return "rgba(6,10,34,.34)";
 }
 tick();
 setInterval(tick, 1000);
 
-// ukuran teks kalender mengikuti `unit` panggung, sama seperti di APK
-function fitClock() {
+// ukuran bidang & huruf mengikuti `unit` panggung, sama seperti di APK
+function fitFaces() {
   const u = (stage.clientWidth || SCENE.w) / SCENE.w;
-  const px = (v) => Math.max(4, u * v).toFixed(2) + "px";
-  calEl.style.fontSize = px(7);
-  const d = calEl.querySelector(".d");
-  d.style.fontSize = px(20);
+  const calH = placeOnPlane(calEl, CAL_QUAD, u);
+  const ledH = placeOnPlane(ledEl, LED_QUAD, u);
+  const calFont = (f) => (calH * u * f).toFixed(2) + "px";
+  calEl.querySelector(".m").style.fontSize = calFont(0.22);
+  calEl.querySelector(".d").style.fontSize = calFont(0.46);
+  calEl.querySelector(".w").style.fontSize = calFont(0.22);
+  const ledW = parseFloat(ledEl.style.width);
+  ledEl.style.fontSize =
+    Math.min(ledH * u * 0.62, (ledW * 0.86) / 5.0).toFixed(2) + "px";
 }
-fitClock();
-window.addEventListener("resize", fitClock);
-if (window.ResizeObserver) new ResizeObserver(fitClock).observe(stage);
+fitFaces();
+window.addEventListener("resize", fitFaces);
+if (window.ResizeObserver) new ResizeObserver(fitFaces).observe(stage);
 
 // minta browser mengunci landscape (butuh fullscreen; kalau ditolak, abaikan saja)
 function lockLandscape() {
@@ -254,7 +302,7 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 
 
 def main() -> None:
-    scene_w, scene_h, tiles, clock, calendar = parse_data()
+    scene_w, scene_h, tiles, clock, cal_quad, led_quad = parse_data()
     size = make_scene(scene_w, scene_h)
     scene_hash = hashlib.md5((WEB / "scene.png").read_bytes()).hexdigest()[:10]
 
@@ -264,7 +312,8 @@ def main() -> None:
         .replace("__SCENE_W__", str(scene_w))
         .replace("__SCENE_H__", str(scene_h))
         .replace("__CLOCK__", str(clock).replace(" ", ""))
-        .replace("__CALENDAR__", str(calendar).replace(" ", ""))
+        .replace("__CALQUAD__", str(cal_quad).replace(" ", ""))
+        .replace("__LEDQUAD__", str(led_quad).replace(" ", ""))
         .replace("__TILES__", "[\n" + "".join(
             f'  {{label: "{t["label"]}", x: {t["x"]}, y: {t["y"]}, w: {t["w"]}, h: {t["h"]}}},\n'
             for t in tiles

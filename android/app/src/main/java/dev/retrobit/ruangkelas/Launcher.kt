@@ -1,6 +1,8 @@
 package dev.retrobit.ruangkelas
 
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.graphics.Paint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,8 +31,13 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -123,25 +130,11 @@ fun LauncherScreen(
             )
         }
 
-        // jam analog hidup di dinding: jarum jam & menit mengikuti waktu nyata
-        LiveWallClock(
-            box = box,
-            onTap = {
-                caption = "Jadwal"
-                captionTick++
-                onOpen(TILES.first { it.label == "Jadwal" })
-            }
-        )
+        // muka jam (analog + digital) dan kalender menggambar di atas gambar
+        LiveFaces(box = box)
 
-        // kalender meja menampilkan hari, tanggal, dan bulan hari ini
-        LiveCalendar(
-            box = box,
-            onTap = {
-                caption = "Kalender"
-                captionTick++
-                onOpen(TILES.first { it.label == "Kalender" })
-            }
-        )
+        // suasana mengikuti jam perangkat
+        Ambience()
 
         TILES.forEach { tile ->
             LauncherHotspot(
@@ -210,106 +203,144 @@ private fun rememberNowMs(): Long {
     return now
 }
 
-/**
- * Jam analog di dinding.
- * Kertas jam di gambar ditutup oval krem, lalu 12 tanda jam dan dua jarum digambar
- * ulang mengikuti waktu perangkat — jadi selalu menunjukkan jam sekarang.
- */
-@Composable
-private fun LiveWallClock(box: SceneBox, onTap: () -> Unit) {
-    val nowMs = rememberNowMs()
-    val time = remember(nowMs) { LocalTime.now() }
-    val x = CLOCK_FACE[0]
-    val y = CLOCK_FACE[1]
-    val w = CLOCK_FACE[2]
-    val h = CLOCK_FACE[3]
+/** Bidang miring: tiga sudut pertama menentukan arah tulisan. */
+private data class Plane(val tl: Offset, val tr: Offset, val bl: Offset) {
+    val width: Float get() = (tr - tl).getDistance()
+    val height: Float get() = (bl - tl).getDistance()
+}
 
-    Box(
-        Modifier
-            .offset(x = box.x(x), y = box.y(y))
-            .size(width = box.w(w), height = box.h(h))
-            .clickable { onTap() }
-    ) {
-        Canvas(Modifier.fillMaxSize()) {
-            // muka jam (krem + 12 tanda) sudah ada di gambar; di sini hanya jarumnya
-            val rx = size.width / 2f
-            val ry = size.height / 2f
-            val cx = rx
-            val cy = ry
+private fun planeOf(box: SceneBox, quad: IntArray, density: Density): Plane = with(density) {
+    Plane(
+        tl = Offset(box.x(quad[0]).toPx(), box.y(quad[1]).toPx()),
+        tr = Offset(box.x(quad[2]).toPx(), box.y(quad[3]).toPx()),
+        bl = Offset(box.x(quad[4]).toPx(), box.y(quad[5]).toPx())
+    )
+}
 
-            fun hand(angleDeg: Double, length: Float, width: Float, color: Color = Ink) {
-                val a = Math.toRadians(angleDeg - 90.0)
-                drawLine(
-                    color = color,
-                    start = Offset(cx, cy),
-                    end = Offset(cx + (cos(a) * rx * length).toFloat(), cy + (sin(a) * ry * length).toFloat()),
-                    strokeWidth = width,
-                    cap = StrokeCap.Round
-                )
-            }
-
-            val minute = time.minute + time.second / 60f
-            val hour = (time.hour % 12) + minute / 60f
-            hand(hour * 30.0, 0.48f, size.width * 0.105f)
-            hand(minute * 6.0, 0.70f, size.width * 0.075f)
-            // jarum detik merah tipis: bikin jam jelas hidup
-            hand(time.second * 6.0, 0.80f, size.width * 0.030f, Coral)
-
-            drawCircle(color = Ink, radius = size.width * 0.06f, center = Offset(cx, cy))
-            drawCircle(color = Coral, radius = size.width * 0.025f, center = Offset(cx, cy))
-        }
+/** Tulis satu baris teks seolah menempel di bidang [plane]. */
+private fun DrawScope.drawOnPlane(plane: Plane, paint: Paint, text: String, baseline: Float) {
+    drawIntoCanvas { canvas ->
+        val native = canvas.nativeCanvas
+        val matrix = Matrix()
+        matrix.setPolyToPoly(
+            floatArrayOf(0f, 0f, plane.width, 0f, 0f, plane.height), 0,
+            floatArrayOf(plane.tl.x, plane.tl.y, plane.tr.x, plane.tr.y, plane.bl.x, plane.bl.y), 0,
+            3
+        )
+        val save = native.save()
+        native.concat(matrix)
+        native.drawText(text, plane.width / 2f, baseline, paint)
+        native.restoreToCount(save)
     }
 }
 
 private val MONTHS_SHORT = listOf("JAN", "FEB", "MAR", "APR", "MEI", "JUN",
     "JUL", "AGU", "SEP", "OKT", "NOV", "DES")
 private val DAYS_SHORT = listOf("SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN")
+private val FaceInk = Color(0xFF181430)
+private val ScreenGreen = Color(0xFFD7F7CD)
 
 /**
- * Kalender meja: kertasnya menampilkan bulan, tanggal, dan nama hari hari ini.
+ * Tiga muka hidup di atas gambar:
+ *  - jarum jam analog mengikuti [LocalTime],
+ *  - layar jam digital di bawahnya menampilkan jam:menit:detik,
+ *  - kertas kalender mencetak hari, tanggal, bulan hari ini.
+ *
+ * Tulisan menempel pada bidangnya masing-masing (kalender & layar LED miring),
+ * jadi ikut arah muka benda — bukan datar di atas gambar.
  */
 @Composable
-private fun LiveCalendar(box: SceneBox, onTap: () -> Unit) {
+private fun LiveFaces(box: SceneBox) {
     val nowMs = rememberNowMs()
+    val time = remember(nowMs) { LocalTime.now() }
     val today = remember(nowMs) { LocalDate.now() }
-    val month = MONTHS_SHORT[today.monthValue - 1]
-    val weekday = DAYS_SHORT[today.dayOfWeek.value - 1]
-    val x = CALENDAR_FACE[0]
-    val y = CALENDAR_FACE[1]
-    val w = CALENDAR_FACE[2]
-    val h = CALENDAR_FACE[3]
+    val ctx = LocalContext.current
 
-    Box(
-        Modifier
-            .offset(x = box.x(x), y = box.y(y))
-            .size(width = box.w(w), height = box.h(h))
-            .clickable { onTap() },
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                month,
-                style = MaterialTheme.typography.labelMedium,
-                color = Ink,
-                fontSize = (box.unit.value * 7f).coerceIn(5f, 13f).sp,
-                maxLines = 1
-            )
-            Text(
-                "${today.dayOfMonth}",
-                style = MaterialTheme.typography.displayLarge,
-                color = Ink,
-                fontSize = (box.unit.value * 20f).coerceIn(12f, 40f).sp,
-                maxLines = 1
-            )
-            Text(
-                weekday,
-                style = MaterialTheme.typography.labelMedium,
-                color = Ink,
-                fontSize = (box.unit.value * 7f).coerceIn(5f, 13f).sp,
-                maxLines = 1
+    val paint = remember {
+        Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
+    }
+    val typeface = remember {
+        runCatching { ctx.resources.getFont(R.font.silkscreen_bold) }.getOrNull()
+    }
+
+    Canvas(Modifier.fillMaxSize()) {
+        // ---------- jarum jam analog ----------
+        val f = CLOCK_FACE
+        val left = box.x(f[0]).toPx()
+        val top = box.y(f[1]).toPx()
+        val w = box.w(f[2]).toPx()
+        val h = box.h(f[3]).toPx()
+        val cx = left + w / 2f
+        val cy = top + h / 2f
+        val rx = w / 2f
+        val ry = h / 2f
+
+        fun hand(angleDeg: Double, length: Float, width: Float, color: Color = Ink) {
+            val a = Math.toRadians(angleDeg - 90.0)
+            drawLine(
+                color = color,
+                start = Offset(cx, cy),
+                end = Offset(cx + (cos(a) * rx * length).toFloat(), cy + (sin(a) * ry * length).toFloat()),
+                strokeWidth = width,
+                cap = StrokeCap.Round
             )
         }
+
+        val minute = time.minute + time.second / 60f
+        val hour = (time.hour % 12) + minute / 60f
+        hand(hour * 30.0, 0.48f, w * 0.105f)
+        hand(minute * 6.0, 0.70f, w * 0.075f)
+        hand(time.second * 6.0, 0.80f, w * 0.030f, Coral)
+        drawCircle(color = Ink, radius = w * 0.06f, center = Offset(cx, cy))
+        drawCircle(color = Coral, radius = w * 0.025f, center = Offset(cx, cy))
+
+        // ---------- layar jam digital (jam:menit:detik) ----------
+        val led = planeOf(box, LED_QUAD, this)
+        val digital = "%02d:%02d:%02d".format(time.hour, time.minute, time.second)
+        paint.color = ScreenGreen.toArgb()
+        paint.typeface = typeface
+        paint.textSize = led.height * 0.62f
+        val measured = paint.measureText(digital)
+        if (measured > led.width * 0.86f) paint.textSize *= led.width * 0.86f / measured
+        drawOnPlane(led, paint, digital, led.height * 0.68f)
+
+        // ---------- kalender: bulan, tanggal, hari ----------
+        val cal = planeOf(box, CALENDAR_QUAD, this)
+        val month = MONTHS_SHORT[today.monthValue - 1]
+        val weekday = DAYS_SHORT[today.dayOfWeek.value - 1]
+        val day = today.dayOfMonth.toString()
+        paint.color = FaceInk.toArgb()
+
+        paint.textSize = cal.height * 0.22f
+        drawOnPlane(cal, paint, month, cal.height * 0.30f)
+
+        paint.textSize = cal.height * 0.46f
+        val dayWidth = paint.measureText(day)
+        if (dayWidth > cal.width * 0.84f) paint.textSize *= cal.width * 0.84f / dayWidth
+        drawOnPlane(cal, paint, day, cal.height * 0.74f)
+
+        paint.textSize = cal.height * 0.22f
+        drawOnPlane(cal, paint, weekday, cal.height * 0.99f)
     }
+}
+
+/** Warna selaput suasana untuk satu jam tertentu. */
+private fun ambienceOf(hour: Int): Pair<Color, Float> = when (hour) {
+    in 4..5 -> Color(0xFF6E5AA8) to 0.10f      // subuh
+    in 6..9 -> Color(0xFFFFC46B) to 0.06f      // pagi
+    in 10..14 -> Color(0xFFFFF2D0) to 0.03f    // siang
+    in 15..17 -> Color(0xFFFF8A4C) to 0.10f    // sore
+    in 18..21 -> Color(0xFF2B3F8F) to 0.12f    // malam
+    else -> Color(0xFF060A22) to 0.34f         // larut
+}
+
+/** Selaput tipis di atas scene: pagi hangat, malam kebiruan, larut lebih gelap. */
+@Composable
+private fun Ambience() {
+    val nowMs = rememberNowMs()
+    val hour = remember(nowMs) { LocalTime.now().hour }
+    val (tint, alpha) = ambienceOf(hour)
+    Box(Modifier.fillMaxSize().background(tint.copy(alpha = alpha)))
 }
 
 /** Garis scanline CRT tipis di atas gambar. */

@@ -15,11 +15,11 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageEnhance
 
 ROOT = Path(__file__).resolve().parent.parent
-ART = ROOT / "art/workspace-iso-v3.png"
+ART = ROOT / "art/workspace-iso-v5.png"
 
-CLOCK_BOX = (880, 45, 120, 145)    # area pencarian muka jam (x, y, w, h)
+CLOCK_BOX = (1030, 70, 150, 160)   # area pencarian muka jam (x, y, w, h)
 INK = (14, 13, 26)                 # sama dengan warna Ink di Theme.kt
-CAL_BOX = (958, 335, 120, 110)     # area pencarian kertas kalender
+CAL_BOX = (1100, 370, 120, 110)    # area pencarian kertas kalender
 
 
 def _is_cream(p):
