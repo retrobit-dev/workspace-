@@ -111,6 +111,11 @@ jobs:
           fi
 
           adb shell settings put global window_animation_scale 0 || true
+          adb shell settings put global transition_animation_scale 0 || true
+          adb shell settings put global animator_duration_scale 0 || true
+          # emulator kadang lambat -> sembunyikan dialog ANR/crash supaya screenshot bersih
+          adb shell settings put global hide_error_dialogs 1 || true
+          adb shell settings put system screen_off_timeout 1800000 || true
           adb install -r dist/RuangKelas-0.6.0-debug.apk || { emit "install gagal"; exit 1; }
           mkdir -p docs/screens
 

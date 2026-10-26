@@ -65,7 +65,21 @@ def tap_cls(kind: str, nth: int = 0) -> bool:
     return True
 
 
+def dismiss_system_dialog() -> None:
+    """Tutup dialog "System UI isn't responding" kalau muncul di emulator lambat."""
+    ns = nodes()
+    for n in ns:
+        if "isn't responding" in n["text"] or "is not responding" in n["text"]:
+            print("dialog sistem terdeteksi, tekan Wait", flush=True)
+            sh("adb shell settings put global hide_error_dialogs 1")
+            for cand in ns:
+                if cand["text"].lower() in ("wait", "tunggu"):
+                    tap(*cand["c"], wait=1.5)
+                    return
+
+
 def shot(name: str) -> None:
+    dismiss_system_dialog()
     sh(f"adb shell screencap -p /sdcard/{name}.png")
     print(sh(f"adb pull /sdcard/{name}.png docs/screens/{name}.png").strip(), flush=True)
 
