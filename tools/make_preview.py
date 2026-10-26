@@ -1,6 +1,6 @@
 """Bangun preview browser untuk launcher.
 
-Sumber kebenaran tetap Data.kt (TILES, CLOCK_RECT, BOARD_QUAD,
+Sumber kebenaran tetap Data.kt (TILES, BOARD_QUAD,
 CALENDAR_QUAD, FRAME_QUADS, RAIL_LINE, BATTERY_TEXT_QUAD, CURTAIN_RECTS,
 LEAF_RECT, APP_ICONS, SCENE_W/H) supaya area ketuk di browser sama persis
 dengan APK.
@@ -63,7 +63,6 @@ def parse_data():
         w=scene_w,
         h=scene_h,
         tiles=tiles,
-        clock=rect("CLOCK_RECT"),
         board=rect("BOARD_QUAD"),
         cal=rect("CALENDAR_QUAD"),
         rail=rect("RAIL_LINE"),
@@ -233,18 +232,6 @@ HTML = """<!DOCTYPE html>
             stroke="rgba(24,20,48,.35)" stroke-width="1.6"/>
     </g>
 
-    <!-- jam digital + bendera -->
-    <g id="clock" transform="__CLOCK_MATRIX__">
-      <rect x="0" y="0" width="__CLOCK_W__" height="__CLOCK_H__" fill="#07060F"/>
-      <rect x="1.5" y="1.5" width="__CLOCK_W2__" height="__CLOCK_H2__"
-            fill="none" stroke="#2B2A46" stroke-width="2.2"/>
-      <text id="clock-time" x="__CLOCK_CX__" y="__CLOCK_TY1__" text-anchor="middle"
-            fill="#D7F7CD" font-size="__CLOCK_FS__">00:00</text>
-      <text id="clock-date" x="__CLOCK_CX__" y="__CLOCK_TY2__" text-anchor="middle"
-            fill="#9FD8B0" font-size="__CLOCK_FS2__">SEN 26 OKT</text>
-      <rect id="clock-sec" x="__CLOCK_BAR_X__" y="__CLOCK_BAR_Y__" width="0"
-            height="__CLOCK_BAR_H__" fill="#D7F7CD" opacity="0.6" data-full="__CLOCK_BAR_FULL__"/>
-    </g>
     <!-- kalender: halaman bisa terlipat -->
     <g id="cal" transform="__CAL_MATRIX__">
       <rect id="cal-pad" x="0" y="__CAL_PAD_Y__" width="__CAL_W__" height="__CAL_PAD_H__" fill="#CBB68C"/>
@@ -368,14 +355,6 @@ function tick() {
     lastDay = day;
   }
 
-  document.getElementById("clock-time").textContent =
-    String(now.getHours()).padStart(2, "0") + ":" +
-    String(now.getMinutes()).padStart(2, "0");
-  const sec = document.getElementById("clock-sec");
-  sec.setAttribute("width", (parseFloat(sec.dataset.full || 0) * now.getSeconds() / 60).toFixed(2));
-  document.getElementById("clock-date").textContent =
-    HARI[(now.getDay() + 6) % 7] + " " + now.getDate() + " " + BULAN[now.getMonth()];
-
   // kalender: kalau tanggal berganti, halaman dilipat dulu
   const shown = document.getElementById("cal-d").textContent;
   if (shown !== String(now.getDate())) {
@@ -436,16 +415,11 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 
 def build_html(data, scene_sizes):
     w, h = data["w"], data["h"]
-    clock = data["clock"]
     board = data["board"]
     cal = data["cal"]
     batt = data["battery_text"]
 
-    clock_plane = (clock[0], clock[1], clock[0] + clock[2], clock[1] + int(clock[2] * 0.42),
-                   clock[0], clock[1] + clock[3])
 
-    clock_w = ((clock_plane[2] - clock_plane[0]) ** 2 + (clock_plane[3] - clock_plane[1]) ** 2) ** 0.5
-    clock_h = ((clock_plane[4] - clock_plane[0]) ** 2 + (clock_plane[5] - clock_plane[1]) ** 2) ** 0.5
     board_w = ((board[2] - board[0]) ** 2 + (board[3] - board[1]) ** 2) ** 0.5
     board_h = ((board[4] - board[0]) ** 2 + (board[5] - board[1]) ** 2) ** 0.5
 
@@ -487,21 +461,19 @@ def build_html(data, scene_sizes):
         .replace("__BOARD_LX1__", f"{board_w * 0.18:.2f}")
         .replace("__BOARD_LX2__", f"{board_w * 0.82:.2f}")
         .replace("__BOARD_LY__", f"{board_h * 0.215:.2f}")
-        # jam digital
-        .replace("__CLOCK_MATRIX__", matrix_attr(clock_plane))
-        .replace("__CLOCK_W__", f"{clock_w:.2f}")
-        .replace("__CLOCK_H__", f"{clock_h:.2f}")
-        .replace("__CLOCK_W2__", f"{clock_w - 3:.2f}")
-        .replace("__CLOCK_H2__", f"{clock_h - 3:.2f}")
-        .replace("__CLOCK_CX__", f"{clock_w / 2:.2f}")
-        .replace("__CLOCK_TY1__", f"{clock_h * 0.46:.2f}")
-        .replace("__CLOCK_TY2__", f"{clock_h * 0.66:.2f}")
-        .replace("__CLOCK_FS__", f"{min(clock_h * 0.34, clock_w * 0.88 / 3.9):.2f}")
-        .replace("__CLOCK_FS2__", f"{min(clock_h * 0.15, clock_w * 0.92 / 7.9):.2f}")
-        .replace("__CLOCK_BAR_X__", f"{clock_w * 0.12:.2f}")
-        .replace("__CLOCK_BAR_Y__", f"{clock_h * 0.84:.2f}")
-        .replace("__CLOCK_BAR_H__", f"{clock_h * 0.035:.2f}")
-        .replace("__CLOCK_BAR_FULL__", f"{clock_w * 0.76:.2f}")
+
+
+
+
+
+
+
+
+
+
+
+
+
         # bendera
         # kalender
         .replace("__CAL_MATRIX__", matrix_attr(cal))

@@ -212,7 +212,7 @@ val TILES = listOf(
     // --- dinding ---
     TileInfo("Absensi", Scr.ABSENSI, "check", 334, 124, 252, 330),       // papan tulis
     TileInfo("Catatan", Scr.CATATAN, "pencil", 70, 265, 168, 190),       // papan pin di atas rak
-    TileInfo("Jadwal", Scr.JADWAL, "clock", 792, 34, 130, 136),          // jam digital dinding
+    TileInfo("Jadwal", Scr.JADWAL, "board", 352, 248, 214, 192),         // papan tulis "JADWAL MENGAJAR"
     TileInfo("Profil", Scr.PROFIL, "face", 712, 36, 76, 124),            // foto user
 
     // --- sisi kiri & kanan ---
@@ -232,7 +232,6 @@ val TILES = listOf(
  * Jam digital: sejajar dengan foto user, tingginya sama dengan bingkai foto.
  * Bendera Indonesia menempel tepat di kanan jam, tinggi sama, lebar menyesuaikan.
  */
-val CLOCK_RECT = intArrayOf(796, 38, 120, 124)
 
 /** Papan tulis: judul "JADWAL MENGAJAR" di bagian atas, rata tengah. */
 val BOARD_QUAD = intArrayOf(344, 250, 574, 132, 344, 442)

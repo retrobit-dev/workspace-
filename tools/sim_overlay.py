@@ -45,7 +45,6 @@ def parse():
         icons.append((name, bg, shapes))
 
     return dict(
-        clock=rect("CLOCK_RECT"),
         board=rect("BOARD_QUAD"),
         cal=rect("CALENDAR_QUAD"),
         rail=rect("RAIL_LINE"),
@@ -103,18 +102,6 @@ def text(draw, xy, s, font, fill, anchor="ms"):
     draw.text(xy, s, font=font, fill=fill, anchor=anchor)
 
 
-def paint_clock(layer, w, h, hhmm, date, second=32):
-    d = ImageDraw.Draw(layer)
-    d.rectangle([0, 0, w, h], fill=(7, 6, 15, 255))
-    d.rectangle([1.5, 1.5, w - 1.5, h - 1.5], outline=(43, 42, 70, 255), width=2)
-    fs = max(6, int(min(h * 0.34, w * 0.88 / 3.9)))
-    text(d, (w / 2, h * 0.46), hhmm, ImageFont.truetype(FONT, fs), SCREEN)
-    f2 = ImageFont.truetype(FONT, max(6, int(min(h * 0.15, w * 0.92 / 7.9))))
-    text(d, (w / 2, h * 0.66), date, f2, (159, 216, 176, 255))
-    d.rectangle([w * 0.12, h * 0.84, w * 0.12 + max(1, w * 0.76 * second / 60), h * 0.875],
-                fill=(215, 247, 205, 153))
-
-
 def paint_board(layer, w, h):
     d = ImageDraw.Draw(layer)
     title = "JADWAL MENGAJAR"
@@ -168,8 +155,6 @@ def build(mode, hour, battery=76, second=32):
     digital = "14:07" if mode == "day" else "21:44"
     date = "SEN 26 OKT"
 
-    clock_q = wall_quad(data["clock"])
-    draw_plane(src, clock_q, lambda w, h: _layer(w, h, lambda l: paint_clock(l, w, h, digital, date, second)))
 
 
     draw_plane(src, data["board"], lambda w, h: _layer(w, h, lambda l: paint_board(l, w, h)))

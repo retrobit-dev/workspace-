@@ -127,18 +127,6 @@
             stroke="rgba(24,20,48,.35)" stroke-width="1.6"/>
     </g>
 
-    <!-- jam digital + bendera -->
-    <g id="clock" transform="matrix(120.000,50.000,0.000,124.000,796.000,38.000)">
-      <rect x="0" y="0" width="130.00" height="124.00" fill="#07060F"/>
-      <rect x="1.5" y="1.5" width="127.00" height="121.00"
-            fill="none" stroke="#2B2A46" stroke-width="2.2"/>
-      <text id="clock-time" x="65.00" y="57.04" text-anchor="middle"
-            fill="#D7F7CD" font-size="29.33">00:00</text>
-      <text id="clock-date" x="65.00" y="81.84" text-anchor="middle"
-            fill="#9FD8B0" font-size="15.14">SEN 26 OKT</text>
-      <rect id="clock-sec" x="15.60" y="104.16" width="0"
-            height="4.34" fill="#D7F7CD" opacity="0.6" data-full="98.80"/>
-    </g>
     <!-- kalender: halaman bisa terlipat -->
     <g id="cal" transform="matrix(43.000,20.000,-13.000,46.000,1043.000,405.000)">
       <rect id="cal-pad" x="0" y="2.87" width="47.42" height="54.02" fill="#CBB68C"/>
@@ -172,7 +160,7 @@ const TILES = [
   {label: "Binder", x: 688, y: 536, w: 158, h: 158},
   {label: "Absensi", x: 334, y: 124, w: 252, h: 330},
   {label: "Catatan", x: 70, y: 265, w: 168, h: 190},
-  {label: "Jadwal", x: 792, y: 34, w: 130, h: 136},
+  {label: "Jadwal", x: 352, y: 248, w: 214, h: 192},
   {label: "Profil", x: 712, y: 36, w: 76, h: 124},
   {label: "Binder", x: 60, y: 425, w: 255, h: 310},
   {label: "Kelas", x: 1024, y: 95, w: 230, h: 300},
@@ -280,14 +268,6 @@ function tick() {
     document.querySelectorAll(".sway-scene").forEach((img) => img.setAttribute("href", file));
     lastDay = day;
   }
-
-  document.getElementById("clock-time").textContent =
-    String(now.getHours()).padStart(2, "0") + ":" +
-    String(now.getMinutes()).padStart(2, "0");
-  const sec = document.getElementById("clock-sec");
-  sec.setAttribute("width", (parseFloat(sec.dataset.full || 0) * now.getSeconds() / 60).toFixed(2));
-  document.getElementById("clock-date").textContent =
-    HARI[(now.getDay() + 6) % 7] + " " + now.getDate() + " " + BULAN[now.getMonth()];
 
   // kalender: kalau tanggal berganti, halaman dilipat dulu
   const shown = document.getElementById("cal-d").textContent;

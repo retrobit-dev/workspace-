@@ -136,7 +136,7 @@ fun LauncherScreen(
         // angin: gorden & daun bergoyang halus
         WindSway(box = box, scene = scene)
 
-        // muka hidup: jam digital, bendera, kalender, ikon bingkai, judul papan tulis
+        // muka hidup: kalender, ikon bingkai, judul papan tulis
         LiveFaces(box = box, battery = battery, isDay = isDay)
         BatteryLabel(box = box, battery = battery)
 
@@ -380,8 +380,6 @@ private val FaceInk = Color(0xFF181430)
 
 /**
  * Semua muka hidup di atas gambar:
- *  - jam digital (jam:menit:detik + tanggal) sejajar bingkai foto, tinggi sama,
- *  - bendera Indonesia menempel di kanan jam, tinggi sama,
  *  - kalender dengan animasi melipat saat tanggal berganti,
  *  - ikon aplikasi di lima bingkai,
  *  - judul "JADWAL MENGAJAR" di papan tulis,
@@ -390,7 +388,6 @@ private val FaceInk = Color(0xFF181430)
 @Composable
 private fun LiveFaces(box: SceneBox, battery: Int, isDay: Boolean) {
     val nowMs = rememberNowMs()
-    val time = remember(nowMs) { LocalTime.now() }
     val today = remember(nowMs) { LocalDate.now() }
 
     // animasi lipat kalender: 0 = kertas penuh, 1 = kertas terlipat habis
@@ -412,35 +409,6 @@ private fun LiveFaces(box: SceneBox, battery: Int, isDay: Boolean) {
 
     Canvas(Modifier.fillMaxSize()) {
         paint.typeface = typeface
-
-        // ---------------- jam digital + bendera ----------------
-        val clock = planeOf(box, wallQuad(CLOCK_RECT), this)
-        withPlane(clock) { native ->
-            native.drawRect(0f, 0f, clock.width, clock.height, Paint().apply { color = 0xFF07060F.toInt() })
-            native.drawRect(1.5f, 1.5f, clock.width - 1.5f, clock.height - 1.5f,
-                Paint().apply { color = 0xFF2B2A46.toInt(); style = Paint.Style.STROKE; strokeWidth = 2.2f })
-
-            // jam:menit besar, tanggal kecil, detik jadi bilah tipis di tepi bawah
-            paint.textAlign = Paint.Align.CENTER
-            paint.color = ScreenGreen.toArgb()
-            paint.textSize = minOf(clock.height * 0.34f, clock.width * 0.88f / 3.9f)
-            val digital = "%02d:%02d".format(time.hour, time.minute)
-            native.drawText(digital, clock.width / 2f, clock.height * 0.46f, paint)
-
-            paint.textSize = clock.height * 0.15f
-            paint.color = Color(0xFF9FD8B0).toArgb()
-            val date = "${DAYS_SHORT[today.dayOfWeek.value - 1]} ${today.dayOfMonth} ${MONTHS_SHORT[today.monthValue - 1]}"
-            val dateW = paint.measureText(date)
-            if (dateW > clock.width * 0.92f) paint.textSize *= clock.width * 0.92f / dateW
-            native.drawText(date, clock.width / 2f, clock.height * 0.66f, paint)
-
-            // detik berjalan sebagai bilah di tepi bawah panel
-            val barStart = clock.width * 0.12f
-            val barFull = clock.width * 0.76f
-            native.drawRect(barStart, clock.height * 0.84f,
-                barStart + max(1f, barFull * time.second / 60f), clock.height * 0.875f,
-                Paint().apply { color = 0x99D7F7CD.toInt() })
-        }
 
         // ---------------- judul di papan tulis ----------------
         val board = planeOf(box, BOARD_QUAD, this)

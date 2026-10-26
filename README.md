@@ -5,14 +5,16 @@ satu layar berisi gambar workspace isometrik ukuran penuh. Tanpa sidebar, tanpa 
 tanpa header, tanpa panel. Setiap objek di gambar bisa diketuk untuk membuka aplikasi
 bawaannya — aplikasi itu dibuat menyusul, satu per satu.
 
-**Status: v0.15.5 — jam analog dihapus, tinggal jam digital dinding yang sejajar dan
-setinggi bingkai foto; papan tulis memakai
-judul "Jadwal Mengajar"; kalender meja lebih tebal dan halamannya melipat saat tanggal
+**Status: v0.15.6 — jam digital dinding dihapus; satu-satunya pintu ke aplikasi
+Jadwal kini papan tulis berjudul "Jadwal Mengajar"; kalender meja lebih tebal dan halamannya melipat saat tanggal
 berganti; jendela tanpa palang dengan gorden & daun tanaman yang bergoyang; rel gorden
 jadi penunjuk baterai dengan persentase tertulis di dinding; tempat sampah membuka
 file manager; suasana siang/malam mengikuti jam perangkat.**
 
-Perbaikan 0.15.5: saat siang lampu meja MATI — pencahayaan ruangan datang dari
+Perbaikan 0.15.6: jam digital dinding (jam:menit, tanggal, bilah detik) dan
+sisa benderanya dihapus dari launcher — dinding kini bersih, dan mengetuk papan
+tulis "Jadwal Mengajar" yang membuka aplikasi Jadwal. Dan sebelumnya, 0.15.5:
+saat siang lampu meja MATI — pencahayaan ruangan datang dari
 jendela (gradasi dingin kebiruan, pantulan cahaya jendela di lantai, bayangan jatuh
 ke kanan-bawah). Malam tetap lampu menyala. Dan sebelumnya, sisi kanan gorden:
 kain 36 px (dari 58 px) dan rel mulai tepat di ujung jendela sehingga dinding kiri
@@ -20,7 +22,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.15.5-debug.apk`](dist/RuangKelas-0.15.5-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.15.6-debug.apk`](dist/RuangKelas-0.15.6-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain) |
@@ -29,7 +31,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.15.5-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.15.6-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -57,22 +59,18 @@ Koordinat ketuk disimpan di `Data.kt` (`TILES`, satuan piksel gambar 1312 × 816
 | Laci meja, rak buku | Binder Materi |
 | Papan tulis | Absensi |
 | Papan pin (atas rak) | Buku Catatan |
-| Jam digital dinding | Jadwal — jam:menit, tanggal, dan bilah detik yang berjalan |
-| Foto user (kiri jam) | Profil & pengaturan launcher |
+| Papan tulis "Jadwal Mengajar" | Jadwal |
+| Foto user di dinding | Profil & pengaturan launcher |
 | Jendela | Kelas |
 | Tempat sampah (sudut kiri bawah) | File manager: aplikasi berkas bawaan, atau pemilih dokumen Android |
 | 5 bingkai di atas papan pin | Pintasan: WhatsApp, Vivaldi, Spotify, YouTube, Sinaga Jateng |
 
-Jam, kalender, judul papan tulis, ikon aplikasi, dan persentase baterai bukan gambar
+Kalender, judul papan tulis, ikon aplikasi, dan persentase baterai bukan gambar
 mati: `Launcher.kt` menggambarnya di atas scene setiap detik.
 
-- **Jam digital** (`CLOCK_RECT`) sejajar dengan bingkai foto di dinding dan **tingginya
-  sama** (124 px). Isinya `jam:menit` besar, tanggal kecil (`SEN 26 OKT`), dan bilah
-  detik tipis di tepi bawah panel. Mengetuknya membuka `Jadwal`; ke depan jam ini yang
-  akan menampung alarm, pengatur waktu, dan jam dunia.
-  sudut kirinya bertemu sudut kanan-atas jam. Menandai Indonesia sebagai zona bawaan.
 - **Papan tulis** (`BOARD_QUAD`) diberi judul **"Jadwal Mengajar"** rata tengah di bagian
-  atas, dengan garis tipis di bawahnya. Tempat jadwal pelajaran nanti.
+  atas, dengan garis tipis di bawahnya. Mengetuknya membuka `Jadwal`; ke depan di sinilah
+  alarm, pengatur waktu, dan jam dunia akan ditampung.
 - **Kalender** (`CALENDAR_QUAD`) lebih tebal (tumpukan kertas di bawah muka), dan saat
   tanggal berganti halamannya "dilipat" — tinggi kertas menyusut lalu muncul lagi
   dengan angka baru.
@@ -113,7 +111,7 @@ npm run preview:build   # bangun ulang web/ dari art + TILES
 `CLOCK_RECT`, `FLAG_RECT`, `BOARD_QUAD`, `CALENDAR_QUAD`, `FRAME_QUADS`, `APP_ICONS`,
 `RAIL_LINE`, `BATTERY_TEXT_QUAD`, `CURTAIN_RECTS`, `LEAF_RECT`, dan `SCENE_W/H`
 langsung dari `Data.kt` — jadi area ketuk di browser identik dengan di APK. Gambar
-penuh layar, tanpa sidebar/tab/header, objek menyala saat ditekan, jam digital dan
+penuh layar, tanpa sidebar/tab/header, objek menyala saat ditekan,
 kalender hidup, gorden bergoyang, rel baterai ikut berubah, dan suasana siang/malam
 otomatis mengikuti jam browser.
 
@@ -137,7 +135,7 @@ tools/check_preview.mjs            uji area ketuk preview (jsdom)
 web/                               preview statis: index.html + scene_night.png + scene_day.png
 android/app/src/main/java/dev/retrobit/ruangkelas/
 ├── App.kt                         MainActivity (fullscreen) + Root
-├── Launcher.kt                    gambar penuh layar + 18 area ketuk + jam digital + kalender + angin + rel baterai
+├── Launcher.kt                    gambar penuh layar + 18 area ketuk + kalender + angin + rel baterai
 ├── Data.kt                        model, data contoh, simpan/muat JSON, TILES
 ├── Theme.kt                       token warna + font pixel
 └── Ui.kt                          komponen dasar untuk aplikasi yang akan datang
@@ -150,6 +148,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.15.5-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.15.6-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.

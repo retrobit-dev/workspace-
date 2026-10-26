@@ -104,7 +104,7 @@ def main() -> None:
         ("launcher-ketuk-kalender", 1062, 437),   # kalender meja tebal (tanggal hidup)
         ("launcher-ketuk-binder", 767, 615),      # laci meja
         ("launcher-ketuk-profil", 750, 98),       # foto user di kiri jam dinding
-        ("launcher-ketuk-jadwal", 849, 100),      # jam digital + bendera
+        ("launcher-ketuk-jadwal", 459, 287),      # papan tulis "JADWAL MENGAJAR"
         ("launcher-ketuk-sampah", 58, 707),       # tempat sampah -> file manager
         ("launcher-ketuk-pintasan", 242, 182),    # bingkai aplikasi (Spotify)
     ]

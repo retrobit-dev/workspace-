@@ -1,7 +1,7 @@
 // Cek preview tanpa browser: hotspot & semua lapisan hidup harus memakai
 // koordinat yang sama dengan Data.kt (sumber kebenaran), plus aturan v7:
 //   · tidak ada jam analog, hanya jam digital
-//   · jam digital setinggi bingkai foto & sejajar dengannya
+//   · (0.15.6) jam digital & bendera dihapus; Jadwal lewat papan tulis
 //   · bendera di kanan jam DIHAPUS (0.15.5)
 //   · kalender punya halaman yang bisa terlipat
 //   · rel gorden = indikator baterai + persen di dinding
@@ -37,7 +37,6 @@ const frameQuads = listOfQuads("FRAME_QUADS");
 const curtainRects = listOfQuads("CURTAIN_RECTS");
 const icons = [...data.matchAll(/AppIcon\("([^"]+)",\s*"(#[0-9A-Fa-f]+)"/g)].map((m) => ({ name: m[1], bg: m[2] }));
 
-const CLOCK = rect("CLOCK_RECT");
 const BOARD = rect("BOARD_QUAD");
 const CAL = rect("CALENDAR_QUAD");
 const RAIL = rect("RAIL_LINE");
@@ -76,19 +75,14 @@ tiles.forEach((tile, i) => {
 });
 if (/analog/i.test(document.body.innerHTML)) fail("masih menyebut jam analog");
 
-// ---- jam digital: setinggi & sejajar bingkai foto ----
-const clockGroup = document.getElementById("clock");
-const m = (clockGroup.getAttribute("transform") || "").match(/matrix\(([^)]+)\)/);
-if (!m) fail("jam digital tidak memakai bidang miring");
+// ---- jam digital dihapus; hotspot Jadwal kini di papan tulis ----
+if (document.getElementById("clock")) fail("#clock masih ada (jam digital sudah dihapus)");
+const jadwalTile = tiles.find((t) => t.label === "Jadwal");
+if (!jadwalTile) fail("hotspot Jadwal hilang");
 else {
-  const [a, b, c, d, e, f] = m[1].split(",").map(Number);
-  if (!close(e, CLOCK[0], 0.5) || !close(f, CLOCK[1], 0.5)) fail(`jam di (${e},${f}) != CLOCK_RECT (${CLOCK[0]},${CLOCK[1]})`);
-  if (!close(Math.hypot(c, d), CLOCK[3], 0.5)) fail(`tinggi jam ${Math.hypot(c, d).toFixed(1)} != ${CLOCK[3]}`);
-  // tinggi bingkai foto = tinggi hotspot "Profil"
-  const frameTile = tiles.find((t) => t.label === "Profil");
-  if (frameTile && Math.abs(Math.hypot(c, d) - frameTile.h) > 1.5)
-    fail(`tinggi jam ${Math.hypot(c, d).toFixed(1)} != tinggi bingkai foto ${frameTile.h}`);
-  if (Math.abs(a) < 20) fail("jam digital tidak mengikuti kemiringan dinding");
+  const boardC = { x: jadwalTile.x + jadwalTile.w / 2, y: jadwalTile.y + jadwalTile.h / 2 };
+  if (boardC.x < 300 || boardC.x > 620 || boardC.y < 200 || boardC.y > 380)
+    fail(`hotspot Jadwal tidak di area papan tulis (${boardC.x},${boardC.y})`);
 }
 
 // ---- bendera dihapus dari jam digital ----
@@ -140,13 +134,8 @@ const scene = document.getElementById("scene");
 if (!/scene_(day|night)\.png/.test(scene.getAttribute("src") || "")) fail("scene tidak memakai scene_day/night");
 
 // ---- waktu & kalender hidup ----
-const clockText = document.getElementById("clock-time").textContent.trim();
-if (!/^\d{2}:\d{2}$/.test(clockText)) fail(`jam digital "${clockText}" bukan HH:MM`);
-if (!document.getElementById("clock-sec")) fail("bilah detik di panel jam hilang");
 const now = new Date();
-const hhmm = String(now.getHours()).padStart(2, "0") + ":" + String(now.getMinutes()).padStart(2, "0");
-if (!clockText.startsWith(hhmm)) fail(`jam digital ${clockText} != waktu sekarang ${hhmm}`);
-for (const id of ["clock-date", "cal-m", "cal-d", "cal-w", "batt"]) {
+for (const id of ["cal-m", "cal-d", "cal-w", "batt"]) {
   if (!document.getElementById(id).textContent.trim()) fail(`${id} kosong`);
 }
 if (+document.getElementById("cal-d").textContent !== now.getDate())
@@ -168,6 +157,6 @@ if (BATT.length !== 6) fail("BATTERY_TEXT_QUAD harus 6 angka");
 if (document.querySelector("#fx #flag")) fail("#flag masih ada di svg");
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · ${icons.length} bingkai · jam ${clockText} · kalender ${now.getDate()} · rel baterai ${ticks.length} tanda`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · ${icons.length} bingkai · kalender ${now.getDate()} · rel baterai ${ticks.length} tanda`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);
