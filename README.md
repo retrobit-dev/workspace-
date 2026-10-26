@@ -5,11 +5,11 @@ satu layar berisi gambar workspace isometrik ukuran penuh. Tanpa sidebar, tanpa 
 tanpa header, tanpa panel. Setiap objek di gambar bisa diketuk untuk membuka aplikasi
 bawaannya — aplikasi itu dibuat menyusul, satu per satu.
 
-**Status: v0.7.0 — launcher sudah jadi dan diuji di emulator tablet.**
+**Status: v0.8.0 — launcher landscape, sudah diuji di emulator tablet.**
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.7.0-debug.apk`](dist/RuangKelas-0.7.0-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.8.0-debug.apk`](dist/RuangKelas-0.8.0-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain) |
@@ -18,8 +18,19 @@ bawaannya — aplikasi itu dibuat menyusul, satu per satu.
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.7.0-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.8.0-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
+
+## Mode landscape
+
+- Layar dikunci **landscape** di manifest (`sensorLandscape`) dan ditegaskan lagi di
+  `MainActivity.requestedOrientation`, jadi tidak bisa berputar ke portrait.
+- Gambar selalu mempertahankan rasio aslinya **16:10**. Kalau layar lebih lebar/pendek,
+  sisa ruang dibiarkan hitam (letterbox) — art tidak pernah melar dan koordinat ketuk
+  tetap presisi. Semua posisi dihitung dari satu satuan `unit` (ukuran 1 piksel gambar),
+  dipakai bersama oleh gambar, 11 area ketuk, dan layar jam.
+- Di browser, jendela portrait menampilkan ajakan "putar ke landscape"; kalau didukung,
+  browser juga diminta mengunci orientasi saat layar disentuh.
 
 ## Objek yang bisa diketuk
 
