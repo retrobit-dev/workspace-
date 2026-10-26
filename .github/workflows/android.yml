@@ -52,7 +52,7 @@ jobs:
             {
               echo "Build gagal (exit $rc) - ringkasan error:"
               echo '```'
-              grep -E "^e: |ERROR|error:|FAILURE:|What went wrong" /tmp/build.log | head -80
+              grep -A10 -E "^e: |ERROR:|error:|FAILURE:|What went wrong" /tmp/build.log | head -160
               echo '```'
             } > /tmp/err.md
             gh api -X POST "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" -f body="$(head -c 60000 /tmp/err.md)" || true

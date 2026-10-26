@@ -546,6 +546,8 @@ private fun SceneCard(state: AppState, clock: String) {
             .border(3.dp, Ink)
             .background(Ink)
     ) {
+        val mw = maxWidth
+        val mh = maxHeight
         Image(
             painter = painterResource(if (state.art64) R.drawable.scene64 else R.drawable.scene),
             contentDescription = "Ruang kerja guru malam hari",
@@ -560,7 +562,7 @@ private fun SceneCard(state: AppState, clock: String) {
             val cy = (tile.y + tile.h / 2f) / SCENE_H.toFloat()
             Box(
                 Modifier
-                    .offset(x = maxWidth * cx - dot / 2, y = maxHeight * cy - dot / 2)
+                    .offset(x = mw * cx - dot / 2, y = mh * cy - dot / 2)
                     .size(dot)
                     .background(Color(0xE6F8E9C8))
                     .border(2.dp, Ink)
@@ -577,8 +579,8 @@ private fun SceneCard(state: AppState, clock: String) {
         val jy = (jam.y + jam.h / 2f) / SCENE_H.toFloat()
         Box(
             Modifier
-                .offset(x = maxWidth * jx - maxWidth * 0.062f, y = maxHeight * jy - 10.dp)
-                .width(maxWidth * 0.124f)
+                .offset(x = mw * jx - mw * 0.062f, y = mh * jy - 10.dp)
+                .width(mw * 0.124f)
                 .height(20.dp)
                 .background(Color(0xFF0B1410))
                 .border(1.dp, Color(0xFF3E6B57))
@@ -609,7 +611,7 @@ private fun SceneCard(state: AppState, clock: String) {
                 color = Cream
             )
             Spacer(Modifier.height(4.dp))
-            Box(Modifier.width(maxWidth * 0.42f).height(7.dp).background(Color(0xCC0A0A14)).border(1.dp, Ink)) {
+            Box(Modifier.width(mw * 0.42f).height(7.dp).background(Color(0xCC0A0A14)).border(1.dp, Ink)) {
                 Box(Modifier.fillMaxWidth(xp / 1000f).fillMaxHeight().background(Amber))
             }
         }
