@@ -173,6 +173,7 @@ HTML = """<!DOCTYPE html>
     width:min(100vw, calc(100vh * var(--ratio)));
     max-height:100vh;
   }
+  /* ukuran stage dipastikan lewat JS (fit()) — CSS di atas hanya fallback */
   #scene{position:absolute;inset:0;width:100%;height:100%;display:block;
     image-rendering:pixelated;pointer-events:none}
   #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
@@ -199,7 +200,7 @@ HTML = """<!DOCTYPE html>
   #rotate .icon{width:56px;height:56px;border:3px solid var(--amber);border-radius:8px;position:relative}
   #rotate .icon::after{content:"";position:absolute;inset:8px 16px;border:3px solid var(--amber);border-radius:4px}
   #rotate small{color:#7D75A0;letter-spacing:1px;font-size:11px;line-height:1.7}
-  @media (orientation:portrait){ #rotate{display:flex} }
+  /* di preview, layar potret cukup dilayerbox — sama seperti APK di layar lain rasio */
 </style>
 </head>
 <body>
@@ -414,6 +415,18 @@ if (navigator.getBattery) {
   }).catch(() => {});
 }
 
+// pastikan stage selalu 1312:816 muat penuh di viewport apa pun
+// (CSS min()/calc() gagal di sebagian webview — ukuran dihitung JS di sini)
+function fit() {
+  var st = document.getElementById("stage");
+  var s = Math.min(window.innerWidth / __W__, window.innerHeight / __H__);
+  st.style.width = Math.floor(__W__ * s) + "px";
+  st.style.height = Math.floor(__H__ * s) + "px";
+}
+window.addEventListener("resize", fit);
+window.addEventListener("orientationchange", fit);
+fit();
+
 // minta browser mengunci landscape saat layar disentuh
 function lockLandscape() {
   try {
@@ -461,6 +474,7 @@ def build_html(data, scene_sizes):
 
     html = (
         HTML.replace("__RATIO__", f"{w} / {h}")
+        .replace("__W__", str(w)).replace("__H__", str(h))
         .replace("__SCENE_W__", str(w))
         .replace("__SCENE_H__", str(h))
         .replace("__TILES__", "[\n" + "".join(
