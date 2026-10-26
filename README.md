@@ -42,11 +42,28 @@ Ketukan saat ini memunculkan label "<NAMA> · SEGERA HADIR" selama 2 detik
 (`Root` → `LauncherScreen(onOpen)`); begitu satu aplikasi dibuat, arahkan saja
 `onOpen` ke layarnya.
 
+## Preview di browser
+
+Launcher yang sama juga bisa dicoba di browser (tanpa memasang APK):
+
+```bash
+npm start          # http://localhost:4173  → menyajikan web/
+npm run preview:build   # bangun ulang web/ dari art + TILES
+```
+
+`web/index.html` dibuat oleh `tools/make_preview.py` yang membaca `TILES`,
+`CLOCK_SCREEN`, dan `SCENE_W/H` langsung dari `Data.kt` — jadi area ketuk di
+browser identik dengan di APK. Gambar penuh layar, tanpa sidebar/tab/header,
+objek menyala saat ditekan, jam LED menampilkan waktu nyata, dan label
+"SEGERA HADIR" muncul saat objek diketuk.
+
 ## Struktur
 
 ```
 art/workspace-iso-raw.png          sumber gambar isometrik 1312 × 816
 tools/make_scene.py                memotong ke 16:10 → res/drawable-nodpi/scene.png
+tools/make_preview.py              bangun web/index.html dari Data.kt (preview browser)
+web/                               preview statis: index.html + scene.png
 android/app/src/main/java/dev/retrobit/ruangkelas/
 ├── App.kt                         MainActivity (fullscreen) + Root
 ├── Launcher.kt                    gambar penuh layar + 11 area ketuk + jam LED + scanline
