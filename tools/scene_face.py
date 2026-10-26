@@ -11,19 +11,20 @@ Dipakai oleh `tools/make_scene.py` (aset Android) dan `tools/make_preview.py`
 import math
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageEnhance
 
 ROOT = Path(__file__).resolve().parent.parent
-ART = ROOT / "art/workspace-iso-v2.png"
+ART = ROOT / "art/workspace-iso-v3.png"
 
-CLOCK_BOX = (752, 100, 108, 136)   # area pencarian muka jam (x, y, w, h)
+CLOCK_BOX = (880, 45, 120, 145)    # area pencarian muka jam (x, y, w, h)
 INK = (14, 13, 26)                 # sama dengan warna Ink di Theme.kt
-CAL_BOX = (856, 380, 90, 92)       # area pencarian kertas kalender
+CAL_BOX = (958, 335, 120, 110)     # area pencarian kertas kalender
 
 
 def _is_cream(p):
+    """Kertas/krem di scene: terang, kekuningan, bukan jingga meja maupun langit."""
     r, g, b = p
-    return r > 185 and g > 160 and b > 100 and b < 200 and (r - b) > 45
+    return r > 200 and g > 190 and 140 < b < 215 and 40 < (r - b) < 75
 
 
 def cream_mask(im, box):
@@ -57,10 +58,21 @@ def _avg_cream(im, spans):
     return tuple(c // n for c in tot)
 
 
+GRADE_GAMMA = 1.45   # malam yang lebih pekat, mendekati acuan pengguna
+GRADE_SAT = 0.85     # warna sedikit diredam, tidak norak
+
+
+def grade(im):
+    """Redupkan & damai-kan warna supaya suasana malam terasa seperti acuan."""
+    lut = [min(255, int(round(255 * ((i / 255) ** GRADE_GAMMA)))) for i in range(256)]
+    return ImageEnhance.Color(im.point(lut * 3)).enhance(GRADE_SAT)
+
+
 def load_scene():
-    """Gambar scene bersih (jarum jam dihapus)."""
-    im = Image.open(ART).convert("RGB")
-    spans = cream_mask(im, CLOCK_BOX)
+    """Gambar scene siap pakai: warna digrade, muka jam dikosongkan."""
+    raw = Image.open(ART).convert("RGB")
+    spans = cream_mask(raw, CLOCK_BOX)          # deteksi di gambar asli
+    im = grade(raw)
     cream = _avg_cream(im, spans)
     px = im.load()
     for y, (a, b) in spans.items():
@@ -86,9 +98,13 @@ def draw_ticks(im, bbox):
         d.line([p1, p2], fill=INK, width=2 if major else 1)
 
 
-def clock_face(im):
-    return face_bbox(cream_mask(im, CLOCK_BOX))
+def clock_face(_im=None):
+    """Kotak muka jam pada gambar asli (piksel scene)."""
+    if _im is not None and not isinstance(_im, Image.Image):
+        _im = None
+    return face_bbox(cream_mask(Image.open(ART).convert("RGB"), CLOCK_BOX))
 
 
-def calendar_face(im):
-    return face_bbox(cream_mask(im, CAL_BOX))
+def calendar_face(_im=None):
+    """Kotak kertas kalender pada gambar asli (piksel scene)."""
+    return face_bbox(cream_mask(Image.open(ART).convert("RGB"), CAL_BOX))

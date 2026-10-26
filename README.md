@@ -5,12 +5,13 @@ satu layar berisi gambar workspace isometrik ukuran penuh. Tanpa sidebar, tanpa 
 tanpa header, tanpa panel. Setiap objek di gambar bisa diketuk untuk membuka aplikasi
 bawaannya — aplikasi itu dibuat menyusul, satu per satu.
 
-**Status: v0.9.0 — launcher dengan tata letak alat yang sudah dirapikan: jam analog hidup,
-kalender yang benar-benar menampilkan hari ini, kalkulator di kanan laptop.**
+**Status: v0.10.0 — scene digambar ulang dengan nuansa yang dipilih pengguna: ruangan lebih
+lapang, lantai biru-ungu, kayu lebih hangat, suasana malam lebih pekat. Jam dinding hidup,
+kalender mencetak tanggal hari ini, kalkulator di kanan laptop.**
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.9.0-debug.apk`](dist/RuangKelas-0.9.0-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.10.0-debug.apk`](dist/RuangKelas-0.10.0-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain) |
@@ -19,7 +20,7 @@ kalender yang benar-benar menampilkan hari ini, kalkulator di kanan laptop.**
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.9.0-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.10.0-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -83,8 +84,9 @@ setiap hotspot berada tepat di atas objeknya dan muka jam/kalender terisi.
 ## Struktur
 
 ```
-art/workspace-iso-v2.png          gambar isometrik terkini 1312 × 816 (tata letak baru)
-art/workspace-iso-v1.png          gambar sebelumnya (arsip)
+art/workspace-iso-v3.png          gambar isometrik terkini 1312 × 816 (ruangan lapang)
+art/workspace-iso-v2.png          gambar sebelumnya (arsip)
+art/workspace-iso-v1.png          gambar pertama (arsip)
 tools/scene_face.py                bersihkan muka jam + gambar tanda jam di piksel asli
 tools/make_scene.py                → res/drawable-nodpi/scene.png (tanpa padding)
 tools/make_preview.py              bangun web/index.html dari Data.kt (preview browser)
@@ -105,6 +107,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.9.0-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.10.0-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.
