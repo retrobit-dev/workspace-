@@ -412,9 +412,14 @@ function predikat(value) {
 
 const NAV_SCREENS = ["home", "jurnal", "catatan", "nilai", "binder"];
 
+const SCREEN_LABEL = {
+  home: "Beranda", jurnal: "Jurnal", catatan: "Buku Catatan", absensi: "Absensi",
+  nilai: "Nilai", jadwal: "Jadwal", kalender: "Kalender", kalkulator: "Kalkulator",
+  binder: "Binder Materi", kelas: "Kelas", profil: "Profil", kit: "Design Kit"
+};
+
 function showScreen(name) {
   state.screen = name;
-  const isKit = name === "kit";
 
   $$(".screen").forEach((el) => el.classList.toggle("is-active", el.dataset.panel === name));
   $$(".tab").forEach((el) => el.setAttribute("aria-selected", String(el.dataset.screen === name)));
@@ -423,9 +428,8 @@ function showScreen(name) {
     else el.removeAttribute("aria-current");
   });
 
-  $("#phoneWrap").style.display = isKit ? "none" : "";
-  $("#stageBody").classList.toggle("kit-mode", isKit);
-  $$(".kit").forEach((el) => el.classList.toggle("is-active", isKit));
+  const crumb = $("#appScreenName");
+  if (crumb) crumb.textContent = SCREEN_LABEL[name] || "Beranda";
 
   const scroll = $(`.screen[data-panel="${name}"] .screen-scroll`);
   if (scroll) scroll.scrollTop = 0;
@@ -1248,6 +1252,9 @@ function badgeDialog(label) {
 function openJournal() { $("#journalSheet").classList.add("open"); setTimeout(() => $("#fMateri")?.focus(), 60); }
 function closeSheet() { $("#journalSheet").classList.remove("open"); }
 
+function openDisplay() { $("#displaySheet").classList.add("open"); }
+function closeDisplay() { $("#displaySheet").classList.remove("open"); }
+
 /* ------------------------------ toggles -------------------------------- */
 
 function hydrateTogglesFromBody() {
@@ -1341,6 +1348,7 @@ function initEvents() {
     if (goto) {
       if ($("#dialog").classList.contains("open")) closeDialog();
       closeSheet();
+      closeDisplay();
       showScreen(goto.dataset.goto);
       return;
     }
@@ -1355,6 +1363,8 @@ function initEvents() {
     if (e.target.id === "dialog") { closeDialog(); return; }
     if (e.target.closest("[data-close-sheet]")) { closeSheet(); return; }
     if (e.target.id === "journalSheet") { closeSheet(); return; }
+    if (e.target.closest("[data-close-display]")) { closeDisplay(); return; }
+    if (e.target.id === "displaySheet") { closeDisplay(); return; }
   });
 
   $$(".tab").forEach((tab) => tab.addEventListener("click", () => showScreen(tab.dataset.screen)));
@@ -1366,6 +1376,33 @@ function initEvents() {
     row.addEventListener("click", flip);
     row.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
+    });
+  });
+
+  /* pengaturan tampilan */
+  $("#openDisplay").addEventListener("click", openDisplay);
+
+  $("#fullscreenBtn").addEventListener("click", () => {
+    const el = document.documentElement;
+    if (!document.fullscreenElement && el.requestFullscreen) {
+      el.requestFullscreen().then(() => toast("MODE LAYAR PENUH AKTIF")).catch(() => toast("BROWSER TIDAK MENDUKUNG LAYAR PENUH"));
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen().then(() => toast("KELUAR DARI LAYAR PENUH")).catch(() => {});
+    } else {
+      toast("BROWSER TIDAK MENDUKUNG LAYAR PENUH");
+    }
+  });
+
+  $("#resetBtn").addEventListener("click", () => {
+    openDialog("RESET DATA", [], null, null,
+      `<p style="font-size:13px;line-height:1.6;margin:0">Semua catatan, jurnal, agenda, dan nilai kembali ke data contoh.</p>
+       <div class="dialog-actions" style="margin-top:14px">
+         <button class="btn ghost" data-close-dialog>Batal</button>
+         <button class="btn" id="confirmReset2">Reset</button>
+       </div>`);
+    $("#confirmReset2").addEventListener("click", () => {
+      localStorage.removeItem(LS_KEY);
+      location.reload();
     });
   });
 
@@ -1603,7 +1640,7 @@ function initEvents() {
       }
       return;
     }
-    if (e.key === "Escape") closeSheet();
+    if (e.key === "Escape") { closeSheet(); closeDisplay(); }
 
     if (state.screen === "kalkulator" && state.calcMode === "hitung" && !["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) {
       const map = { Enter: "=", Backspace: "del", Escape: "AC", "*": "*", "/": "/", "+": "+", "-": "-", "%": "%", ".": "." };

@@ -68,6 +68,7 @@ let html = read("index.html").toString("utf8");
 
 html = html.replace('<link rel="stylesheet" href="styles.css">', () => inlineCSS("styles.css"));
 html = html.replace('<link rel="stylesheet" href="tablet.css">', () => inlineCSS("tablet.css"));
+html = html.replace('<link rel="stylesheet" href="real.css">', () => inlineCSS("real.css"));
 /* pakai fungsi sebagai pengganti agar "$$" di JS tidak ditafsirkan sebagai escape */
 html = html.replace('<script src="app.js"></script>', () => inlineJS());
 

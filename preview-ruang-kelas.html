@@ -3109,8 +3109,358 @@ body.scanlines .tablet-screen::after { opacity: 1; }
 .today:focus-visible { outline: 2px solid var(--amber); outline-offset: -2px; }
 
 </style>
+<style data-source="real.css">
+/* ==========================================================================
+   RUANG KELAS — real.css
+   Membuat preview tampil seperti APLIKASI SUNGGUHAN di tablet:
+   tanpa bezel, tanpa sidebar kontrol, tanpa tab — layar penuh 100%.
+   Dimuat paling akhir setelah tablet.css.
+   ========================================================================== */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body.real {
+  font-size: 15px;
+}
+
+/* ---------- bingkai halaman dihilangkan ------------------------------- */
+
+body.real .page {
+  display: block;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  min-height: 100%;
+}
+
+body.real .sidebar,
+body.real .tabs,
+body.real .device-caption,
+body.real .tablet-cam {
+  display: none !important;
+}
+
+body.real .stage,
+body.real .stage-body,
+body.real .device-wrap {
+  display: block;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+}
+
+body.real .tablet {
+  width: 100%;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+}
+
+body.real .tablet::before,
+body.real .tablet::after { content: none; }
+
+/* layar mengisi seluruh viewport */
+body.real .tablet-screen {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  aspect-ratio: auto;
+  border-radius: 0;
+}
+
+/* design kit sudah menjadi layar biasa di dalam aplikasi */
+body.real .kit-mode { display: block; }
+
+/* ---------- app bar --------------------------------------------------- */
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  height: 56px;
+  flex: none;
+  padding: 0 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.075), rgba(0, 0, 0, 0.18)),
+    #191833;
+  border-bottom: 2px solid var(--line);
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+  position: relative;
+  z-index: 30;
+}
+
+.app-id,
+.app-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.app-logo {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: var(--ink);
+  background: var(--amber);
+  box-shadow: 0 0 0 2px var(--line), inset 0 -3px 0 rgba(0, 0, 0, 0.18);
+}
+
+.app-name {
+  font-family: var(--font-title);
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  color: var(--cream);
+  white-space: nowrap;
+  text-shadow: 2px 2px 0 rgba(184, 57, 47, 0.65);
+}
+
+.app-sep {
+  width: 2px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.14);
+  flex: none;
+}
+
+.app-screen {
+  font-family: var(--font-label);
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: var(--amber);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-status .clock {
+  font-family: var(--font-label);
+  font-size: 22px;
+  letter-spacing: 1.4px;
+  color: #d7f7cd;
+  text-shadow: 0 0 10px rgba(159, 216, 176, 0.4), 2px 2px 0 #0a0f0c;
+  line-height: 1;
+}
+.app-status .clock::after {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 6px;
+  vertical-align: 4px;
+  background: #d7f7cd;
+  box-shadow: 0 0 8px rgba(215, 247, 205, 0.8);
+  animation: blink 2s steps(1) infinite;
+}
+.app-status .clock-date {
+  font-family: var(--font-label);
+  font-size: 8px;
+  letter-spacing: 0.9px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.app-status .tab-badge {
+  font-size: 7px;
+  padding: 4px 6px;
+}
+
+.status-btn {
+  width: 30px;
+  height: 30px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 0;
+  cursor: pointer;
+  color: var(--cream-2);
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 0 0 2px var(--line);
+  transition: color 0.1s, background 0.1s, transform 0.06s steps(2);
+}
+.status-btn:hover { color: var(--amber); background: rgba(242, 171, 63, 0.16); }
+.status-btn:active { transform: translateY(2px); }
+
+/* ---------- body aplikasi ---------------------------------------------- */
+
+body.real .tab-body {
+  grid-template-columns: 88px minmax(0, 1fr) 312px;
+}
+
+body.real .rail {
+  padding: 8px 7px;
+  gap: 3px;
+}
+
+body.real .rail .nav-btn {
+  min-height: 48px;
+  border-radius: 0;
+}
+body.real .rail .nav-btn .ico svg { width: 20px; height: 20px; }
+body.real .rail .nav-btn span:last-child { font-size: 6.5px; }
+
+/* layar masuk dengan transisi halus */
+body.real .screen.is-active { animation: screen-in 0.18s steps(3); }
+
+/* scrollbar tipis seperti aplikasi */
+body.real .screen-scroll { padding: 16px 20px 22px; }
+body.real .screen-head { padding: 16px 20px 12px; }
+
+/* tab dalam dialog tetap terlihat (chip) */
+body.real .sheet { max-width: 560px; }
+
+/* sheet pengaturan tampilan */
+#displaySheet .toggle-row { font-size: 13px; }
+#displaySheet .switch { margin-left: 0; }
+
+/* ---------- sentuhan akhir ------------------------------------------- */
+
+body.real .btn:active,
+body.real .icon-btn:active,
+body.real .chip:active,
+body.real .tool:active,
+body.real .stat:active,
+body.real .inv-slot:active,
+body.real .nav-btn:active {
+  transform: translateY(2px);
+}
+
+@media (hover: none) {
+  body.real .tile-dot { animation: none; }
+}
+
+body.real .home-hero .scene { width: min(100%, 600px); }
+
+/* ---------- lebar layar besar (desktop) -------------------------------- */
+
+@media (min-width: 1600px) {
+  body.real .tab-body { grid-template-columns: 96px minmax(0, 1fr) 340px; }
+  body.real .screen-head h1 { font-size: 26px; }
+  body.real .screen-head h2 { font-size: 24px; }
+  body.real .card-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  body.real .home-hero .scene { width: min(100%, 640px); }
+}
+
+/* ---------- tinggi layar pendek --------------------------------------- */
+
+@media (max-height: 720px) {
+  body.real .app-bar { height: 50px; }
+  body.real .screen-head { padding: 12px 18px 9px; }
+  body.real .rail .nav-btn { min-height: 40px; }
+  body.real .rail .nav-btn span:last-child { display: none; }
+  body.real .app-status .clock-date { display: none; }
+}
+
+@media (max-height: 560px) {
+  body.real .app-bar { height: 44px; }
+  body.real .screen-head h1 { font-size: 20px; }
+  body.real .home-hero .scene { width: min(100%, 380px); }
+}
+
+/* ---------- beranda: dashboard dua kolom ------------------------------- */
+
+.home-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 14px 20px;
+  align-items: start;
+}
+
+.home-left { display: grid; gap: 10px; }
+.home-right { display: grid; gap: 0; align-content: start; }
+
+body.real .home-hero .scene { width: 100%; }
+
+.home-left .quick-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.home-hint {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  color: var(--muted-2);
+}
+.home-hint p {
+  margin: 0;
+  font-family: var(--font-label);
+  font-size: 6.5px;
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+}
+.home-hint .ico { color: var(--amber); flex: none; }
+
+.home-right .tool-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.home-right .home-notes .note p { -webkit-line-clamp: 2; }
+.home-right .section-head:first-child { margin-top: 0; }
+
+@container (max-width: 1040px) {
+  .home-board { grid-template-columns: 1fr; }
+  .home-left .quick-stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@container (max-width: 640px) {
+  .home-left .quick-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .home-right .tool-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ---------- perilaku seperti aplikasi native --------------------------- */
+
+body.real .rail,
+body.real .app-bar,
+body.real .chips,
+body.real .day-tabs,
+body.real .seg,
+body.real .screen-head,
+body.real .bottom-nav {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body.real .screen-scroll,
+body.real .context-panel {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.real .tablet-screen { touch-action: manipulation; }
+
+/* app bar makin ringkas saat layar sempit */
+@container (max-width: 980px) {
+  .app-status .tab-badge { display: none; }
+}
+@container (max-width: 820px) {
+  .app-status .clock-date { display: none; }
+  .app-name { font-size: 9px; }
+}
+@container (max-width: 620px) {
+  .app-name { display: none; }
+  .app-id .app-sep { display: none; }
+}
+
+/* fokus keyboard tetap terlihat */
+body.real button:focus-visible,
+body.real input:focus-visible,
+body.real select:focus-visible,
+body.real textarea:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+</style>
 </head>
-<body class="scanlines">
+<body class="scanlines real">
 
 <div class="page">
 
@@ -3191,7 +3541,6 @@ body.scanlines .tablet-screen::after { opacity: 1; }
       <button class="tab" role="tab" data-screen="binder" aria-selected="false">Binder</button>
       <button class="tab" role="tab" data-screen="kelas" aria-selected="false">Kelas</button>
       <button class="tab" role="tab" data-screen="profil" aria-selected="false">Profil</button>
-      <button class="tab" role="tab" data-screen="kit" aria-selected="false">Design Kit</button>
     </div>
 
     <div class="stage-body" id="stageBody">
@@ -3202,18 +3551,27 @@ body.scanlines .tablet-screen::after { opacity: 1; }
           <div class="tablet-cam"></div>
           <div class="tablet-screen" id="phoneScreen">
 
-            <!-- status bar landscape -->
-            <div class="tab-status">
-              <div class="tab-status-left">
+            <!-- app bar + jam digital -->
+            <header class="app-bar">
+              <div class="app-id">
+                <span class="app-logo"><span class="ico" data-icon="logo" data-size="17"></span></span>
+                <span class="app-name">RUANG KELAS</span>
+                <span class="app-sep"></span>
+                <span class="app-screen" id="appScreenName">Beranda</span>
+              </div>
+
+              <div class="app-status">
+                <span class="tab-badge" id="statusLevel">LV 7 · GURU SIGAP</span>
                 <span class="clock" id="clockTime">09:12</span>
                 <span class="clock-date" id="clockDate">SENIN · 26 OKT 2026</span>
-              </div>
-              <div class="tab-status-right">
-                <span class="tab-badge" id="statusLevel">LV 7 · GURU SIGAP</span>
+                <span class="app-sep"></span>
                 <span class="sig"><i></i><i></i><i></i><i></i></span>
                 <span class="battery"><span></span></span>
+                <button class="status-btn" id="openDisplay" aria-label="Pengaturan tampilan">
+                  <span class="ico" data-icon="gear"></span>
+                </button>
               </div>
-            </div>
+            </header>
 
             <div class="tab-body">
 
@@ -3271,71 +3629,77 @@ body.scanlines .tablet-screen::after { opacity: 1; }
                   </div>
 
                   <div class="screen-scroll home-scroll">
-                    <div class="home-hero">
-                      <div class="scene" id="scene">
-                        <div class="scene-frame">
-                          <img class="scene-img" id="sceneImg" src="data:image/png;base64,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"
-                               alt="Ruang kerja guru malam hari: laptop, papan tulis, papan pin, jam digital, kalender meja, dan laci">
+                    <div class="home-board">
+
+                      <div class="home-left">
+                        <div class="home-hero">
+                          <div class="scene" id="scene">
+                            <div class="scene-frame">
+                              <img class="scene-img" id="sceneImg" src="data:image/png;base64,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"
+                                   alt="Ruang kerja guru malam hari: laptop, papan tulis, papan pin, jam digital, kalender meja, dan laci">
+                            </div>
+                            <div class="tiles" id="sceneTiles"></div>
+                            <span class="scene-tag" id="sceneTag">RUANG KERJA · MALAM</span>
+                            <div class="scene-level">
+                              <div class="row"><span>LEVEL 7 · GURU SIGAP</span><b id="xpLabel">740 / 1000 XP</b></div>
+                              <div class="xp"><span id="xpBar" style="width:74%"></span></div>
+                            </div>
+                          </div>
                         </div>
-                        <div class="tiles" id="sceneTiles"></div>
-                        <span class="scene-tag" id="sceneTag">RUANG KERJA · MALAM</span>
-                        <div class="scene-level">
-                          <div class="row"><span>LEVEL 7 · GURU SIGAP</span><b id="xpLabel">740 / 1000 XP</b></div>
-                          <div class="xp"><span id="xpBar" style="width:74%"></span></div>
+
+                        <div class="quick-stats">
+                          <button class="stat amber" data-goto="jadwal"><b>3</b><span>Kelas hari ini</span></button>
+                          <button class="stat mint" data-goto="kelas"><b>96</b><span>Total siswa</span></button>
+                          <button class="stat sky" data-goto="catatan"><b id="noteCount">6</b><span>Catatan aktif</span></button>
+                          <button class="stat" data-goto="binder"><b id="docCount">7</b><span>Dokumen binder</span></button>
+                        </div>
+
+                        <div class="home-hint">
+                          <span class="ico" data-icon="star" data-size="12"></span>
+                          <p>TAP OBJEK DI RUANG KERJA UNTUK MEMBUKA TOOL</p>
                         </div>
                       </div>
-                    </div>
 
-                    <div class="quick-stats">
-                      <button class="stat amber" data-goto="jadwal"><b>3</b><span>Kelas hari ini</span></button>
-                      <button class="stat mint" data-goto="kelas"><b>96</b><span>Total siswa</span></button>
-                      <button class="stat sky" data-goto="catatan"><b id="noteCount">6</b><span>Catatan aktif</span></button>
-                      <button class="stat" data-goto="binder"><b id="docCount">7</b><span>Dokumen binder</span></button>
-                    </div>
-
-                    <div class="home-cols">
-                      <div>
+                      <div class="home-right">
                         <div class="section-head">
                           <h3>Tools mengajar</h3>
                           <button class="more" data-goto="kit">DESIGN KIT →</button>
                         </div>
                         <div class="tool-grid">
-                        <button class="tool" data-goto="jurnal">
-                          <span class="ico-box"><span class="ico" data-icon="book"></span></span>
-                          <span><b>Jurnal</b><small>Catat pertemuan</small></span>
-                        </button>
-                        <button class="tool" data-goto="catatan">
-                          <span class="ico-box"><span class="ico" data-icon="pencil"></span></span>
-                          <span><b>Catatan</b><small>Ide &amp; refleksi</small></span>
-                        </button>
-                        <button class="tool" data-goto="absensi">
-                          <span class="ico-box"><span class="ico" data-icon="check"></span></span>
-                          <span><b>Absensi</b><small>Kehadiran</small></span>
-                        </button>
-                        <button class="tool" data-goto="nilai">
-                          <span class="ico-box"><span class="ico" data-icon="chart"></span></span>
-                          <span><b>Nilai</b><small>Tugas &amp; ujian</small></span>
-                        </button>
-                        <button class="tool" data-goto="jadwal">
-                          <span class="ico-box"><span class="ico" data-icon="clock"></span></span>
-                          <span><b>Jadwal</b><small>Weekly</small></span>
-                        </button>
-                        <button class="tool" data-goto="kalender">
-                          <span class="ico-box"><span class="ico" data-icon="calendar"></span></span>
-                          <span><b>Kalender</b><small>Agenda</small></span>
-                        </button>
-                        <button class="tool" data-goto="kalkulator">
-                          <span class="ico-box"><span class="ico" data-icon="calc"></span></span>
-                          <span><b>Kalkulator</b><small>Hitung nilai</small></span>
-                        </button>
-                        <button class="tool" data-goto="binder">
-                          <span class="ico-box"><span class="ico" data-icon="folder"></span></span>
-                          <span><b>Binder</b><small>Materi</small></span>
-                        </button>
+                          <button class="tool" data-goto="jurnal">
+                            <span class="ico-box"><span class="ico" data-icon="book"></span></span>
+                            <span><b>Jurnal</b><small>Catat pertemuan</small></span>
+                          </button>
+                          <button class="tool" data-goto="catatan">
+                            <span class="ico-box"><span class="ico" data-icon="pencil"></span></span>
+                            <span><b>Catatan</b><small>Ide &amp; refleksi</small></span>
+                          </button>
+                          <button class="tool" data-goto="absensi">
+                            <span class="ico-box"><span class="ico" data-icon="check"></span></span>
+                            <span><b>Absensi</b><small>Kehadiran</small></span>
+                          </button>
+                          <button class="tool" data-goto="nilai">
+                            <span class="ico-box"><span class="ico" data-icon="chart"></span></span>
+                            <span><b>Nilai</b><small>Tugas &amp; ujian</small></span>
+                          </button>
+                          <button class="tool" data-goto="jadwal">
+                            <span class="ico-box"><span class="ico" data-icon="clock"></span></span>
+                            <span><b>Jadwal</b><small>Weekly</small></span>
+                          </button>
+                          <button class="tool" data-goto="kalender">
+                            <span class="ico-box"><span class="ico" data-icon="calendar"></span></span>
+                            <span><b>Kalender</b><small>Agenda</small></span>
+                          </button>
+                          <button class="tool" data-goto="kalkulator">
+                            <span class="ico-box"><span class="ico" data-icon="calc"></span></span>
+                            <span><b>Kalkulator</b><small>Hitung nilai</small></span>
+                          </button>
+                          <button class="tool" data-goto="binder">
+                            <span class="ico-box"><span class="ico" data-icon="folder"></span></span>
+                            <span><b>Binder</b><small>Materi</small></span>
+                          </button>
                         </div>
-                      </div>
 
-                      <div>
                         <div class="section-head">
                           <h3>Berikutnya</h3>
                           <button class="more" data-goto="jadwal">JADWAL →</button>
@@ -3353,9 +3717,8 @@ body.scanlines .tablet-screen::after { opacity: 1; }
                         </div>
                         <div id="homeNotes" class="home-notes"></div>
                       </div>
-                    </div>
 
-                    <div style="height:8px"></div>
+                    </div>
                   </div>
                 </section>
 
@@ -3732,6 +4095,11 @@ body.scanlines .tablet-screen::after { opacity: 1; }
                             <span>Reset data prototipe</span>
                             <span class="val">AWAS</span>
                           </div>
+                          <div class="setting" data-goto="kit">
+                            <span class="ico" data-icon="grid"></span>
+                            <span>Design kit &amp; token</span>
+                            <span class="val">BUKA →</span>
+                          </div>
                           <div class="setting" data-setting="device">
                             <span class="ico" data-icon="grid"></span>
                             <span>Target perangkat</span>
@@ -3756,108 +4124,20 @@ body.scanlines .tablet-screen::after { opacity: 1; }
                   </div>
                 </section>
 
-              </div>
 
-              <!-- panel konteks kanan -->
-              <aside class="context-panel" aria-label="Panel informasi">
-                <div class="ctx-clock">
-                  <span class="ctx-clock-label">JAM DIGITAL</span>
-                  <div class="ctx-clock-time" id="ctxClock">09:12</div>
-                  <div class="ctx-clock-date" id="ctxClockDate">SENIN · 26 OKT 2026</div>
-                  <div class="ctx-clock-note">WAKTU SERVER LOKAL · 24 JAM</div>
-                </div>
-
-                <div class="ctx-card">
-                  <h4>AGENDA HARI INI</h4>
-                  <div id="ctxAgenda"></div>
-                  <button class="btn small ghost block" data-goto="kalender" style="margin-top:8px">Buka Kalender</button>
-                </div>
-
-                <div class="ctx-card">
-                  <h4>KELAS CEPAT</h4>
-                  <div class="ctx-classes" id="ctxClasses"></div>
-                </div>
-
-                <div class="ctx-card">
-                  <h4>PROGRES</h4>
-                  <div class="ctx-xp">
-                    <span>LV 7 · 740 XP</span>
-                    <div class="xp"><span style="width:74%"></span></div>
+                <!-- ---------- DESIGN KIT ---------- -->
+                <section class="screen" data-panel="kit">
+                  <div class="screen-head">
+                    <div>
+                      <h2>Design Kit</h2>
+                      <p class="eyebrow">TOKEN DESAIN · SIAP DIPINDAH KE JETPACK COMPOSE</p>
+                    </div>
+                    <div class="head-actions">
+                      <button class="icon-btn" data-soon="Ekspor token JSON" data-icon="download" aria-label="Ekspor token"></button>
+                      <button class="btn ghost" data-goto="profil"><span class="ico" data-icon="chevL"></span> Profil</button>
+                    </div>
                   </div>
-                  <p class="ctx-note">SELESAIKAN 1 JURNAL = +25 XP</p>
-                </div>
-              </aside>
-            </div>
-
-            <div class="toast" id="toast"></div>
-
-            <!-- bottom sheet: jurnal baru -->
-            <div class="sheet-backdrop" id="journalSheet">
-              <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-                <h3 id="sheetTitle">Catat Pertemuan
-                  <button class="icon-btn" data-icon="close" data-close-sheet aria-label="Tutup"></button>
-                </h3>
-                <p class="sheet-sub">JURNAL MENGAJAR · DATA TERSIMPAN LOKAL</p>
-
-                <div class="field-row">
-                  <div class="field">
-                    <label for="fKelas">Kelas</label>
-                    <select id="fKelas">
-                      <option>7A</option><option>7B</option><option>8A</option><option>8B</option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="fJam">Jam ke</label>
-                    <input id="fJam" type="text" value="3–4" inputmode="numeric">
-                  </div>
-                </div>
-
-                <div class="field">
-                  <label for="fMateri">Materi</label>
-                  <input id="fMateri" type="text" placeholder="Contoh: Klasifikasi makhluk hidup">
-                </div>
-
-                <div class="field">
-                  <label for="fCatatan">Catatan / refleksi</label>
-                  <textarea id="fCatatan" placeholder="Apa yang berjalan baik? Siswa yang perlu perhatian?"></textarea>
-                </div>
-
-                <div class="field-row">
-                  <div class="field">
-                    <label for="fHadir">Hadir</label>
-                    <input id="fHadir" type="text" value="30" inputmode="numeric">
-                  </div>
-                  <div class="field">
-                    <label for="fTotal">Dari</label>
-                    <input id="fTotal" type="text" value="32" inputmode="numeric">
-                  </div>
-                </div>
-
-                <button class="btn block" id="saveJournal"><span class="ico" data-icon="check"></span> Simpan Catatan</button>
-              </div>
-            </div>
-
-            <!-- dialog generik -->
-            <div class="dialog-backdrop" id="dialog">
-              <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
-                <div class="dialog-bar">
-                  <span class="dots"><i></i><i></i><i></i></span>
-                  <span class="title" id="dialogTitle">DIALOG</span>
-                  <button class="x" data-close-dialog aria-label="Tutup"><span class="ico" data-icon="close" data-size="12"></span></button>
-                </div>
-                <div class="dialog-body" id="dialogBody"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="device-caption">TABLET 1280 × 800 DP · 16:10 · LANDSCAPE · TAP OBJEK DI SCENE</div>
-      </div>
-
-      <!-- ============ DESIGN KIT ============ -->
-      <section class="kit" data-panel="kit">
-        <h2>DESIGN KIT · v0.3</h2>
-        <p class="kit-lede">Semua token di bawah dipakai prototipe ini dan siap dipindahkan ke Jetpack Compose untuk tablet 8,8" landscape. Scene memakai grid art 51 × 32 piksel dengan 32 warna.</p>
-
+                  <div class="screen-scroll kit-page">
         <div class="kit-grid">
           <div class="kit-card">
             <h4>Warna inti</h4>
@@ -3944,7 +4224,140 @@ body.scanlines .tablet-screen::after { opacity: 1; }
             <b>Panel kanan</b> jam digital, agenda hari ini, kelas cepat, progres XP.
           </p>
         </div>
-      </section>
+                  </div>
+                </section>
+              </div>
+
+              <!-- panel konteks kanan -->
+              <aside class="context-panel" aria-label="Panel informasi">
+                <div class="ctx-clock">
+                  <span class="ctx-clock-label">JAM DIGITAL</span>
+                  <div class="ctx-clock-time" id="ctxClock">09:12</div>
+                  <div class="ctx-clock-date" id="ctxClockDate">SENIN · 26 OKT 2026</div>
+                  <div class="ctx-clock-note">WAKTU SERVER LOKAL · 24 JAM</div>
+                </div>
+
+                <div class="ctx-card">
+                  <h4>AGENDA HARI INI</h4>
+                  <div id="ctxAgenda"></div>
+                  <button class="btn small ghost block" data-goto="kalender" style="margin-top:8px">Buka Kalender</button>
+                </div>
+
+                <div class="ctx-card">
+                  <h4>KELAS CEPAT</h4>
+                  <div class="ctx-classes" id="ctxClasses"></div>
+                </div>
+
+                <div class="ctx-card">
+                  <h4>PROGRES</h4>
+                  <div class="ctx-xp">
+                    <span>LV 7 · 740 XP</span>
+                    <div class="xp"><span style="width:74%"></span></div>
+                  </div>
+                  <p class="ctx-note">SELESAIKAN 1 JURNAL = +25 XP</p>
+                </div>
+              </aside>
+            </div>
+
+            <div class="toast" id="toast"></div>
+
+            <!-- bottom sheet: jurnal baru -->
+            <div class="sheet-backdrop" id="journalSheet">
+              <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+                <h3 id="sheetTitle">Catat Pertemuan
+                  <button class="icon-btn" data-icon="close" data-close-sheet aria-label="Tutup"></button>
+                </h3>
+                <p class="sheet-sub">JURNAL MENGAJAR · DATA TERSIMPAN LOKAL</p>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="fKelas">Kelas</label>
+                    <select id="fKelas">
+                      <option>7A</option><option>7B</option><option>8A</option><option>8B</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="fJam">Jam ke</label>
+                    <input id="fJam" type="text" value="3–4" inputmode="numeric">
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="fMateri">Materi</label>
+                  <input id="fMateri" type="text" placeholder="Contoh: Klasifikasi makhluk hidup">
+                </div>
+
+                <div class="field">
+                  <label for="fCatatan">Catatan / refleksi</label>
+                  <textarea id="fCatatan" placeholder="Apa yang berjalan baik? Siswa yang perlu perhatian?"></textarea>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="fHadir">Hadir</label>
+                    <input id="fHadir" type="text" value="30" inputmode="numeric">
+                  </div>
+                  <div class="field">
+                    <label for="fTotal">Dari</label>
+                    <input id="fTotal" type="text" value="32" inputmode="numeric">
+                  </div>
+                </div>
+
+                <button class="btn block" id="saveJournal"><span class="ico" data-icon="check"></span> Simpan Catatan</button>
+              </div>
+            </div>
+
+            <!-- pengaturan tampilan -->
+            <div class="sheet-backdrop" id="displaySheet">
+              <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="displayTitle">
+                <h3 id="displayTitle">Pengaturan Tampilan
+                  <button class="icon-btn" data-close-display aria-label="Tutup"><span class="ico" data-icon="close"></span></button>
+                </h3>
+                <p class="sheet-sub">KHUSUS PREVIEW · TIDAK MENGUBAH DATA</p>
+
+                <div class="toggle-row" data-toggle="art" role="switch" aria-checked="true" tabindex="0">
+                  <span>Art 32 px (kasar)</span>
+                  <span class="switch" aria-hidden="true"></span>
+                </div>
+                <div class="toggle-row" data-toggle="inspect" role="switch" aria-checked="false" tabindex="0">
+                  <span>Inspeksi area tap</span>
+                  <span class="switch" aria-hidden="true"></span>
+                </div>
+                <div class="toggle-row" data-toggle="scanlines" role="switch" aria-checked="true" tabindex="0">
+                  <span>Scanline CRT</span>
+                  <span class="switch" aria-hidden="true"></span>
+                </div>
+                <div class="toggle-row" data-toggle="motion" role="switch" aria-checked="true" tabindex="0">
+                  <span>Animasi</span>
+                  <span class="switch" aria-hidden="true"></span>
+                </div>
+
+                <div class="dialog-actions" style="margin-top:14px">
+                  <button class="btn ghost" id="fullscreenBtn"><span class="ico" data-icon="grid"></span> Layar Penuh</button>
+                  <button class="btn" data-goto="kit"><span class="ico" data-icon="download"></span> Design Kit</button>
+                </div>
+                <button class="btn block ghost" id="resetBtn" style="margin-top:8px">
+                  <span class="ico" data-icon="trash"></span> Reset Data Contoh
+                </button>
+              </div>
+            </div>
+
+            <!-- dialog generik -->
+            <div class="dialog-backdrop" id="dialog">
+              <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+                <div class="dialog-bar">
+                  <span class="dots"><i></i><i></i><i></i></span>
+                  <span class="title" id="dialogTitle">DIALOG</span>
+                  <button class="x" data-close-dialog aria-label="Tutup"><span class="ico" data-icon="close" data-size="12"></span></button>
+                </div>
+                <div class="dialog-body" id="dialogBody"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="device-caption">TABLET 1280 × 800 DP · 16:10 · LANDSCAPE · TAP OBJEK DI SCENE</div>
+      </div>
+
 
     </div>
   </main>
@@ -4368,9 +4781,14 @@ function predikat(value) {
 
 const NAV_SCREENS = ["home", "jurnal", "catatan", "nilai", "binder"];
 
+const SCREEN_LABEL = {
+  home: "Beranda", jurnal: "Jurnal", catatan: "Buku Catatan", absensi: "Absensi",
+  nilai: "Nilai", jadwal: "Jadwal", kalender: "Kalender", kalkulator: "Kalkulator",
+  binder: "Binder Materi", kelas: "Kelas", profil: "Profil", kit: "Design Kit"
+};
+
 function showScreen(name) {
   state.screen = name;
-  const isKit = name === "kit";
 
   $$(".screen").forEach((el) => el.classList.toggle("is-active", el.dataset.panel === name));
   $$(".tab").forEach((el) => el.setAttribute("aria-selected", String(el.dataset.screen === name)));
@@ -4379,9 +4797,8 @@ function showScreen(name) {
     else el.removeAttribute("aria-current");
   });
 
-  $("#phoneWrap").style.display = isKit ? "none" : "";
-  $("#stageBody").classList.toggle("kit-mode", isKit);
-  $$(".kit").forEach((el) => el.classList.toggle("is-active", isKit));
+  const crumb = $("#appScreenName");
+  if (crumb) crumb.textContent = SCREEN_LABEL[name] || "Beranda";
 
   const scroll = $(`.screen[data-panel="${name}"] .screen-scroll`);
   if (scroll) scroll.scrollTop = 0;
@@ -5204,6 +5621,9 @@ function badgeDialog(label) {
 function openJournal() { $("#journalSheet").classList.add("open"); setTimeout(() => $("#fMateri")?.focus(), 60); }
 function closeSheet() { $("#journalSheet").classList.remove("open"); }
 
+function openDisplay() { $("#displaySheet").classList.add("open"); }
+function closeDisplay() { $("#displaySheet").classList.remove("open"); }
+
 /* ------------------------------ toggles -------------------------------- */
 
 function hydrateTogglesFromBody() {
@@ -5297,6 +5717,7 @@ function initEvents() {
     if (goto) {
       if ($("#dialog").classList.contains("open")) closeDialog();
       closeSheet();
+      closeDisplay();
       showScreen(goto.dataset.goto);
       return;
     }
@@ -5311,6 +5732,8 @@ function initEvents() {
     if (e.target.id === "dialog") { closeDialog(); return; }
     if (e.target.closest("[data-close-sheet]")) { closeSheet(); return; }
     if (e.target.id === "journalSheet") { closeSheet(); return; }
+    if (e.target.closest("[data-close-display]")) { closeDisplay(); return; }
+    if (e.target.id === "displaySheet") { closeDisplay(); return; }
   });
 
   $$(".tab").forEach((tab) => tab.addEventListener("click", () => showScreen(tab.dataset.screen)));
@@ -5322,6 +5745,33 @@ function initEvents() {
     row.addEventListener("click", flip);
     row.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); }
+    });
+  });
+
+  /* pengaturan tampilan */
+  $("#openDisplay").addEventListener("click", openDisplay);
+
+  $("#fullscreenBtn").addEventListener("click", () => {
+    const el = document.documentElement;
+    if (!document.fullscreenElement && el.requestFullscreen) {
+      el.requestFullscreen().then(() => toast("MODE LAYAR PENUH AKTIF")).catch(() => toast("BROWSER TIDAK MENDUKUNG LAYAR PENUH"));
+    } else if (document.exitFullscreen) {
+      document.exitFullscreen().then(() => toast("KELUAR DARI LAYAR PENUH")).catch(() => {});
+    } else {
+      toast("BROWSER TIDAK MENDUKUNG LAYAR PENUH");
+    }
+  });
+
+  $("#resetBtn").addEventListener("click", () => {
+    openDialog("RESET DATA", [], null, null,
+      `<p style="font-size:13px;line-height:1.6;margin:0">Semua catatan, jurnal, agenda, dan nilai kembali ke data contoh.</p>
+       <div class="dialog-actions" style="margin-top:14px">
+         <button class="btn ghost" data-close-dialog>Batal</button>
+         <button class="btn" id="confirmReset2">Reset</button>
+       </div>`);
+    $("#confirmReset2").addEventListener("click", () => {
+      localStorage.removeItem(LS_KEY);
+      location.reload();
     });
   });
 
@@ -5559,7 +6009,7 @@ function initEvents() {
       }
       return;
     }
-    if (e.key === "Escape") closeSheet();
+    if (e.key === "Escape") { closeSheet(); closeDisplay(); }
 
     if (state.screen === "kalkulator" && state.calcMode === "hitung" && !["INPUT", "TEXTAREA", "SELECT"].includes(e.target.tagName)) {
       const map = { Enter: "=", Backspace: "del", Escape: "AC", "*": "*", "/": "/", "+": "+", "-": "-", "%": "%", ".": "." };

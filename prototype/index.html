@@ -7,8 +7,9 @@
 <meta name="description" content="Prototipe UI/UX aplikasi guru tablet landscape bergaya pixel art 32px: jurnal, catatan, absensi, nilai, jadwal, kalender, kalkulator, binder.">
 <link rel="stylesheet" href="styles.css">
 <link rel="stylesheet" href="tablet.css">
+<link rel="stylesheet" href="real.css">
 </head>
-<body class="scanlines">
+<body class="scanlines real">
 
 <div class="page">
 
@@ -89,7 +90,6 @@
       <button class="tab" role="tab" data-screen="binder" aria-selected="false">Binder</button>
       <button class="tab" role="tab" data-screen="kelas" aria-selected="false">Kelas</button>
       <button class="tab" role="tab" data-screen="profil" aria-selected="false">Profil</button>
-      <button class="tab" role="tab" data-screen="kit" aria-selected="false">Design Kit</button>
     </div>
 
     <div class="stage-body" id="stageBody">
@@ -100,18 +100,27 @@
           <div class="tablet-cam"></div>
           <div class="tablet-screen" id="phoneScreen">
 
-            <!-- status bar landscape -->
-            <div class="tab-status">
-              <div class="tab-status-left">
+            <!-- app bar + jam digital -->
+            <header class="app-bar">
+              <div class="app-id">
+                <span class="app-logo"><span class="ico" data-icon="logo" data-size="17"></span></span>
+                <span class="app-name">RUANG KELAS</span>
+                <span class="app-sep"></span>
+                <span class="app-screen" id="appScreenName">Beranda</span>
+              </div>
+
+              <div class="app-status">
+                <span class="tab-badge" id="statusLevel">LV 7 · GURU SIGAP</span>
                 <span class="clock" id="clockTime">09:12</span>
                 <span class="clock-date" id="clockDate">SENIN · 26 OKT 2026</span>
-              </div>
-              <div class="tab-status-right">
-                <span class="tab-badge" id="statusLevel">LV 7 · GURU SIGAP</span>
+                <span class="app-sep"></span>
                 <span class="sig"><i></i><i></i><i></i><i></i></span>
                 <span class="battery"><span></span></span>
+                <button class="status-btn" id="openDisplay" aria-label="Pengaturan tampilan">
+                  <span class="ico" data-icon="gear"></span>
+                </button>
               </div>
-            </div>
+            </header>
 
             <div class="tab-body">
 
@@ -169,71 +178,77 @@
                   </div>
 
                   <div class="screen-scroll home-scroll">
-                    <div class="home-hero">
-                      <div class="scene" id="scene">
-                        <div class="scene-frame">
-                          <img class="scene-img" id="sceneImg" src="assets/scene-32.png"
-                               alt="Ruang kerja guru malam hari: laptop, papan tulis, papan pin, jam digital, kalender meja, dan laci">
+                    <div class="home-board">
+
+                      <div class="home-left">
+                        <div class="home-hero">
+                          <div class="scene" id="scene">
+                            <div class="scene-frame">
+                              <img class="scene-img" id="sceneImg" src="assets/scene-32.png"
+                                   alt="Ruang kerja guru malam hari: laptop, papan tulis, papan pin, jam digital, kalender meja, dan laci">
+                            </div>
+                            <div class="tiles" id="sceneTiles"></div>
+                            <span class="scene-tag" id="sceneTag">RUANG KERJA · MALAM</span>
+                            <div class="scene-level">
+                              <div class="row"><span>LEVEL 7 · GURU SIGAP</span><b id="xpLabel">740 / 1000 XP</b></div>
+                              <div class="xp"><span id="xpBar" style="width:74%"></span></div>
+                            </div>
+                          </div>
                         </div>
-                        <div class="tiles" id="sceneTiles"></div>
-                        <span class="scene-tag" id="sceneTag">RUANG KERJA · MALAM</span>
-                        <div class="scene-level">
-                          <div class="row"><span>LEVEL 7 · GURU SIGAP</span><b id="xpLabel">740 / 1000 XP</b></div>
-                          <div class="xp"><span id="xpBar" style="width:74%"></span></div>
+
+                        <div class="quick-stats">
+                          <button class="stat amber" data-goto="jadwal"><b>3</b><span>Kelas hari ini</span></button>
+                          <button class="stat mint" data-goto="kelas"><b>96</b><span>Total siswa</span></button>
+                          <button class="stat sky" data-goto="catatan"><b id="noteCount">6</b><span>Catatan aktif</span></button>
+                          <button class="stat" data-goto="binder"><b id="docCount">7</b><span>Dokumen binder</span></button>
+                        </div>
+
+                        <div class="home-hint">
+                          <span class="ico" data-icon="star" data-size="12"></span>
+                          <p>TAP OBJEK DI RUANG KERJA UNTUK MEMBUKA TOOL</p>
                         </div>
                       </div>
-                    </div>
 
-                    <div class="quick-stats">
-                      <button class="stat amber" data-goto="jadwal"><b>3</b><span>Kelas hari ini</span></button>
-                      <button class="stat mint" data-goto="kelas"><b>96</b><span>Total siswa</span></button>
-                      <button class="stat sky" data-goto="catatan"><b id="noteCount">6</b><span>Catatan aktif</span></button>
-                      <button class="stat" data-goto="binder"><b id="docCount">7</b><span>Dokumen binder</span></button>
-                    </div>
-
-                    <div class="home-cols">
-                      <div>
+                      <div class="home-right">
                         <div class="section-head">
                           <h3>Tools mengajar</h3>
                           <button class="more" data-goto="kit">DESIGN KIT →</button>
                         </div>
                         <div class="tool-grid">
-                        <button class="tool" data-goto="jurnal">
-                          <span class="ico-box"><span class="ico" data-icon="book"></span></span>
-                          <span><b>Jurnal</b><small>Catat pertemuan</small></span>
-                        </button>
-                        <button class="tool" data-goto="catatan">
-                          <span class="ico-box"><span class="ico" data-icon="pencil"></span></span>
-                          <span><b>Catatan</b><small>Ide &amp; refleksi</small></span>
-                        </button>
-                        <button class="tool" data-goto="absensi">
-                          <span class="ico-box"><span class="ico" data-icon="check"></span></span>
-                          <span><b>Absensi</b><small>Kehadiran</small></span>
-                        </button>
-                        <button class="tool" data-goto="nilai">
-                          <span class="ico-box"><span class="ico" data-icon="chart"></span></span>
-                          <span><b>Nilai</b><small>Tugas &amp; ujian</small></span>
-                        </button>
-                        <button class="tool" data-goto="jadwal">
-                          <span class="ico-box"><span class="ico" data-icon="clock"></span></span>
-                          <span><b>Jadwal</b><small>Weekly</small></span>
-                        </button>
-                        <button class="tool" data-goto="kalender">
-                          <span class="ico-box"><span class="ico" data-icon="calendar"></span></span>
-                          <span><b>Kalender</b><small>Agenda</small></span>
-                        </button>
-                        <button class="tool" data-goto="kalkulator">
-                          <span class="ico-box"><span class="ico" data-icon="calc"></span></span>
-                          <span><b>Kalkulator</b><small>Hitung nilai</small></span>
-                        </button>
-                        <button class="tool" data-goto="binder">
-                          <span class="ico-box"><span class="ico" data-icon="folder"></span></span>
-                          <span><b>Binder</b><small>Materi</small></span>
-                        </button>
+                          <button class="tool" data-goto="jurnal">
+                            <span class="ico-box"><span class="ico" data-icon="book"></span></span>
+                            <span><b>Jurnal</b><small>Catat pertemuan</small></span>
+                          </button>
+                          <button class="tool" data-goto="catatan">
+                            <span class="ico-box"><span class="ico" data-icon="pencil"></span></span>
+                            <span><b>Catatan</b><small>Ide &amp; refleksi</small></span>
+                          </button>
+                          <button class="tool" data-goto="absensi">
+                            <span class="ico-box"><span class="ico" data-icon="check"></span></span>
+                            <span><b>Absensi</b><small>Kehadiran</small></span>
+                          </button>
+                          <button class="tool" data-goto="nilai">
+                            <span class="ico-box"><span class="ico" data-icon="chart"></span></span>
+                            <span><b>Nilai</b><small>Tugas &amp; ujian</small></span>
+                          </button>
+                          <button class="tool" data-goto="jadwal">
+                            <span class="ico-box"><span class="ico" data-icon="clock"></span></span>
+                            <span><b>Jadwal</b><small>Weekly</small></span>
+                          </button>
+                          <button class="tool" data-goto="kalender">
+                            <span class="ico-box"><span class="ico" data-icon="calendar"></span></span>
+                            <span><b>Kalender</b><small>Agenda</small></span>
+                          </button>
+                          <button class="tool" data-goto="kalkulator">
+                            <span class="ico-box"><span class="ico" data-icon="calc"></span></span>
+                            <span><b>Kalkulator</b><small>Hitung nilai</small></span>
+                          </button>
+                          <button class="tool" data-goto="binder">
+                            <span class="ico-box"><span class="ico" data-icon="folder"></span></span>
+                            <span><b>Binder</b><small>Materi</small></span>
+                          </button>
                         </div>
-                      </div>
 
-                      <div>
                         <div class="section-head">
                           <h3>Berikutnya</h3>
                           <button class="more" data-goto="jadwal">JADWAL →</button>
@@ -251,9 +266,8 @@
                         </div>
                         <div id="homeNotes" class="home-notes"></div>
                       </div>
-                    </div>
 
-                    <div style="height:8px"></div>
+                    </div>
                   </div>
                 </section>
 
@@ -630,6 +644,11 @@
                             <span>Reset data prototipe</span>
                             <span class="val">AWAS</span>
                           </div>
+                          <div class="setting" data-goto="kit">
+                            <span class="ico" data-icon="grid"></span>
+                            <span>Design kit &amp; token</span>
+                            <span class="val">BUKA →</span>
+                          </div>
                           <div class="setting" data-setting="device">
                             <span class="ico" data-icon="grid"></span>
                             <span>Target perangkat</span>
@@ -654,108 +673,20 @@
                   </div>
                 </section>
 
-              </div>
 
-              <!-- panel konteks kanan -->
-              <aside class="context-panel" aria-label="Panel informasi">
-                <div class="ctx-clock">
-                  <span class="ctx-clock-label">JAM DIGITAL</span>
-                  <div class="ctx-clock-time" id="ctxClock">09:12</div>
-                  <div class="ctx-clock-date" id="ctxClockDate">SENIN · 26 OKT 2026</div>
-                  <div class="ctx-clock-note">WAKTU SERVER LOKAL · 24 JAM</div>
-                </div>
-
-                <div class="ctx-card">
-                  <h4>AGENDA HARI INI</h4>
-                  <div id="ctxAgenda"></div>
-                  <button class="btn small ghost block" data-goto="kalender" style="margin-top:8px">Buka Kalender</button>
-                </div>
-
-                <div class="ctx-card">
-                  <h4>KELAS CEPAT</h4>
-                  <div class="ctx-classes" id="ctxClasses"></div>
-                </div>
-
-                <div class="ctx-card">
-                  <h4>PROGRES</h4>
-                  <div class="ctx-xp">
-                    <span>LV 7 · 740 XP</span>
-                    <div class="xp"><span style="width:74%"></span></div>
+                <!-- ---------- DESIGN KIT ---------- -->
+                <section class="screen" data-panel="kit">
+                  <div class="screen-head">
+                    <div>
+                      <h2>Design Kit</h2>
+                      <p class="eyebrow">TOKEN DESAIN · SIAP DIPINDAH KE JETPACK COMPOSE</p>
+                    </div>
+                    <div class="head-actions">
+                      <button class="icon-btn" data-soon="Ekspor token JSON" data-icon="download" aria-label="Ekspor token"></button>
+                      <button class="btn ghost" data-goto="profil"><span class="ico" data-icon="chevL"></span> Profil</button>
+                    </div>
                   </div>
-                  <p class="ctx-note">SELESAIKAN 1 JURNAL = +25 XP</p>
-                </div>
-              </aside>
-            </div>
-
-            <div class="toast" id="toast"></div>
-
-            <!-- bottom sheet: jurnal baru -->
-            <div class="sheet-backdrop" id="journalSheet">
-              <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-                <h3 id="sheetTitle">Catat Pertemuan
-                  <button class="icon-btn" data-icon="close" data-close-sheet aria-label="Tutup"></button>
-                </h3>
-                <p class="sheet-sub">JURNAL MENGAJAR · DATA TERSIMPAN LOKAL</p>
-
-                <div class="field-row">
-                  <div class="field">
-                    <label for="fKelas">Kelas</label>
-                    <select id="fKelas">
-                      <option>7A</option><option>7B</option><option>8A</option><option>8B</option>
-                    </select>
-                  </div>
-                  <div class="field">
-                    <label for="fJam">Jam ke</label>
-                    <input id="fJam" type="text" value="3–4" inputmode="numeric">
-                  </div>
-                </div>
-
-                <div class="field">
-                  <label for="fMateri">Materi</label>
-                  <input id="fMateri" type="text" placeholder="Contoh: Klasifikasi makhluk hidup">
-                </div>
-
-                <div class="field">
-                  <label for="fCatatan">Catatan / refleksi</label>
-                  <textarea id="fCatatan" placeholder="Apa yang berjalan baik? Siswa yang perlu perhatian?"></textarea>
-                </div>
-
-                <div class="field-row">
-                  <div class="field">
-                    <label for="fHadir">Hadir</label>
-                    <input id="fHadir" type="text" value="30" inputmode="numeric">
-                  </div>
-                  <div class="field">
-                    <label for="fTotal">Dari</label>
-                    <input id="fTotal" type="text" value="32" inputmode="numeric">
-                  </div>
-                </div>
-
-                <button class="btn block" id="saveJournal"><span class="ico" data-icon="check"></span> Simpan Catatan</button>
-              </div>
-            </div>
-
-            <!-- dialog generik -->
-            <div class="dialog-backdrop" id="dialog">
-              <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
-                <div class="dialog-bar">
-                  <span class="dots"><i></i><i></i><i></i></span>
-                  <span class="title" id="dialogTitle">DIALOG</span>
-                  <button class="x" data-close-dialog aria-label="Tutup"><span class="ico" data-icon="close" data-size="12"></span></button>
-                </div>
-                <div class="dialog-body" id="dialogBody"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="device-caption">TABLET 1280 × 800 DP · 16:10 · LANDSCAPE · TAP OBJEK DI SCENE</div>
-      </div>
-
-      <!-- ============ DESIGN KIT ============ -->
-      <section class="kit" data-panel="kit">
-        <h2>DESIGN KIT · v0.3</h2>
-        <p class="kit-lede">Semua token di bawah dipakai prototipe ini dan siap dipindahkan ke Jetpack Compose untuk tablet 8,8" landscape. Scene memakai grid art 51 × 32 piksel dengan 32 warna.</p>
-
+                  <div class="screen-scroll kit-page">
         <div class="kit-grid">
           <div class="kit-card">
             <h4>Warna inti</h4>
@@ -842,7 +773,140 @@
             <b>Panel kanan</b> jam digital, agenda hari ini, kelas cepat, progres XP.
           </p>
         </div>
-      </section>
+                  </div>
+                </section>
+              </div>
+
+              <!-- panel konteks kanan -->
+              <aside class="context-panel" aria-label="Panel informasi">
+                <div class="ctx-clock">
+                  <span class="ctx-clock-label">JAM DIGITAL</span>
+                  <div class="ctx-clock-time" id="ctxClock">09:12</div>
+                  <div class="ctx-clock-date" id="ctxClockDate">SENIN · 26 OKT 2026</div>
+                  <div class="ctx-clock-note">WAKTU SERVER LOKAL · 24 JAM</div>
+                </div>
+
+                <div class="ctx-card">
+                  <h4>AGENDA HARI INI</h4>
+                  <div id="ctxAgenda"></div>
+                  <button class="btn small ghost block" data-goto="kalender" style="margin-top:8px">Buka Kalender</button>
+                </div>
+
+                <div class="ctx-card">
+                  <h4>KELAS CEPAT</h4>
+                  <div class="ctx-classes" id="ctxClasses"></div>
+                </div>
+
+                <div class="ctx-card">
+                  <h4>PROGRES</h4>
+                  <div class="ctx-xp">
+                    <span>LV 7 · 740 XP</span>
+                    <div class="xp"><span style="width:74%"></span></div>
+                  </div>
+                  <p class="ctx-note">SELESAIKAN 1 JURNAL = +25 XP</p>
+                </div>
+              </aside>
+            </div>
+
+            <div class="toast" id="toast"></div>
+
+            <!-- bottom sheet: jurnal baru -->
+            <div class="sheet-backdrop" id="journalSheet">
+              <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+                <h3 id="sheetTitle">Catat Pertemuan
+                  <button class="icon-btn" data-icon="close" data-close-sheet aria-label="Tutup"></button>
+                </h3>
+                <p class="sheet-sub">JURNAL MENGAJAR · DATA TERSIMPAN LOKAL</p>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="fKelas">Kelas</label>
+                    <select id="fKelas">
+                      <option>7A</option><option>7B</option><option>8A</option><option>8B</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="fJam">Jam ke</label>
+                    <input id="fJam" type="text" value="3–4" inputmode="numeric">
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="fMateri">Materi</label>
+                  <input id="fMateri" type="text" placeholder="Contoh: Klasifikasi makhluk hidup">
+                </div>
+
+                <div class="field">
+                  <label for="fCatatan">Catatan / refleksi</label>
+                  <textarea id="fCatatan" placeholder="Apa yang berjalan baik? Siswa yang perlu perhatian?"></textarea>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label for="fHadir">Hadir</label>
+                    <input id="fHadir" type="text" value="30" inputmode="numeric">
+                  </div>
+                  <div class="field">
+                    <label for="fTotal">Dari</label>
+                    <input id="fTotal" type="text" value="32" inputmode="numeric">
+                  </div>
+                </div>
+
+                <button class="btn block" id="saveJournal"><span class="ico" data-icon="check"></span> Simpan Catatan</button>
+              </div>
+            </div>
+
+            <!-- pengaturan tampilan -->
+            <div class="sheet-backdrop" id="displaySheet">
+              <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="displayTitle">
+                <h3 id="displayTitle">Pengaturan Tampilan
+                  <button class="icon-btn" data-close-display aria-label="Tutup"><span class="ico" data-icon="close"></span></button>
+                </h3>
+                <p class="sheet-sub">KHUSUS PREVIEW · TIDAK MENGUBAH DATA</p>
+
+                <div class="toggle-row" data-toggle="art" role="switch" aria-checked="true" tabindex="0">
+                  <span>Art 32 px (kasar)</span>
+                  <span class="switch" aria-hidden="true"></span>
+                </div>
+                <div class="toggle-row" data-toggle="inspect" role="switch" aria-checked="false" tabindex="0">
+                  <span>Inspeksi area tap</span>
+                  <span class="switch" aria-hidden="true"></span>
+                </div>
+                <div class="toggle-row" data-toggle="scanlines" role="switch" aria-checked="true" tabindex="0">
+                  <span>Scanline CRT</span>
+                  <span class="switch" aria-hidden="true"></span>
+                </div>
+                <div class="toggle-row" data-toggle="motion" role="switch" aria-checked="true" tabindex="0">
+                  <span>Animasi</span>
+                  <span class="switch" aria-hidden="true"></span>
+                </div>
+
+                <div class="dialog-actions" style="margin-top:14px">
+                  <button class="btn ghost" id="fullscreenBtn"><span class="ico" data-icon="grid"></span> Layar Penuh</button>
+                  <button class="btn" data-goto="kit"><span class="ico" data-icon="download"></span> Design Kit</button>
+                </div>
+                <button class="btn block ghost" id="resetBtn" style="margin-top:8px">
+                  <span class="ico" data-icon="trash"></span> Reset Data Contoh
+                </button>
+              </div>
+            </div>
+
+            <!-- dialog generik -->
+            <div class="dialog-backdrop" id="dialog">
+              <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+                <div class="dialog-bar">
+                  <span class="dots"><i></i><i></i><i></i></span>
+                  <span class="title" id="dialogTitle">DIALOG</span>
+                  <button class="x" data-close-dialog aria-label="Tutup"><span class="ico" data-icon="close" data-size="12"></span></button>
+                </div>
+                <div class="dialog-body" id="dialogBody"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="device-caption">TABLET 1280 × 800 DP · 16:10 · LANDSCAPE · TAP OBJEK DI SCENE</div>
+      </div>
+
 
     </div>
   </main>

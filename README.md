@@ -24,6 +24,21 @@ npm start          # python3 -m http.server 4173 → http://localhost:4173
 Atau buka `prototype/index.html` langsung (font & gambar lokal, tanpa internet).
 Toggle **Fokus tablet** di panel kiri menyembunyikan panel kontrol agar tampil penuh seperti di perangkat.
 
+## Tampilan real (seperti aplikasi terpasang)
+
+Preview sekarang tampil **seperti aplikasi sungguhan**, bukan mockup:
+tanpa bezel tablet, tanpa sidebar kontrol, tanpa baris tab — layar penuh 100% viewport,
+lengkap dengan app bar sendiri (logo, nama layar aktif, jam, tanggal, sinyal, baterai).
+
+- Layout mengikuti ukuran jendela: rail kiri 88 dp · konten · panel kanan 312 dp.
+- Beranda berupa **dashboard dua kolom**: scene di kiri (dengan 11 hotspot), tool &
+  agenda di kanan.
+- Kontrol desain tidak hilang, hanya dipindah ke dalam aplikasi: tombol ⚙ di
+  kanan app bar membuka **Pengaturan Tampilan** (art 32/64 px, inspeksi area tap,
+  scanline, animasi, layar penuh, reset data).
+- Design Kit kini menjadi layar biasa di dalam aplikasi (dari Profil atau tautan di Beranda).
+- Navigasi hanya lewat UI aplikasi: rail 11 tujuan, scene, kartu, dan tombol aksi.
+
 ## Preview satu file (paling praktis)
 
 `preview-ruang-kelas.html` adalah **satu file HTML mandiri** — CSS, JS, 6 font,
@@ -52,6 +67,7 @@ prototype/
 ├── index.html                 # 11 layar, rail, panel konteks, Design Kit
 ├── styles.css                 # token desain + komponen dasar
 ├── tablet.css                 # tata letak landscape (rail + konten + panel)
+├── real.css                   # mode aplikasi penuh (tanpa bezel/sidebar/tab)
 ├── app.js                     # data contoh, render, interaksi, jam digital, localStorage
 └── assets/
     ├── scene-32.png           # scene utama 51 × 32 (art 32 px)
