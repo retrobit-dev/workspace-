@@ -18,7 +18,7 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter
 
 ROOT = Path(__file__).resolve().parent.parent
-ART = ROOT / "art/workspace-iso-v7b.png"
+ART = ROOT / "art/workspace-iso-v7c.png"
 
 CAL_BOX = (1010, 390, 110, 95)     # area pencarian kertas kalender di gambar asli
 

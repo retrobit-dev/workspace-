@@ -267,7 +267,7 @@ val BATTERY_TEXT_QUAD = intArrayOf(1014, 0, 1122, 26, 1014, 44)
 /** Area gorden kiri & kanan yang ikut bergoyang saat ada hembusan angin. */
 val CURTAIN_RECTS = listOf(
     intArrayOf(995, 78, 40, 308),
-    intArrayOf(1236, 128, 62, 330)
+    intArrayOf(1216, 224, 34, 246)
 )
 
 /** Daun tanaman yang ikut bergoyang. */
