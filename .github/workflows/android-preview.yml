@@ -134,6 +134,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
+          export PATH="$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/emulator:$PATH"
           REPORT=/tmp/aksi.log
           exec > >(tee -a $REPORT) 2>&1
           set -x
