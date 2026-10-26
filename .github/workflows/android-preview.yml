@@ -134,49 +134,111 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
-          export PATH="$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/emulator:$PATH"
           REPORT=/tmp/aksi.log
+          export PATH="$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/emulator:$PATH"
           exec > >(tee -a $REPORT) 2>&1
-          set -x
-          shot() {
-            adb shell screencap -p /sdcard/$1.png
-            adb pull /sdcard/$1.png docs/screens/$1.png
-          }
-          open() {
-            adb shell am force-stop dev.retrobit.ruangkelas
-            adb shell am start -W -n dev.retrobit.ruangkelas/.MainActivity --es screen $1
-            sleep 4
-          }
 
-          # 1. Jurnal: buka dialog catat pertemuan
-          open JURNAL
-          adb shell input tap 1793 219
-          sleep 2
-          shot aksi-dialog-jurnal
+          cat > /tmp/ui.py <<'PYEOF'
+import re, subprocess, time, sys
 
-          # 2. Kalkulator: 78 + 85 x 2
-          open KALKULATOR
-          adb shell input tap 313 640
-          adb shell input tap 573 640
-          adb shell input tap 1002 870
-          adb shell input tap 573 640
-          adb shell input tap 702 640
-          adb shell input tap 1002 640
-          adb shell input tap 449 640
-          sleep 1
-          shot aksi-kalkulator
+def sh(cmd):
+    return subprocess.run(cmd, shell=True, capture_output=True, text=True).stdout
 
-          # 3. Absensi: tandai satu sakit, satu izin
-          open ABSENSI
-          adb shell input tap 924 356
-          adb shell input tap 960 420
-          sleep 1
-          shot aksi-absensi
+NODE = re.compile(r'<node[^>]*>')
+
+def nodes():
+    sh("adb shell uiautomator dump /sdcard/ui.xml")
+    sh("adb pull /sdcard/ui.xml /tmp/ui.xml")
+    try:
+        xml = open('/tmp/ui.xml').read()
+    except FileNotFoundError:
+        return []
+    out = []
+    for n in NODE.findall(xml):
+        t = re.search(r'text="([^"]*)"', n)
+        c = re.search(r'class="([^"]*)"', n)
+        b = re.search(r'bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', n)
+        if b:
+            x1, y1, x2, y2 = map(int, b.groups())
+            out.append({'text': (t.group(1) if t else '').strip(),
+                        'class': (c.group(1) if c else ''),
+                        'c': ((x1 + x2) // 2, (y1 + y2) // 2)})
+    return out
+
+def tap(x, y, wait=1.0):
+    sh(f"adb shell input tap {x} {y}")
+    time.sleep(wait)
+
+def tap_text(label, nth=0):
+    ns = nodes()
+    hits = [n for n in ns if n['text'].lower() == label.lower()]
+    if not hits:
+        hits = [n for n in ns if label.lower() in n['text'].lower()]
+    print('tap_text', label, 'hits', len(hits))
+    if len(hits) <= nth:
+        print('NOT FOUND', label, [n['text'] for n in ns if n['text']][:40])
+        return False
+    tap(*hits[nth]['c'])
+    return True
+
+def tap_cls(kind, nth=0):
+    ns = [n for n in nodes() if kind in n['class']]
+    print('tap_cls', kind, len(ns))
+    if len(ns) <= nth:
+        return False
+    tap(*ns[nth]['c'])
+    return True
+
+def shot(name):
+    sh(f"adb shell screencap -p /sdcard/{name}.png")
+    print(sh(f"adb pull /sdcard/{name}.png docs/screens/{name}.png").strip())
+
+def launch(screen):
+    sh("adb shell am force-stop dev.retrobit.ruangkelas")
+    sh("adb logcat -c")
+    sh(f"adb shell am start -W -n dev.retrobit.ruangkelas/.MainActivity --es screen {screen}")
+    time.sleep(4)
+
+def crashes():
+    out = sh("adb logcat -d -b crash")
+    if out.strip():
+        print('--- CRASH ---')
+        print(out[-4000:])
+
+# 1. Jurnal -> dialog -> isi materi -> simpan
+launch('JURNAL')
+tap_text('CATAT PERTEMUAN')
+shot('aksi-dialog-jurnal')
+tap_cls('EditText', 0)
+sh('adb shell input text "Sistem%sPencernaan%sManusia"')
+time.sleep(1)
+shot('aksi-form-jurnal')
+tap_text('SIMPAN', 0)
+time.sleep(1.5)
+shot('aksi-jurnal-baru')
+crashes()
+
+# 2. Kalkulator: 78 + 85 x 2
+launch('KALKULATOR')
+for key in ['7', '8', '+', '8', '5', '×', '2']:
+    ok = tap_text(key)
+    print('key', key, ok)
+shot('aksi-kalkulator')
+crashes()
+
+# 3. Absensi: tandai S lalu I
+launch('ABSENSI')
+tap_text('S', 0)
+tap_text('S', 1)
+shot('aksi-absensi')
+crashes()
+PYEOF
+          python3 /tmp/ui.py
 
           {
             echo "Aksi interaktif report:"
             echo '```'
-            tail -n 40 $REPORT
+            tail -n 60 $REPORT
             echo '```'
           } > /tmp/aksi.md
           gh api -X POST "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" -f body="$(head -c 60000 /tmp/aksi.md)" || true

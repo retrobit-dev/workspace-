@@ -1,1 +1,1 @@
-run 02:25:26 coords2
+run 02:31:29 ui-auto
