@@ -354,15 +354,15 @@ def night_standing(im):
     px = im.load()
     # interior globe + bohlam: warna gading netral di base (grade menggesernya,
     # jadi dicari lewat rentang, bukan warna persis), dibatasi area shade.
-    for y in range(286, 306):
-        for x in range(615, 675):
+    for y in range(132, 143):
+        for x in range(926, 978):
             r, g, b = px[x, y]
             if r > 165 and g > 150 and b > 115 and r >= b:
-                px[x, y] = (252, 218, 122) if y < 296 else (244, 178, 70)
+                px[x, y] = (252, 218, 122) if y < 137 else (244, 178, 70)
     # pendar lembut di dinding sekitar tudung (radial, hanya piksel navy)
-    cx, cy = 646, 262
-    for y in range(180, 360):
-        for x in range(560, 760):
+    cx, cy = 944, 138
+    for y in range(70, 240):
+        for x in range(852, 1000):
             r, g, b = px[x, y]
             if b <= r:
                 continue                       # bukan dinding navy
@@ -371,18 +371,6 @@ def night_standing(im):
             if w <= 0.02:
                 continue
             px[x, y] = (int(r + (86 - r) * w), int(g + (64 - g) * w), int(b + (58 - b) * w))
-    # kolam cahaya kecil di lantai di sekitar kaki lampu
-    cx, cy, rx, ry = 618, 556, 78, 26
-    for y in range(cy - ry - 5, cy + ry + 5):
-        for x in range(cx - rx - 5, cx + rx + 5):
-            n = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
-            if n > 1.0:
-                continue
-            r, g, b = px[x, y]
-            if r + g + b < 60:
-                continue
-            w = (1.0 - n) ** 1.5 * 0.4
-            px[x, y] = (int(r + (104 - r) * w), int(g + (82 - g) * w), int(b + (76 - b) * w))
     return im
 
 
@@ -390,8 +378,8 @@ def day_standing_off(im):
     """Siang: kaca globe standing lamp digelapkan (add_daylight membuatnya
     ter-clipping putih seolah menyala)."""
     px = im.load()
-    for y in range(286, 306):
-        for x in range(615, 675):
+    for y in range(132, 143):
+        for x in range(926, 978):
             r, g, b = px[x, y]
             if r > 200 and g > 195 and b > 170:
                 px[x, y] = (176, 166, 148)
