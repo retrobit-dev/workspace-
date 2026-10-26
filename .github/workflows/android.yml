@@ -80,6 +80,17 @@ jobs:
               --notes "APK debug siap dipasang di tablet Android. Unduh RuangKelas-0.15.2-debug.apk lalu buka di perangkat (izinkan instalasi dari sumber ini)."
           gh release upload "$TAG" dist/RuangKelas-0.15.2-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
 
+      - name: Pulihkan asset rilis 0.15.1 (one-off, tertimpa run sebelumnya)
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git cat-file -e 2a09ae7:dist/RuangKelas-0.15.1-debug.apk 2>/dev/null; then
+            git show 2a09ae7:dist/RuangKelas-0.15.1-debug.apk > /tmp/RuangKelas-0.15.1-debug.apk
+            gh release upload v0.15.1-android /tmp/RuangKelas-0.15.1-debug.apk --repo "$GITHUB_REPOSITORY" --clobber || true
+            echo "asset 0.15.1 dipulihkan"
+          fi
+
       - name: Commit APK ke dist/
         if: github.event_name != 'pull_request'
         env:
