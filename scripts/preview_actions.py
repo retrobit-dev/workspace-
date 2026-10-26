@@ -115,13 +115,16 @@ def main() -> None:
         if name.endswith("sampah"):
             # tempat sampah membuka aplikasi lain (file manager), jadi yang
             # dibuktikan adalah aktivitas yang muncul di depan, lalu kembali.
+            time.sleep(3.5)
             focus = sh("adb shell dumpsys window 2>/dev/null | grep -E 'mCurrentFocus|mFocusedApp' | head -4")
+            resumed = sh("adb shell dumpsys activity activities 2>/dev/null | grep -m2 -E 'ResumedActivity|topResumedActivity'")
             print("fokus setelah ketuk sampah:", focus.strip(), flush=True)
+            print("aktivitas terdepan:", resumed.strip(), flush=True)
             shot("launcher-ketuk-sampah-file-manager")
             sh("adb shell input keyevent KEYCODE_BACK")
-            time.sleep(2.0)
-            sh(f"adb shell am start -W -n {ACTIVITY}")
             time.sleep(2.5)
+            sh(f"adb shell am start -W -n {ACTIVITY}")
+            time.sleep(3.0)
             shot("launcher-kembali-dari-sampah")
         else:
             shot(name)
