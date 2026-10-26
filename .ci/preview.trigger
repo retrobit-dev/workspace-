@@ -22,3 +22,4 @@ run 03:58:21 clockfit
 # 0.15.1 gorden kiri + rel ringkas 080240
 run 0.15.2 sisi kanan gorden langsing: kain x1246, knob kecil, swing rect baru
 run 0.15.2 preview: screenshot emulator dengan nama APK benar
+run 0.15.2 preview ulang: tanpa race dist, screenshot di-commit
