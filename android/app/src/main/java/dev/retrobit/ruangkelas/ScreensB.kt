@@ -40,50 +40,113 @@ import java.time.YearMonth
 fun ScheduleScreen(state: AppState) {
     val days = listOf("Senin", "Selasa", "Rabu", "Kamis", "Jumat")
     val lessons = SCHEDULE[state.day] ?: emptyList()
+    val totalLessons = SCHEDULE.values.sumOf { it.size }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Jadwal", "Semester ganjil · minggu 9") {
+        ScreenHeader("Jadwal", "Semester ganjil · minggu 9 · $totalLessons pertemuan") {
             ChipRow(days.map { it.take(3).uppercase() }, state.day.take(3).uppercase()) { picked ->
                 state.day = days.first { it.take(3).uppercase() == picked }
             }
         }
 
-        Column(
+        Row(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(state.day.uppercase(), style = MaterialTheme.typography.labelMedium, color = Amber)
-            Spacer(Modifier.height(8.dp))
+            Column(Modifier.weight(1.35f).verticalScrollable()) {
+                Text(state.day.uppercase(), style = MaterialTheme.typography.labelMedium, color = Amber)
+                Spacer(Modifier.height(8.dp))
 
-            if (lessons.isEmpty()) {
-                Text("TIDAK ADA JADWAL DI HARI INI.", style = MaterialTheme.typography.labelMedium, color = Muted2)
+                if (lessons.isEmpty()) {
+                    Text("TIDAK ADA JADWAL DI HARI INI.", style = MaterialTheme.typography.labelMedium, color = Muted2)
+                }
+
+                lessons.forEachIndexed { i, lesson ->
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .background(if (i % 2 == 0) Color(0x14F2AB3F) else Navy)
+                            .border(2.dp, Ink)
+                            .padding(12.dp)
+                    ) {
+                        Column(Modifier.width(64.dp)) {
+                            Text(lesson.time, style = MaterialTheme.typography.labelLarge, color = Amber, fontSize = 14.sp)
+                            Text("–${lesson.end}", style = MaterialTheme.typography.labelSmall, color = Muted2)
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("IPA · ${lesson.kelas}", style = MaterialTheme.typography.titleMedium)
+                                Spacer(Modifier.width(8.dp))
+                                Tag(lesson.kelas, Teal)
+                            }
+                            Spacer(Modifier.height(3.dp))
+                            Text(lesson.materi, style = MaterialTheme.typography.bodyMedium, color = Cream2)
+                            Spacer(Modifier.height(4.dp))
+                            Text("${lesson.room.uppercase()} · JAM KE ${i + 1}", style = MaterialTheme.typography.labelSmall, color = Muted2)
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                }
             }
 
-            lessons.forEach { lesson ->
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .background(Color(0x14F2AB3F))
-                        .border(2.dp, Ink)
-                        .padding(10.dp)
-                ) {
-                    Column(Modifier.width(52.dp)) {
-                        Text(lesson.time, style = MaterialTheme.typography.labelLarge, color = Amber)
-                        Text(lesson.end, style = MaterialTheme.typography.labelSmall, color = Muted2)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PixelPanel(padding = 12.dp, modifier = Modifier.fillMaxWidth()) {
+                    Column {
+                        Text("PEKAN INI", style = MaterialTheme.typography.labelMedium, color = Amber)
+                        Spacer(Modifier.height(8.dp))
+                        days.forEach { day ->
+                            val list = SCHEDULE[day] ?: emptyList()
+                            val active = day == state.day
+                            Row(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .background(if (active) Color(0x1FF2AB3F) else Color.Transparent)
+                                    .clickable { state.day = day }
+                                    .padding(horizontal = 6.dp, vertical = 7.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    day.uppercase(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (active) Amber else Cream2,
+                                    modifier = Modifier.width(64.dp)
+                                )
+                                Text(
+                                    "${list.size} PERTEMUAN",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Muted2,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    list.firstOrNull()?.let { it.time } ?: "—",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (active) Amber else Muted2
+                                )
+                            }
+                        }
                     }
-                    Column(Modifier.weight(1f)) {
-                        Text("IPA · ${lesson.kelas}", style = MaterialTheme.typography.titleMedium)
+                }
+
+                PixelPanel(padding = 12.dp, modifier = Modifier.fillMaxWidth()) {
+                    Column {
+                        Text("BEBAN MENGAJAR", style = MaterialTheme.typography.labelMedium, color = Amber)
+                        Spacer(Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            StatBox("$totalLessons", "Pertemuan", Amber) { }
+                            StatBox("5", "Hari", Sky) { }
+                            StatBox("4", "Kelas", Mint) { state.screen = Scr.KELAS }
+                        }
+                        Spacer(Modifier.height(8.dp))
                         Text(
-                            "${lesson.room} · ${lesson.materi}",
+                            "TOTAL 16 JAM PELAJARAN · LAB SAINS 3 SESI",
                             style = MaterialTheme.typography.labelSmall,
                             color = Muted2
                         )
                     }
                 }
-                Spacer(Modifier.height(8.dp))
             }
         }
     }
@@ -107,9 +170,10 @@ fun CalendarScreen(state: AppState) {
             else -> ym.atDay(dayIndex + 1) to true
         }
     }
+    val monthEvents = state.agenda.count { it.date.startsWith(ym.toString()) }
 
     Column(Modifier.fillMaxSize()) {
-        ScreenHeader("Kalender", "Agenda · ujian · rapat") {
+        ScreenHeader("Kalender", "$monthEvents agenda bulan ini · ujian · rapat") {
             GhostButton("<", { state.month = ym.minusMonths(1) })
             Text(monthLabel(ym), style = MaterialTheme.typography.labelLarge, color = Cream)
             GhostButton(">", { state.month = ym.plusMonths(1) })
@@ -120,10 +184,10 @@ fun CalendarScreen(state: AppState) {
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 16.dp, vertical = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(Modifier.weight(1.15f)) {
+            Column(Modifier.weight(1.2f)) {
                 Row(Modifier.fillMaxWidth()) {
                     listOf("SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN").forEach { d ->
                         Text(
@@ -136,45 +200,55 @@ fun CalendarScreen(state: AppState) {
                     }
                 }
                 Spacer(Modifier.height(4.dp))
-                for (week in 0 until 6) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        for (d in 0 until 7) {
-                            val (date, inMonth) = cells[week * 7 + d]
-                            val iso = date.toString()
-                            val selected = iso == state.selectedDate
-                            val today = iso == LocalDate.now().toString()
-                            val hasEvent = state.agenda.any { it.date == iso }
+                Column(Modifier.weight(1f).fillMaxWidth()) {
+                    for (week in 0 until 6) {
+                        Row(
+                            Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            for (d in 0 until 7) {
+                                val (date, inMonth) = cells[week * 7 + d]
+                                val iso = date.toString()
+                                val selected = iso == state.selectedDate
+                                val today = iso == LocalDate.now().toString()
+                                val events = state.eventsOn(iso).size
 
-                            Box(
-                                Modifier
-                                    .weight(1f)
-                                    .padding(vertical = 2.dp)
-                                    .height(38.dp)
-                                    .background(if (selected) Amber else Navy)
-                                    .border(2.dp, if (today && !selected) Amber else Ink)
-                                    .clickable {
-                                        state.selectedDate = iso
-                                        state.month = YearMonth.from(date)
-                                    },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        "${date.dayOfMonth}",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = when {
-                                            selected -> Ink
-                                            !inMonth -> Muted2
-                                            today -> Amber
-                                            else -> Cream2
-                                        }
-                                    )
-                                    if (hasEvent) {
-                                        Box(
-                                            Modifier
-                                                .size(5.dp)
-                                                .background(if (selected) Ink else Sky)
+                                Box(
+                                    Modifier
+                                        .weight(1f)
+                                        .fillMaxHeight()
+                                        .padding(2.dp)
+                                        .background(if (selected) Amber else if (inMonth) Navy else Color(0x6615142A))
+                                        .border(2.dp, if (today && !selected) Amber else Ink)
+                                        .clickable {
+                                            state.selectedDate = iso
+                                            state.month = YearMonth.from(date)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            "${date.dayOfMonth}",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontSize = 13.sp,
+                                            color = when {
+                                                selected -> Ink
+                                                !inMonth -> Muted2
+                                                today -> Amber
+                                                else -> Cream2
+                                            }
                                         )
+                                        if (events > 0) {
+                                            Spacer(Modifier.height(2.dp))
+                                            Text(
+                                                "•".repeat(events.coerceAtMost(3)),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontSize = 8.sp,
+                                                color = if (selected) Ink else Sky
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -200,10 +274,11 @@ fun CalendarScreen(state: AppState) {
                 }
                 Spacer(Modifier.height(8.dp))
 
-                Column(Modifier.verticalScroll(rememberScrollState())) {
+                Column(Modifier.verticalScrollable()) {
                     val events = state.eventsOn(state.selectedDate).sortedBy { it.time }
                     if (events.isEmpty()) {
-                        Text("TIDAK ADA AGENDA.", style = MaterialTheme.typography.labelSmall, color = Muted2)
+                        Text("BELUM ADA AGENDA DI TANGGAL INI.", style = MaterialTheme.typography.labelSmall, color = Muted2)
+                        Spacer(Modifier.height(8.dp))
                     }
                     events.forEach { ev ->
                         val kind = EVENT_KIND[ev.jenis] ?: (Amber to "KEGIATAN")
@@ -229,6 +304,35 @@ fun CalendarScreen(state: AppState) {
                         }
                         Spacer(Modifier.height(6.dp))
                     }
+
+                    Spacer(Modifier.height(4.dp))
+                    PixelPanel(padding = 10.dp, modifier = Modifier.fillMaxWidth()) {
+                        Column {
+                            Text("AGENDA MENDATANG", style = MaterialTheme.typography.labelMedium, color = Amber)
+                            Spacer(Modifier.height(6.dp))
+                            val upcoming = state.agenda.filter { it.date > state.selectedDate }.sortedBy { it.date }.take(4)
+                            if (upcoming.isEmpty()) {
+                                Text("TIDAK ADA AGENDA LAIN.", style = MaterialTheme.typography.labelSmall, color = Muted2)
+                            }
+                            upcoming.forEach { ev ->
+                                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)) {
+                                    Text(
+                                        fmtDate(ev.date, "d MMM"),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Amber,
+                                        modifier = Modifier.width(66.dp)
+                                    )
+                                    Text(
+                                        ev.title,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Cream2,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -247,7 +351,7 @@ private fun NewAgendaDialog(state: AppState, onClose: () -> Unit) {
     PixelDialog("Agenda Baru", onClose) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text("Tanggal: ${fmtLongDay(state.selectedDate)}", style = MaterialTheme.typography.labelMedium, color = Amber)
-            PixelField("Judul agenda", title, { title = it })
+            PixelField("Judul agenda", title, { title = it }, placeholder = "mis. Rapat wali murid")
             PixelField("Jam", time, { time = it })
             ChipRow(listOf("KEGIATAN", "UJIAN", "RAPAT", "LIBUR", "ADMIN"), jenis) { jenis = it }
             if (error.isNotEmpty()) Text(error, style = MaterialTheme.typography.labelSmall, color = Coral)
@@ -353,15 +457,16 @@ private fun CalcHitung(state: AppState) {
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    state.calcExpr.ifBlank { " " },
-                    style = MaterialTheme.typography.labelSmall,
+                    state.calcExpr.ifBlank { "KETIK ANGKA" },
+                    style = MaterialTheme.typography.labelMedium,
                     color = Color(0xFF6F9F86),
                     maxLines = 1
                 )
+                Spacer(Modifier.height(6.dp))
                 Text(
                     if (value == null) "0" else fmtNum(value),
                     style = MaterialTheme.typography.labelLarge,
-                    fontSize = 30.sp,
+                    fontSize = 38.sp,
                     color = ScreenGreen
                 )
             }
@@ -383,7 +488,7 @@ private fun CalcHitung(state: AppState) {
                         Box(
                             Modifier
                                 .weight(if (key == "=") 2f else 1f)
-                                .height(52.dp)
+                                .height(56.dp)
                                 .background(
                                     when {
                                         isEq -> Amber
@@ -427,6 +532,32 @@ private fun CalcHitung(state: AppState) {
                         style = MaterialTheme.typography.labelSmall,
                         color = Muted2
                     )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            PixelPanel(padding = 12.dp) {
+                Column {
+                    Text("RIWAYAT CEPAT", style = MaterialTheme.typography.labelMedium, color = Amber)
+                    Spacer(Modifier.height(8.dp))
+                    val samples = listOf("78+85+92", "28/32*100", "90*0.4+88*0.3")
+                    samples.forEach { sample ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { state.calcExpr = sample }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(sample, style = MaterialTheme.typography.labelSmall, color = Cream2, modifier = Modifier.weight(1f))
+                            Text(
+                                evalExpr(sample)?.let { fmtNum(it) } ?: "—",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Mint
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -788,6 +919,84 @@ fun ClassesScreen(state: AppState) {
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 CLASS_CODES.drop(2).forEach { code -> Box(Modifier.weight(1f)) { ClassCard(state, code) { detail = code } } }
+            }
+            Spacer(Modifier.height(12.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(Modifier.weight(1.3f)) {
+                    PixelPanel(padding = 12.dp, modifier = Modifier.fillMaxWidth()) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("PERLU PERHATIAN", style = MaterialTheme.typography.labelMedium, color = Coral)
+                                Spacer(Modifier.weight(1f))
+                                Text("NA DI BAWAH KKM $KKM", style = MaterialTheme.typography.labelSmall, color = Muted2)
+                            }
+                            Spacer(Modifier.height(8.dp))
+                            val low = CLASS_CODES.flatMap { code ->
+                                (state.grades[code] ?: emptyList()).mapIndexedNotNull { i, g ->
+                                    if (g.na < KKM) Triple(code, i, g) else null
+                                }
+                            }.sortedBy { it.third.na }
+
+                            if (low.isEmpty()) {
+                                Text("SEMUA SISWA TUNTAS.", style = MaterialTheme.typography.labelSmall, color = Mint)
+                            }
+                            low.take(6).forEach { (code, index, g) ->
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            state.gradeClass = code
+                                            state.screen = Scr.NILAI
+                                        }
+                                        .padding(vertical = 5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Tag(code, Teal)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        g.nama,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Cream2,
+                                        modifier = Modifier.weight(1f),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Text("${g.tugas} · ${g.uts} · ${g.uas}", style = MaterialTheme.typography.labelSmall, color = Muted2)
+                                    Spacer(Modifier.width(8.dp))
+                                    Text("${g.na}", style = MaterialTheme.typography.labelLarge, color = Coral, fontSize = 13.sp)
+                                }
+                            }
+                            if (low.size > 6) {
+                                Spacer(Modifier.height(4.dp))
+                                Text("+${low.size - 6} SISWA LAIN", style = MaterialTheme.typography.labelSmall, color = Muted2)
+                            }
+                        }
+                    }
+                }
+                Box(Modifier.weight(1f)) {
+                    PixelPanel(padding = 12.dp, modifier = Modifier.fillMaxWidth()) {
+                        Column {
+                            Text("AKSI CEPAT", style = MaterialTheme.typography.labelMedium, color = Amber)
+                            Spacer(Modifier.height(8.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                GhostButton("Absensi", { state.screen = Scr.ABSENSI }, Modifier.weight(1f))
+                                GhostButton("Nilai", { state.screen = Scr.NILAI }, Modifier.weight(1f))
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                GhostButton("Jurnal", { state.screen = Scr.JURNAL }, Modifier.weight(1f))
+                                GhostButton("Jadwal", { state.screen = Scr.JADWAL }, Modifier.weight(1f))
+                            }
+                            Spacer(Modifier.height(10.dp))
+                            Text(
+                                "96 SISWA · 4 KELAS · KKM $KKM · BOBOT 40/30/30",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Muted2
+                            )
+                        }
+                    }
+                }
             }
             Spacer(Modifier.height(16.dp))
         }

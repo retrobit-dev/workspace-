@@ -2,6 +2,10 @@ package dev.retrobit.ruangkelas
 
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.view.WindowManager
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Canvas
@@ -50,6 +54,12 @@ import androidx.compose.ui.unit.sp
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            hide(WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
         setContent {
             RuangKelasTheme {
                 val startScreen = intent?.getStringExtra("screen")
@@ -412,7 +422,8 @@ fun ToggleRow(label: String, checked: Boolean, onChange: () -> Unit) {
             Box(
                 Modifier
                     .align(if (checked) Alignment.CenterEnd else Alignment.CenterStart)
-                    .width(18.dp)
+                    .padding(3.dp)
+                    .width(16.dp)
                     .fillMaxHeight()
                     .background(if (checked) Amber else Muted2)
             )

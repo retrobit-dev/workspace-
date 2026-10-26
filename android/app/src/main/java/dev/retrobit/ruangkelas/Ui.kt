@@ -271,7 +271,8 @@ fun PixelField(
     value: String,
     onValueChange: (String) -> Unit,
     singleLine: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    placeholder: String = ""
 ) {
     Column(modifier) {
         Text(label.uppercase(), style = MaterialTheme.typography.labelMedium, color = Amber)
@@ -282,6 +283,9 @@ fun PixelField(
             singleLine = singleLine,
             modifier = Modifier.fillMaxWidth(),
             textStyle = MaterialTheme.typography.bodyLarge,
+            placeholder = if (placeholder.isBlank()) null else {
+                { Text(placeholder, style = MaterialTheme.typography.bodyMedium, color = Muted2) }
+            },
             shape = RoundedCornerShape(0.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = Amber,

@@ -112,15 +112,17 @@ private fun JournalCard(j: Journal, onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(10.dp)
     ) {
-        Column(
+        Box(
             Modifier
-                .width(42.dp)
-                .background(Amber)
-                .padding(vertical = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .width(46.dp)
+                .height(48.dp)
+                .background(Amber),
+            contentAlignment = Alignment.Center
         ) {
-            Text(fmtDayNum(j.date), style = MaterialTheme.typography.labelLarge, color = Ink, fontSize = 16.sp)
-            Text(fmtDayMon(j.date), style = MaterialTheme.typography.labelSmall, color = Ink)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(fmtDayNum(j.date), style = MaterialTheme.typography.labelLarge, color = Ink, fontSize = 15.sp)
+                Text(fmtDayMon(j.date), style = MaterialTheme.typography.labelSmall, color = Ink, fontSize = 8.sp)
+            }
         }
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
@@ -243,10 +245,13 @@ fun NotesScreen(state: AppState) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Box(Modifier.width(230.dp)) {
-                PixelField("Cari catatan", state.noteQuery, {
-                    state.noteQuery = it
-                })
+            Box(Modifier.width(260.dp)) {
+                PixelField(
+                    "Cari catatan",
+                    state.noteQuery,
+                    { state.noteQuery = it },
+                    placeholder = "judul atau isi catatan"
+                )
             }
             ChipRow(filters, state.noteFilter) { state.noteFilter = it }
         }
@@ -329,7 +334,8 @@ fun NoteEditorDialog(state: AppState, existing: Note?, onClose: () -> Unit) {
 fun AttendanceScreen(state: AppState, wide: Boolean) {
     val statuses = state.attendance[state.absClass] ?: STUDENTS.map { "H" }
     val counts = statuses.groupingBy { it }.eachCount()
-    val columns = if (wide && STUDENTS.size > 6) STUDENTS.chunked(6) else listOf(STUDENTS)
+    val perColumn = if (wide && STUDENTS.size > 12) (STUDENTS.size + 2) / 3 else STUDENTS.size
+    val columns = STUDENTS.withIndex().chunked(perColumn)
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader("Absensi", "${fmtDate(todayIso(), "EEEE, d MMM yyyy")} · kelas ${state.absClass}") {
@@ -366,12 +372,12 @@ fun AttendanceScreen(state: AppState, wide: Boolean) {
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            columns.forEachIndexed { colIndex, chunk ->
+            columns.forEach { chunk ->
                 Column(Modifier.weight(1f).verticalScrollable()) {
-                    chunk.forEachIndexed { i, nama ->
-                        val index = colIndex * 6 + i
+                    chunk.forEach { entry ->
+                        val index = entry.index
                         val status = statuses.getOrNull(index) ?: "H"
-                        StudentRow(index, nama, status) { newStatus ->
+                        StudentRow(index, entry.value, status) { newStatus ->
                             state.setAttendance(state.absClass, index, newStatus)
                         }
                     }
@@ -400,7 +406,8 @@ private fun StudentRow(index: Int, nama: String, status: String, onStatus: (Stri
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.weight(1f),
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            fontSize = 14.sp
         )
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf("H", "S", "I", "A").forEach { key ->
@@ -432,7 +439,8 @@ fun GradesScreen(state: AppState, wide: Boolean) {
     val avg = if (rows.isEmpty()) 0 else rows.sumOf { it.na } / rows.size
     val low = rows.count { it.na < KKM }
     val max = rows.maxOfOrNull { it.na } ?: 0
-    val columns = if (wide) rows.chunked(6) else listOf(rows)
+    val perColumn = if (wide && rows.size > 12) (rows.size + 2) / 3 else rows.size.coerceAtLeast(1)
+    val columns = rows.withIndex().chunked(perColumn)
 
     Column(Modifier.fillMaxSize()) {
         ScreenHeader("Nilai", "Bobot · tugas 40% · uts 30% · uas 30%") {
@@ -473,7 +481,7 @@ fun GradesScreen(state: AppState, wide: Boolean) {
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            columns.forEachIndexed { colIndex, chunk ->
+            columns.forEach { chunk ->
                 Column(Modifier.weight(1f).verticalScrollable()) {
                     Row(
                         Modifier
@@ -491,8 +499,9 @@ fun GradesScreen(state: AppState, wide: Boolean) {
                             )
                         }
                     }
-                    chunk.forEachIndexed { i, g ->
-                        val index = colIndex * 6 + i
+                    chunk.forEach { entry ->
+                        val g = entry.value
+                        val index = entry.index
                         Row(
                             Modifier
                                 .fillMaxWidth()
