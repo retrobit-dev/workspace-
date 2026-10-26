@@ -4,7 +4,7 @@
   "private": true,
   "description": "Launcher Android pixel-art: satu gambar workspace isometrik, objek bisa diketuk untuk membuka aplikasi bawaan.",
   "scripts": {
-    "start": "python3 -m http.server 4173 --bind 0.0.0.0 --directory web",
+    "start": "python3 tools/serve.py",
     "build": "node build.js",
     "preview:build": "python3 tools/make_preview.py"
   }

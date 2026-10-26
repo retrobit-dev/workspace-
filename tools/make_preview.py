@@ -5,6 +5,7 @@ browser punya area ketuk yang sama persis dengan APK Android.
 
   python3 tools/make_preview.py   ->  web/index.html + web/scene.png
 """
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -55,6 +56,8 @@ HTML = """<!DOCTYPE html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#15142A">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>Ruang Kelas</title>
 <style>
   :root{
@@ -124,7 +127,7 @@ HTML = """<!DOCTYPE html>
 </head>
 <body>
 <div id="stage">
-  <img id="scene" src="scene.png" alt="Workspace guru malam hari" draggable="false">
+  <img id="scene" src="scene.png?v=__HASH__" alt="Workspace guru malam hari" draggable="false">
   <div id="clock" role="img" aria-label="Jam analog">
     <svg viewBox="0 0 100 100" preserveAspectRatio="none">
       <g stroke="#0E0D1A" stroke-linecap="round">
@@ -253,9 +256,11 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 def main() -> None:
     scene_w, scene_h, tiles, clock, calendar = parse_data()
     size = make_scene(scene_w, scene_h)
+    scene_hash = hashlib.md5((WEB / "scene.png").read_bytes()).hexdigest()[:10]
 
     html = (
-        HTML.replace("__RATIO__", f"{scene_w} / {scene_h}")
+        HTML.replace("__HASH__", scene_hash)
+        .replace("__RATIO__", f"{scene_w} / {scene_h}")
         .replace("__SCENE_W__", str(scene_w))
         .replace("__SCENE_H__", str(scene_h))
         .replace("__CLOCK__", str(clock).replace(" ", ""))
