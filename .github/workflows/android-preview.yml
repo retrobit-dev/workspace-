@@ -58,6 +58,7 @@ jobs:
           set +e
           set -x
           REPORT=/tmp/emu.log
+          export PATH="$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$ANDROID_SDK_ROOT/emulator:$PATH"
           exec > >(tee -a $REPORT) 2>&1
 
           emit() {
