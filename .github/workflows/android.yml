@@ -21,6 +21,8 @@ jobs:
     name: assembleDebug
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -40,13 +42,43 @@ jobs:
 
       - name: Compile Kotlin + resources
         working-directory: android
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set +e
+          gradle :app:assembleDebug --no-daemon --stacktrace > /tmp/build.log 2>&1
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            {
+              echo "Build gagal (exit $rc) - ringkasan error:"
+              echo '```'
+              grep -E "^e: |ERROR|error:|FAILURE:|What went wrong" /tmp/build.log | head -80
+              echo '```'
+            } > /tmp/err.md
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" -f body="$(head -c 60000 /tmp/err.md)" || true
+            tail -120 /tmp/build.log
+            exit $rc
+          fi
+          echo "APK berhasil dibangun"
+          tail -20 /tmp/build.log
 
       - name: Rename artifact
         run: |
           mkdir -p dist
           cp android/app/build/outputs/apk/debug/app-debug.apk dist/RuangKelas-0.6.0-debug.apk
           ls -lh dist
+
+      - name: Publish APK ke Release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v0.6.0-android"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "Ruang Kelas 0.6.0 - Android (APK)" \
+              --notes "APK debug siap dipasang di tablet Android. Unduh RuangKelas-0.6.0-debug.apk lalu buka di perangkat (izinkan instalasi dari sumber ini)."
+          gh release upload "$TAG" dist/RuangKelas-0.6.0-debug.apk --repo "$GITHUB_REPOSITORY" --clobber
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
