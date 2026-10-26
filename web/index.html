@@ -35,7 +35,8 @@
 
   #clock{position:absolute;display:flex;align-items:center;justify-content:center;
     background:#0C1712;color:var(--screen);
-    font-size:clamp(9px,1.05vw,16px);letter-spacing:1px;cursor:pointer}
+    font-size:11px;letter-spacing:1px;cursor:pointer;
+    white-space:nowrap;overflow:hidden;line-height:1}
 
   #scan{position:absolute;inset:0;pointer-events:none;
     background:repeating-linear-gradient(180deg,rgba(0,0,0,.10) 0 1px,transparent 1px 3px)}
@@ -142,6 +143,14 @@ function tick() {
 }
 tick();
 setInterval(tick, 1000);
+
+// ukuran huruf jam mengikuti lebar panggung, sama seperti di APK
+function fitClock() {
+  clockEl.style.fontSize = Math.max(6, stage.clientWidth * 0.0112) + "px";
+}
+fitClock();
+window.addEventListener("resize", fitClock);
+if (window.ResizeObserver) new ResizeObserver(fitClock).observe(stage);
 
 // minta browser mengunci landscape (butuh fullscreen; kalau ditolak, abaikan saja)
 function lockLandscape() {

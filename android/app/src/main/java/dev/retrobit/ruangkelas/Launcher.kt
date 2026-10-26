@@ -198,11 +198,14 @@ private fun LauncherClock(box: SceneBox, onTap: () -> Unit) {
             .clickable { onTap() },
         contentAlignment = Alignment.Center
     ) {
+        // ukuran huruf ikut skala gambar supaya tidak pernah pecah jadi dua baris
         Text(
             clock,
             style = MaterialTheme.typography.labelLarge,
-            fontSize = 13.sp,
-            color = ScreenGreen
+            fontSize = (box.unit.value * 11f).coerceIn(6f, 18f).sp,
+            color = ScreenGreen,
+            maxLines = 1,
+            softWrap = false
         )
     }
 }
