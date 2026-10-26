@@ -377,7 +377,6 @@ private val MONTHS_SHORT = listOf("JAN", "FEB", "MAR", "APR", "MEI", "JUN",
     "JUL", "AGU", "SEP", "OKT", "NOV", "DES")
 private val DAYS_SHORT = listOf("SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN")
 private val FaceInk = Color(0xFF181430)
-private val FlagRed = Color(0xFFCE1126)
 
 /**
  * Semua muka hidup di atas gambar:
@@ -441,16 +440,6 @@ private fun LiveFaces(box: SceneBox, battery: Int, isDay: Boolean) {
             native.drawRect(barStart, clock.height * 0.84f,
                 barStart + max(1f, barFull * time.second / 60f), clock.height * 0.875f,
                 Paint().apply { color = 0x99D7F7CD.toInt() })
-        }
-
-        // bendera Indonesia menempel di kanan jam (tinggi sama)
-        val flag = planeOf(box, wallQuad(FLAG_RECT), this)
-        withPlane(flag) { native ->
-            val half = flag.height / 2f
-            native.drawRect(0f, 0f, flag.width, half, Paint().apply { color = FlagRed.toArgb() })
-            native.drawRect(0f, half, flag.width, flag.height, Paint().apply { color = 0xFFF6F1E3.toInt() })
-            native.drawRect(0f, 0f, flag.width, flag.height,
-                Paint().apply { color = 0xFF2B2A46.toInt(); style = Paint.Style.STROKE; strokeWidth = 2f })
         }
 
         // ---------------- judul di papan tulis ----------------

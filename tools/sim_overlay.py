@@ -46,7 +46,6 @@ def parse():
 
     return dict(
         clock=rect("CLOCK_RECT"),
-        flag=rect("FLAG_RECT"),
         board=rect("BOARD_QUAD"),
         cal=rect("CALENDAR_QUAD"),
         rail=rect("RAIL_LINE"),
@@ -116,13 +115,6 @@ def paint_clock(layer, w, h, hhmm, date, second=32):
                 fill=(215, 247, 205, 153))
 
 
-def paint_flag(layer, w, h):
-    d = ImageDraw.Draw(layer)
-    d.rectangle([0, 0, w, h / 2], fill=(206, 17, 38, 255))
-    d.rectangle([0, h / 2, w, h], fill=(246, 241, 227, 255))
-    d.rectangle([0, 0, w - 1, h - 1], outline=(43, 42, 70, 255), width=2)
-
-
 def paint_board(layer, w, h):
     d = ImageDraw.Draw(layer)
     title = "JADWAL MENGAJAR"
@@ -179,8 +171,6 @@ def build(mode, hour, battery=76, second=32):
     clock_q = wall_quad(data["clock"])
     draw_plane(src, clock_q, lambda w, h: _layer(w, h, lambda l: paint_clock(l, w, h, digital, date, second)))
 
-    flag_q = wall_quad(data["flag"])
-    draw_plane(src, flag_q, lambda w, h: _layer(w, h, lambda l: paint_flag(l, w, h)))
 
     draw_plane(src, data["board"], lambda w, h: _layer(w, h, lambda l: paint_board(l, w, h)))
 

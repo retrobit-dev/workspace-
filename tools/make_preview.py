@@ -1,6 +1,6 @@
 """Bangun preview browser untuk launcher.
 
-Sumber kebenaran tetap Data.kt (TILES, CLOCK_RECT, FLAG_RECT, BOARD_QUAD,
+Sumber kebenaran tetap Data.kt (TILES, CLOCK_RECT, BOARD_QUAD,
 CALENDAR_QUAD, FRAME_QUADS, RAIL_LINE, BATTERY_TEXT_QUAD, CURTAIN_RECTS,
 LEAF_RECT, APP_ICONS, SCENE_W/H) supaya area ketuk di browser sama persis
 dengan APK.
@@ -64,7 +64,6 @@ def parse_data():
         h=scene_h,
         tiles=tiles,
         clock=rect("CLOCK_RECT"),
-        flag=rect("FLAG_RECT"),
         board=rect("BOARD_QUAD"),
         cal=rect("CALENDAR_QUAD"),
         rail=rect("RAIL_LINE"),
@@ -246,13 +245,6 @@ HTML = """<!DOCTYPE html>
       <rect id="clock-sec" x="__CLOCK_BAR_X__" y="__CLOCK_BAR_Y__" width="0"
             height="__CLOCK_BAR_H__" fill="#D7F7CD" opacity="0.6" data-full="__CLOCK_BAR_FULL__"/>
     </g>
-    <g id="flag" transform="__FLAG_MATRIX__">
-      <rect x="0" y="0" width="__FLAG_W__" height="__FLAG_HALF__" fill="#CE1126"/>
-      <rect x="0" y="__FLAG_HALF__" width="__FLAG_W__" height="__FLAG_HALF__" fill="#F6F1E3"/>
-      <rect x="0" y="0" width="__FLAG_W__" height="__FLAG_H__"
-            fill="none" stroke="#2B2A46" stroke-width="2"/>
-    </g>
-
     <!-- kalender: halaman bisa terlipat -->
     <g id="cal" transform="__CAL_MATRIX__">
       <rect id="cal-pad" x="0" y="__CAL_PAD_Y__" width="__CAL_W__" height="__CAL_PAD_H__" fill="#CBB68C"/>
@@ -445,21 +437,15 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 def build_html(data, scene_sizes):
     w, h = data["w"], data["h"]
     clock = data["clock"]
-    flag = data["flag"]
     board = data["board"]
     cal = data["cal"]
     batt = data["battery_text"]
 
     clock_plane = (clock[0], clock[1], clock[0] + clock[2], clock[1] + int(clock[2] * 0.42),
                    clock[0], clock[1] + clock[3])
-    flag_plane = (flag[0], flag[1], flag[0] + flag[2], flag[1] + int(flag[2] * 0.42),
-                  flag[0], flag[1] + flag[3])
 
     clock_w = ((clock_plane[2] - clock_plane[0]) ** 2 + (clock_plane[3] - clock_plane[1]) ** 2) ** 0.5
     clock_h = ((clock_plane[4] - clock_plane[0]) ** 2 + (clock_plane[5] - clock_plane[1]) ** 2) ** 0.5
-    flag_w = ((flag_plane[2] - flag_plane[0]) ** 2 + (flag_plane[3] - flag_plane[1]) ** 2) ** 0.5
-    flag_h = ((flag_plane[4] - flag_plane[0]) ** 2 + (flag_plane[5] - flag_plane[1]) ** 2) ** 0.5
-
     board_w = ((board[2] - board[0]) ** 2 + (board[3] - board[1]) ** 2) ** 0.5
     board_h = ((board[4] - board[0]) ** 2 + (board[5] - board[1]) ** 2) ** 0.5
 
@@ -517,10 +503,6 @@ def build_html(data, scene_sizes):
         .replace("__CLOCK_BAR_H__", f"{clock_h * 0.035:.2f}")
         .replace("__CLOCK_BAR_FULL__", f"{clock_w * 0.76:.2f}")
         # bendera
-        .replace("__FLAG_MATRIX__", matrix_attr(flag_plane))
-        .replace("__FLAG_W__", f"{flag_w:.2f}")
-        .replace("__FLAG_H__", f"{flag_h:.2f}")
-        .replace("__FLAG_HALF__", f"{flag_h / 2:.2f}")
         # kalender
         .replace("__CAL_MATRIX__", matrix_attr(cal))
         .replace("__CAL_W__", f"{cal_w:.2f}")

@@ -2,7 +2,7 @@
 // koordinat yang sama dengan Data.kt (sumber kebenaran), plus aturan v7:
 //   · tidak ada jam analog, hanya jam digital
 //   · jam digital setinggi bingkai foto & sejajar dengannya
-//   · bendera Indonesia menempel tepat di kanan jam, tinggi sama
+//   · bendera di kanan jam DIHAPUS (0.15.5)
 //   · kalender punya halaman yang bisa terlipat
 //   · rel gorden = indikator baterai + persen di dinding
 //   · siang/malam mengikuti jam, gorden & daun bergoyang
@@ -38,7 +38,6 @@ const curtainRects = listOfQuads("CURTAIN_RECTS");
 const icons = [...data.matchAll(/AppIcon\("([^"]+)",\s*"(#[0-9A-Fa-f]+)"/g)].map((m) => ({ name: m[1], bg: m[2] }));
 
 const CLOCK = rect("CLOCK_RECT");
-const FLAG = rect("FLAG_RECT");
 const BOARD = rect("BOARD_QUAD");
 const CAL = rect("CALENDAR_QUAD");
 const RAIL = rect("RAIL_LINE");
@@ -92,22 +91,9 @@ else {
   if (Math.abs(a) < 20) fail("jam digital tidak mengikuti kemiringan dinding");
 }
 
-// ---- bendera: menempel di kanan jam, tinggi sama ----
-const flagGroup = document.getElementById("flag");
-const fm = flagGroup && flagGroup.getAttribute("transform");
-if (!fm) fail("bendera tidak ditemukan");
-else {
-  const [fa, fb, , , fe, ff] = fm.match(/matrix\(([^)]+)\)/)[1].split(",").map(Number);
-  const clockRight = CLOCK[0] + CLOCK[2];
-  if (Math.abs(fe - clockRight) > 4) fail(`bendera kiri ${fe} tidak menempel di kanan jam ${clockRight}`);
-  if (Math.abs(fb / fa - 0.42) > 0.03) fail(`kemiringan bendera ${(fb / fa).toFixed(2)} != 0.42`);
-  // atas bendera = sudut kanan-atas jam (mengikuti kemiringan dinding)
-  const wantTop = CLOCK[1] + Math.round(0.42 * CLOCK[2]);
-  if (Math.abs(ff - wantTop) > 1.5) fail(`bendera atas ${ff} != sudut kanan-atas jam ${wantTop}`);
-  if (![...flagGroup.querySelectorAll("rect")].some((r) => r.getAttribute("fill") === "#CE1126"))
-    fail("bendera Indonesia (merah-putih) tidak ada");
-  if (Math.abs(FLAG[3] - CLOCK[3]) > 1) fail("tinggi bendera != tinggi jam");
-}
+// ---- bendera dihapus dari jam digital ----
+if (document.getElementById("flag")) fail("#flag masih ada (bendera sudah dihapus)");
+if (/CE1126/i.test(document.getElementById("fx").innerHTML)) fail("masih ada warna bendera merah di overlay");
 
 // ---- papan tulis: judul di atas, rata tengah ----
 const title = document.getElementById("board-title");
@@ -179,7 +165,7 @@ if (labels.filter((l) => l === "Binder").length < 2) fail("hotspot rak & laci ha
 if (WINDOW_QUAD.length !== 8) fail("WINDOW_QUAD harus 8 angka");
 if (RAIL.length !== 4) fail("RAIL_LINE harus 4 angka");
 if (BATT.length !== 6) fail("BATTERY_TEXT_QUAD harus 6 angka");
-if (FLAG[3] !== CLOCK[3]) fail("FLAG_RECT harus setinggi CLOCK_RECT");
+if (document.querySelector("#fx #flag")) fail("#flag masih ada di svg");
 
 console.log(errors === 0
   ? `PREVIEW OK · ${hotspots.length} hotspot · ${icons.length} bingkai · jam ${clockText} · kalender ${now.getDate()} · rel baterai ${ticks.length} tanda`
