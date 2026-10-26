@@ -14,7 +14,7 @@ jobs:
   preview:
     name: Jalankan APK di tablet emulator
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 45
     permissions:
       contents: write
 
@@ -32,7 +32,7 @@ jobs:
 
       - name: Build debug APK
         working-directory: android
-        run: gradle :app:assembleDebug --no-daemon --stacktrace
+        run: gradle :app:assembleDebug --no-daemon
 
       - name: Salin APK
         run: |
@@ -44,36 +44,65 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm || true
+
+      - uses: android-actions/setup-android@v3
 
       - name: Boot emulator + screenshot
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          profile: pixel_tablet
-          disable-animations: true
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none
-          script: |
-            set -x
-            adb install -r dist/RuangKelas-0.6.0-debug.apk
-            mkdir -p docs/screens
-            for SCREEN in HOME JURNAL CATATAN ABSENSI NILAI JADWAL KALENDER KALKULATOR BINDER KELAS PROFIL KIT; do
-              LOWER=$(echo "$SCREEN" | tr '[A-Z]' '[a-z]')
-              adb shell am force-stop dev.retrobit.ruangkelas
-              adb shell am start -W -n dev.retrobit.ruangkelas/.MainActivity --es screen "$SCREEN"
-              sleep 6
-              adb shell screencap -p /sdcard/shot.png
-              adb pull /sdcard/shot.png "docs/screens/${LOWER}.png"
-            done
-            adb shell dumpsys activity activities | grep -i "mResumedActivity" || true
-            adb logcat -d -s AndroidRuntime:E | tail -40 || true
-
-      - name: Commit screenshot
-        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "ruang-kelas-bot"
-          git config user.email "bot@users.noreply.github.com"
-          git add docs/screens || true
-          git commit -m "chore(preview): screenshot aplikasi dari emulator [skip ci]" || exit 0
-          git push || true
+          set +e
+          set -x
+          REPORT=/tmp/emu.log
+          exec > >(tee -a $REPORT) 2>&1
+
+          emit() {
+            {
+              echo "Emulator report ($1):"
+              echo '```'
+              tail -n 60 $REPORT
+              echo '```'
+            } > /tmp/emu.md
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" -f body="$(head -c 60000 /tmp/emu.md)" || true
+          }
+
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager "platform-tools" "emulator" "system-images;android-33;google_apis;x86_64" || { emit "sdkmanager gagal"; exit 1; }
+
+          echo no | avdmanager create avd -n tab -k "system-images;android-33;google_apis;x86_64" -d "pixel_tablet" --force || { emit "avdmanager gagal"; exit 1; }
+
+          nohup $ANDROID_SDK_ROOT/emulator/emulator -avd tab -no-window -no-audio -no-boot-anim \
+            -gpu swiftshader_indirect -no-snapshot -no-metrics > /tmp/emulator.log 2>&1 &
+          adb start-server
+
+          for i in $(seq 1 90); do
+            BOOT=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+            [ "$BOOT" = "1" ] && break
+            sleep 5
+          done
+          adb devices -l
+          if [ "$(adb shell getprop sys.boot_completed | tr -d '\r')" != "1" ]; then
+            echo "--- emulator.log ---"; tail -60 /tmp/emulator.log
+            emit "emulator tidak boot"
+            exit 1
+          fi
+
+          adb shell settings put global window_animation_scale 0 || true
+          adb install -r dist/RuangKelas-0.6.0-debug.apk || { emit "install gagal"; exit 1; }
+          mkdir -p docs/screens
+
+          for SCREEN in HOME JURNAL CATATAN ABSENSI NILAI JADWAL KALENDER KALKULATOR BINDER KELAS PROFIL KIT; do
+            LOWER=$(echo "$SCREEN" | tr '[A-Z]' '[a-z]')
+            adb shell am force-stop dev.retrobit.ruangkelas
+            adb logcat -c
+            adb shell am start -W -n dev.retrobit.ruangkelas/.MainActivity --es screen "$SCREEN"
+            sleep 5
+            adb shell screencap -p /sdcard/shot.png
+            adb pull /sdcard/shot.png "docs/screens/${LOWER}.png" || true
+            adb logcat -d -s AndroidRuntime:E | tail -20
+          done
+
+          adb shell dumpsys activity activities | grep -i "mResumedActivity" || true
+          ls -la docs/screens
+          emit "selesai"
