@@ -180,6 +180,18 @@ jobs:
           } > /tmp/aksi.md
           gh api -X POST "repos/${GITHUB_REPOSITORY}/commits/${GITHUB_SHA}/comments" -f body="$(head -c 60000 /tmp/aksi.md)" || true
 
+      - name: Simpan APK ke repo
+        if: always()
+        run: |
+          set +e
+          git config user.name "ruang-kelas-bot"
+          git config user.email "bot@users.noreply.github.com"
+          mkdir -p dist
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/RuangKelas-debug.apk
+          git add -f dist/RuangKelas-debug.apk
+          git commit -m "build(apk): RuangKelas-debug.apk dari CI [skip ci]"
+          git push origin "HEAD:refs/heads/${GITHUB_REF_NAME}"
+
       - name: Commit screenshot
         if: always()
         env:
