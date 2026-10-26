@@ -375,6 +375,10 @@ fun AttendanceScreen(state: AppState, wide: Boolean) {
         ) {
             columns.forEach { chunk ->
                 Column(Modifier.weight(1f).verticalScrollable()) {
+                    Row(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+                        Text("NAMA SISWA", style = MaterialTheme.typography.labelSmall, color = Muted2, modifier = Modifier.weight(1f))
+                        Text("H  S  I  A", style = MaterialTheme.typography.labelSmall, color = Muted2)
+                    }
                     chunk.forEach { entry ->
                         val index = entry.index
                         val status = statuses.getOrNull(index) ?: "H"
@@ -410,6 +414,8 @@ private fun StudentRow(index: Int, nama: String, status: String, onStatus: (Stri
             overflow = TextOverflow.Ellipsis,
             fontSize = 14.sp
         )
+        Box(Modifier.width(24.dp).height(2.dp).background(Color(0x14FFFFFF)))
+        Spacer(Modifier.width(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             listOf("H", "S", "I", "A").forEach { key ->
                 Box(
@@ -518,6 +524,8 @@ fun GradesScreen(state: AppState, wide: Boolean) {
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
+                            Box(Modifier.width(16.dp).height(2.dp).background(Color(0x14FFFFFF)))
+                            Spacer(Modifier.width(8.dp))
                             Text("${g.tugas}", style = MaterialTheme.typography.labelLarge, color = Cream2, modifier = Modifier.width(34.dp))
                             Text("${g.uts}", style = MaterialTheme.typography.labelLarge, color = Cream2, modifier = Modifier.width(34.dp))
                             Text("${g.uas}", style = MaterialTheme.typography.labelLarge, color = Cream2, modifier = Modifier.width(34.dp))
