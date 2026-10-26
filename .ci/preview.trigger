@@ -1,1 +1,1 @@
-run 02:31:29 ui-auto
+run 02:32:19 ui-script
