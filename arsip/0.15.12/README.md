@@ -9,6 +9,7 @@ tersimpan di git dan di GitHub Releases pada commit yang tercantum di bawah.
 | Yang diarsipkan | Lokasi |
 | --- | --- |
 | Kondisi final seluruh repo | commit `f76d2ad` (art, scene, preview, kode hotspot) + commit docs menyusul |
+| Prototipe HTML era awal | `prototype/`, `build.js`, `preview-ruang-kelas.html` — dihapus dari pohon kerja; ambil dari `git show 7fe1aa9:prototype/index.html` (dst.) |
 | APK 0.15.12 | release `v0.15.12-android` → `RuangKelas-0.15.12-debug.apk` |
 | Gambar dasar (lampu meja + kalender) | `art/workspace-iso-v7c.png` @ `f76d2ad` |
 | Preview HTML + scene day/night | `web/index.html`, `web/scene_day.png`, `web/scene_night.png` |

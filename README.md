@@ -41,7 +41,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 | APK siap pasang | [`dist/RuangKelas-0.15.12-debug.apk`](dist/RuangKelas-0.15.12-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
-| Prototipe HTML lama | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain) |
+| Prototipe HTML lama | diarsipkan — lihat [`arsip/0.15.12/`](arsip/0.15.12) (ambil dari sejarah git) |
 
 ![Launcher Ruang Kelas](docs/preview-launcher.png)
 
