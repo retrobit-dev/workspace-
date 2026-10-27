@@ -11,7 +11,12 @@ import math
 import re
 from pathlib import Path
 
+from datetime import date
+
 from PIL import Image, ImageDraw, ImageFont
+
+BULAN = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"]
+HARI = ["SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN"]
 
 ROOT = Path(__file__).resolve().parent.parent
 RES = ROOT / "android/app/src/main/res"
@@ -153,13 +158,14 @@ def build(mode, hour, battery=76, second=32):
     src = Image.open(RES / f"drawable-nodpi/scene_{mode}.png").convert("RGBA")
 
     digital = "14:07" if mode == "day" else "21:44"
-    date = "SEN 26 OKT"
+    datestr = "SEN 26 OKT"
 
 
 
     draw_plane(src, data["board"], lambda w, h: _layer(w, h, lambda l: paint_board(l, w, h)))
 
-    draw_plane(src, data["cal"], lambda w, h: _layer(w, h, lambda l: paint_cal(l, w, h, "OKT", "26", "SEN")))
+    draw_plane(src, data["cal"], lambda w, h: _layer(w, h, lambda l: paint_cal(
+        l, w, h, BULAN[date.today().month - 1], str(date.today().day), HARI[date.today().weekday()])))
 
     for quad, (name, bg, shapes) in zip(data["frames"], data["icons"]):
         draw_plane(src, quad, lambda w, h, bg=bg, shapes=shapes: icon_layer(w, h, bg, shapes))
