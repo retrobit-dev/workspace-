@@ -204,7 +204,7 @@ data class TileInfo(
  */
 val TILES = listOf(
     // --- meja kerja ---
-    TileInfo("Jurnal", Scr.JURNAL, "book", 766, 296, 178, 172),          // laptop
+    TileInfo("Jurnal", Scr.JURNAL, "book", 788, 296, 178, 172),          // laptop
     TileInfo("Nilai", Scr.NILAI, "chart", 658, 286, 124, 94),            // tumpukan buku
     TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 886, 412, 96, 64),    // kalkulator
     TileInfo("Alat Tulis", Scr.KIT, "pencil", 936, 352, 58, 80),         // tempat pensil
