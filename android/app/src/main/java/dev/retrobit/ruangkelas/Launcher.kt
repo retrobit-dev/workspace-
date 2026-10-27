@@ -350,7 +350,7 @@ private fun LaptopLayer(box: SceneBox, isDay: Boolean, lap: Int, prog: Float) {
                 b,
                 srcOffset = IntOffset.Zero,
                 srcSize = IntSize(b.width, b.height),
-                dstOffset = IntOffset(dst.x, dst.y + (dyScene * box.h(1f).toPx()).roundToInt()),
+                dstOffset = IntOffset(dst.x, dst.y + (dyScene * box.h(1).toPx()).roundToInt()),
                 dstSize = sz,
                 alpha = a.coerceIn(0f, 1f),
                 filterQuality = FilterQuality.High
