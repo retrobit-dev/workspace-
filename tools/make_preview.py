@@ -63,14 +63,18 @@ def parse_data():
 
 # ------------------------------------------------------------------ gambar scene
 
-# bolongan kaca jendela (piksel gambar) — cermin SKY_HOLES di Launcher.kt
-SKY_HOLES = [
+# bolongan kaca jendela (piksel gambar) — cermin SKY_HOLES_* di Launcher.kt.
+# Geometri siang & malam BERBEDA (malam: semua sash tertutup).
+SKY_HOLES_DAY = [
     (1010, 119, 1082, 148, 1082, 338, 1010, 300),  # kaca kiri
     (1100, 146, 1193, 193, 1190, 404, 1100, 357),  # bukaan kanan
-    # celah tirai kiri & segitiga kaca kanan (langit asli di art)
     (975, 206, 977, 197, 981, 181, 987, 186, 987, 280, 986, 287, 982, 296, 978, 284, 975, 252),
     (1191, 272, 1194, 289, 1196, 301, 1198, 313, 1200, 320, 1202, 346,
      1203, 366, 1200, 375, 1198, 385, 1196, 398, 1194, 407, 1191, 407),
+]
+SKY_HOLES_NIGHT = [
+    (1019, 122, 1083, 153, 1082, 366, 1018, 334),  # kaca kiri
+    (1105, 166, 1171, 197, 1168, 408, 1105, 376),  # kaca kanan
 ]
 
 
@@ -95,6 +99,8 @@ def make_scenes():
     holes_total = 0
     for mode in ("night", "day"):
         im = scene_face.load_scene(mode)
+        global SKY_HOLES
+        SKY_HOLES = SKY_HOLES_DAY if mode == "day" else SKY_HOLES_NIGHT
         im, n = punch_holes(im)
         if n < 15000:
             raise SystemExit(f"bolongan kaca scene {mode} terlalu kecil ({n} px) — periksa SKY_HOLES")

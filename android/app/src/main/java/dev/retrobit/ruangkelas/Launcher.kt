@@ -444,9 +444,11 @@ private fun ambienceOf(hour: Int, isDay: Boolean): Pair<Color, Float> = when (ho
      salju, kabut, dan kilat saat badai — semua dari kode cuaca
      Open-Meteo (CuacaRepo, cache offline). Vektor halus, bukan piksel. */
 
-// bolongan kaca jendela di scene (piksel gambar): langit underlay terlihat dari
-// sini; semua art (rel, bingkai, tirai, palang) tetap DI DEPAN animasi
-private val SKY_HOLES = listOf(
+// Bolongan kaca jendela di scene (piksel gambar): langit underlay terlihat dari
+// sini; semua art (rel, bingkai, tirai, palang, gagang) tetap DI DEPAN animasi.
+// GEOMETRI SIANG & MALAM BERBEDA (malam: semua sash tertutup) — masing-masing
+// diukur dari art-nya sendiri.
+private val SKY_HOLES_DAY = listOf(
     floatArrayOf(1010f, 119f, 1082f, 148f, 1082f, 338f, 1010f, 300f), // kaca kiri
     floatArrayOf(1100f, 146f, 1193f, 193f, 1190f, 404f, 1100f, 357f), // bukaan kanan
     // celah sempit antara tirai kiri & bingkai (langit asli terlihat di art)
@@ -454,6 +456,13 @@ private val SKY_HOLES = listOf(
     // segitiga kaca di kanan palang vertikal, sampai tirai kanan
     floatArrayOf(1191f, 272f, 1194f, 289f, 1196f, 301f, 1198f, 313f, 1200f, 320f, 1202f, 346f,
         1203f, 366f, 1200f, 375f, 1198f, 385f, 1196f, 398f, 1194f, 407f, 1191f, 407f),
+)
+
+private val SKY_HOLES_NIGHT = listOf(
+    // kaca kiri (sash tertutup; gagang tengah = art, tetap opaque)
+    floatArrayOf(1019f, 122f, 1083f, 153f, 1082f, 366f, 1018f, 334f),
+    // kaca kanan (area bulan art ikut digantikan orb animasi)
+    floatArrayOf(1105f, 166f, 1171f, 197f, 1168f, 408f, 1105f, 376f),
 )
 
 // titik gradien langit per menit dalam hari (atas, bawah) — diinterpolasi mulus
@@ -464,8 +473,8 @@ private val SKY_STOPS = listOf(
     intArrayOf(720, 0x4D8FE0, 0xA8CDF0),   // 12:00 siang
     intArrayOf(990, 0x6D9BD8, 0xF7C873),   // 16:30 sore keemasan
     intArrayOf(1080, 0x3A3F7A, 0xE86A5A),  // 18:00 senja
-    intArrayOf(1170, 0x141A44, 0x2A3568),  // 19:30 malam
-    intArrayOf(1440, 0x0A0F2E, 0x18224E),
+    intArrayOf(1170, 0x232D5B, 0x3A4C74),  // 19:30 malam (senada art malam)
+    intArrayOf(1440, 0x1B2448, 0x303F66),
 )
 
 private fun lerpColor(c0: Int, c1: Int, t: Float): Color {

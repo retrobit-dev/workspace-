@@ -23,7 +23,7 @@ SKY_ARC = (1108, 336, 1185, 372)  # busur orb (panel kanan); puncak = base-146
 SKY_STOPS = [  # (menit, warna-atas, warna-bawah) — gradien sesuai waktu nyata
     (0, "#0A0F2E", "#18224E"), (300, "#2E3A6E", "#F2955F"), (420, "#7FB2E8", "#CFE6F7"),
     (720, "#4D8FE0", "#A8CDF0"), (990, "#6D9BD8", "#F7C873"), (1080, "#3A3F7A", "#E86A5A"),
-    (1170, "#141A44", "#2A3568"), (1440, "#0A0F2E", "#18224E"),
+    (1170, "#232D5B", "#3A4C74"), (1440, "#1B2448", "#303F66"),
 ]
 
 JEMBER = dict(lat=-8.1728, lon=113.6995)  # kota default CuacaRepo (idx 0)
