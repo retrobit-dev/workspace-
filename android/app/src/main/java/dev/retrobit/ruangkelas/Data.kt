@@ -230,7 +230,10 @@ val BOARD_QUAD = intArrayOf(334, 244, 554, 146, 334, 462)
 val WINDOW_QUAD = intArrayOf(990, 110, 1090, 96, 990, 380, 1090, 366)
 
 /** Daun tanaman yang ikut bergoyang. */
-val LEAF_RECT = intArrayOf(1100, 556, 168, 190)
+val LEAF_RECT = intArrayOf(1055, 470, 150, 160)
+
+/** Panel tirai kanan yang dianimasikan (ditiup angin dari luar jendela). */
+val CURTAIN_R_RECT = intArrayOf(1183, 90, 97, 330)
 
 
 const val SCENE_W = 1280

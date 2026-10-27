@@ -64,12 +64,21 @@
     <g clip-path="url(#c0)">
       <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1280" height="800">
         <animateTransform attributeName="transform" type="translate"
-          values="-2.2,0; 2.2,0; -2.2,0" dur="5.2s"
+          values="-3.2,0; 3.2,0; -3.2,0" dur="2.6s"
           begin="0.0s" repeatCount="indefinite" calcMode="spline"
           keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
       </image>
     </g>
-    <clipPath id="c0"><rect x="1100" y="556" width="168" height="190"/></clipPath>
+    <clipPath id="c0"><rect x="1183" y="90" width="97" height="330"/></clipPath>
+    <g clip-path="url(#c1)">
+      <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1280" height="800">
+        <animateTransform attributeName="transform" type="translate"
+          values="-2.0,0; 2.0,0; -2.0,0" dur="5.2s"
+          begin="0.4s" repeatCount="indefinite" calcMode="spline"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+      </image>
+    </g>
+    <clipPath id="c1"><rect x="1055" y="470" width="150" height="160"/></clipPath>
 
     <!-- lima bingkai aplikasi -->
     
@@ -151,7 +160,7 @@ TILES.forEach((tile) => {
 
 function ambience(h) {
   if (h >= 5 && h <= 8) return "rgba(255,217,160,.10)";
-  if (h >= 9 && h <= 15) return "rgba(255,246,226,.16)";
+  if (h >= 9 && h <= 15) return "rgba(58,70,112,.14)";  // siang lembut, meredam silau (0.16.10)
   if (h >= 16 && h <= 18) return "rgba(255,154,92,.12)";
   if (h >= 19 && h <= 22) return "rgba(43,63,143,.14)";
   return "rgba(6,10,34,.34)";

@@ -131,8 +131,8 @@ def build(mode, hour):
         tint = (255, 217, 160)
         alpha = 0.10
     elif hour in range(9, 16):
-        tint = (255, 246, 226)
-        alpha = 0.16
+        tint = (58, 70, 112)   # siang lembut, meredam silau (0.16.10)
+        alpha = 0.14
     elif hour in range(16, 19):
         tint = (255, 154, 92)
         alpha = 0.12

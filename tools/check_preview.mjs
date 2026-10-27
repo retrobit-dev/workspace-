@@ -110,7 +110,8 @@ if (/BATTERY_TEXT_QUAD|RAIL_LINE/.test(data))
 
 // ---- angin: gorden & daun bergoyang ----
 if (!document.querySelector("#fx .sway-scene, #fx image")) fail("lapisan angin tidak ada");
-if (/CURTAIN_RECTS/.test(data)) fail("CURTAIN_RECTS masih ada di Data.kt (animasi tirai dihentikan)");
+if (/CURTAIN_RECTS\b/.test(data)) fail("konstanta lama CURTAIN_RECTS tidak boleh kembali");
+if (!/CURTAIN_R_RECT/.test(data)) fail("CURTAIN_R_RECT hilang — tirai kanan wajib beranimasi (0.16.10)");
 if (LEAF.length !== 4) fail("LEAF_RECT harus 4 angka");
 
 // ---- bingkai dinding kosong (ikon pintasan dihapus 0.16.1) ----
@@ -136,6 +137,6 @@ if (/image-rendering\s*:\s*pixelated/.test(rawHtml))
   fail("CSS pixelated masih ada — art 0.16.9 smooth tanpa pixelate");
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai diam · langit→Cuaca · art smooth`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai kanan tertiup angin · daun bergoyang · langit→Cuaca · art smooth · siang lembut`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);

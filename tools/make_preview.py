@@ -53,6 +53,7 @@ def parse_data():
         h=scene_h,
         tiles=tiles,
                 board=rect("BOARD_QUAD"),
+                curtain=rect("CURTAIN_R_RECT"),
                 leaf=rect("LEAF_RECT"),
     )
 
@@ -87,13 +88,14 @@ def quad_polygon(quad):
     return f"{ax},{ay} {bx},{by} {bx + cx - ax},{by + cy - ay} {cx},{cy}"
 
 
-def sway_group(rects, scene_name, amp, dur):
+def sway_group(rects, scene_name, amp, dur, id_base=0, delay0=0.0):
     """Kelompok gambar yang ikut bergoyang: scene di-klip ke kotak lalu digeser."""
     groups = []
     for i, (x, y, w, h) in enumerate(rects):
-        delay = i * 0.9
+        delay = delay0 + i * 0.9
+        idx = id_base + i
         groups.append(f"""
-    <g clip-path="url(#c{i})">
+    <g clip-path="url(#c{idx})">
       <image class="sway-scene" href="{scene_name}" x="0" y="0" width="__W__" height="__H__">
         <animateTransform attributeName="transform" type="translate"
           values="{-amp},0; {amp},0; {-amp},0" dur="{dur}s"
@@ -101,7 +103,7 @@ def sway_group(rects, scene_name, amp, dur):
           keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
       </image>
     </g>
-    <clipPath id="c{i}"><rect x="{x}" y="{y}" width="{w}" height="{h}"/></clipPath>""")
+    <clipPath id="c{idx}"><rect x="{x}" y="{y}" width="{w}" height="{h}"/></clipPath>""")
     return "\n".join(groups)
 
 
@@ -237,7 +239,7 @@ TILES.forEach((tile) => {
 
 function ambience(h) {
   if (h >= 5 && h <= 8) return "rgba(255,217,160,.10)";
-  if (h >= 9 && h <= 15) return "rgba(255,246,226,.16)";
+  if (h >= 9 && h <= 15) return "rgba(58,70,112,.14)";  // siang lembut, meredam silau (0.16.10)
   if (h >= 16 && h <= 18) return "rgba(255,154,92,.12)";
   if (h >= 19 && h <= 22) return "rgba(43,63,143,.14)";
   return "rgba(6,10,34,.34)";
@@ -298,7 +300,9 @@ def build_html(data, scene_sizes):
     board_h = ((board[4] - board[0]) ** 2 + (board[5] - board[1]) ** 2) ** 0.5
 
     sway_scene = "scene_night.png"
-    sway = sway_group([data["leaf"]], sway_scene, 2.2, 5.2)  # hanya daun; tirai diam
+    # tirai kanan ditiup angin dari luar (cepat, lebar) + daun bergoyang (pot tidak ikut)
+    sway = (sway_group([data["curtain"]], sway_scene, 3.2, 2.6, id_base=0)
+            + sway_group([data["leaf"]], sway_scene, 2.0, 5.2, id_base=1, delay0=0.4))
 
     html = (
         HTML.replace("__RATIO__", f"{w} / {h}")

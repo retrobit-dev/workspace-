@@ -208,16 +208,25 @@ private fun WindSway(box: SceneBox, scene: ImageBitmap) {
 
     Canvas(Modifier.fillMaxSize()) {
         val base = box.unit.toPx()
-        // daun tanaman bergoyang (tirai tidak dianimasikan — ditutup saat malam)
-        val leaf = LEAF_RECT
-        val dx = sin(phase.value * 1.7f) * base * 1.2f
-        val left = box.x(leaf[0]).toPx()
-        val top = box.y(leaf[1]).toPx()
+        // tirai kanan: ditiup angin dari luar jendela — hanya panelnya yang bergeser
+        val cur = CURTAIN_R_RECT
+        val geser = sin(phase.value * 2.0f) * base * 3.2f
         clipRect(
-            left = left,
-            top = top,
-            right = left + box.w(leaf[2]).toPx(),
-            bottom = top + box.h(leaf[3]).toPx()
+            left = box.x(cur[0]).toPx(),
+            top = box.y(cur[1]).toPx(),
+            right = box.x(cur[0] + cur[2]).toPx(),
+            bottom = box.y(cur[1] + cur[3]).toPx()
+        ) {
+            drawScene(box, scene, dx = geser)
+        }
+        // daun tanaman bergoyang (pot tidak ikut dianimasikan)
+        val leaf = LEAF_RECT
+        val dx = sin(phase.value * 1.7f) * base * 1.6f
+        clipRect(
+            left = box.x(leaf[0]).toPx(),
+            top = box.y(leaf[1]).toPx(),
+            right = box.x(leaf[0] + leaf[2]).toPx(),
+            bottom = box.y(leaf[1] + leaf[3]).toPx()
         ) {
             drawScene(box, scene, dx = dx)
         }
@@ -379,7 +388,7 @@ private fun String.toPixelColor(): Color =
 /** Warna & kepekatan selaput suasana untuk satu jam. */
 private fun ambienceOf(hour: Int, isDay: Boolean): Pair<Color, Float> = when (hour) {
     in 5..8 -> Color(0xFFFFD9A0) to 0.10f      // pagi hangat
-    in 9..15 -> Color(0xFFFFF6E2) to 0.16f     // siang terang
+    in 9..15 -> Color(0xFF3A4670) to 0.14f     // siang lembut — meredam silau (0.16.10)
     in 16..18 -> Color(0xFFFF9A5C) to 0.12f    // sore jingga
     in 19..22 -> Color(0xFF2B3F8F) to 0.14f    // malam biru
     else -> Color(0xFF060A22) to 0.34f         // larut

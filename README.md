@@ -13,7 +13,7 @@ gambar tersendiri: lampu padam, matahari & awan di jendela; malam: lampu
 menyala dengan genangan cahaya hangat. Konsep launcher tetap: ketuk objek →
 buka aplikasi (11 zona), bingkai dinding kosong sebagai hiasan, jendela
 terbuka keluar saat siang dan tertutup rapat saat malam (tirai menutup,
-tidak dianimasikan), ketuk jendela membuka aplikasi Cuaca, suasana
+tirai kanan ditiup angin dari luar jendela, daun tanaman bergoyang — pot diam), ketuk langit jendela kanan membuka aplikasi Cuaca, suasana
 siang/malam mengikuti jam perangkat.**
 
 
@@ -40,7 +40,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.16.9-debug.apk`](dist/RuangKelas-0.16.9-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.16.10-debug.apk`](dist/RuangKelas-0.16.10-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | diarsipkan — lihat [`arsip/0.15.12/`](arsip/0.15.12) (ambil dari sejarah git) |
@@ -49,7 +49,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.16.9-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.16.10-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -158,6 +158,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.16.9-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.16.10-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.
