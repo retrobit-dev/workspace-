@@ -96,3 +96,21 @@ python3 tools/compose.py --tanpa KOMPUTER,KALKULATOR --out art/scene-tanpa-lapto
   regen penuh scene latar.
 - TANAMAN (dan elemen berakar latar) tidak bisa dipindah lewat compose; edit
   dilakukan langsung pada gambar dasar.
+
+## Aset state laptop launcher (0.16.23)
+
+Laptop (KOMPUTER) kini interaktif: tertutup -> membuka -> redup -> menyala ->
+klik = Daftar Aplikasi. Aset state (dibuat `tools/gen_laptop_tutup.py`, crop
+diperluas (768,304)-(950,448), alpha feather; TIDAK termasuk compose scene):
+
+- `KOMPUTER_TERTUTUP{,-night}.png` — tutup tertutup + mouse, di atas meja-rapi.
+- `KOMPUTER_KOSONG{,-night}.png` — meja-rapi + mouse (awal animasi membuka).
+- `KOMPUTER_TERBUKA{,-night}.png` — piksel laptop terbuka dari scene asli
+  (base = scene crop, jadi identik saat handoff).
+- `KOMPUTER_GLOW{,-night}.png` — cahaya menyala (overlay alpha; malam 1.0,
+  siang 0.55).
+
+"Meja-rapi" = `background_{day,night}_rapi.png`: laptop & ghost dibuang dari
+background dengan fit polinomial 2D per kanal (dinding & meja) sehingga
+gradasi lampu malam & perspektif meja tetap mengalir. Veil layar redup
+digambar runtime pada quad (850,338)(917,362)(910,426)(823,417).

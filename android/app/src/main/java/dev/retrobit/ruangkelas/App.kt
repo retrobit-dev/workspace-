@@ -39,6 +39,7 @@ class MainActivity : ComponentActivity() {
 fun Root(state: AppState) {
     when (state.screen) {
         Scr.CUACA -> CuacaScreen(onBack = { state.screen = Scr.HOME })
+        Scr.DAFTAR -> DrawerScreen(state)
         else -> LauncherScreen(state, onOpen = { tile ->
             if (tile.target == Scr.CUACA) state.screen = Scr.CUACA
         })

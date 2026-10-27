@@ -12,6 +12,7 @@ kemiringan benda seperti di APK.
 """
 import hashlib
 import json
+import shutil
 import re
 import sys
 
@@ -178,6 +179,18 @@ HTML = """<!DOCTYPE html>
   #scene{position:absolute;inset:0;width:100%;height:100%;display:block;
     pointer-events:none}
   #fx,#sky-under{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  .lap{position:absolute;pointer-events:none;display:none;image-rendering:auto}
+  #drawer{position:absolute;inset:0;display:none;background:var(--ink);padding:18px 22px;z-index:5}
+  #drawer-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+  #drawer-head b{color:var(--amber);font-size:13px;letter-spacing:2px}
+  #drawer-back{cursor:pointer;border:2px solid var(--amber);background:var(--night);
+    color:var(--cream2);font:inherit;font-size:11px;padding:6px 12px;letter-spacing:1px}
+  #drawer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .ditem{border:2px solid var(--night);background:var(--night);color:var(--cream2);
+    padding:14px 8px;font:inherit;font-size:11px;letter-spacing:1px;text-align:center;cursor:pointer}
+  .ditem.aktif{border-color:#403F6C;color:var(--cream)}
+  .ditem.aktif:hover{border-color:var(--amber);color:var(--amber)}
+  .ditem small{display:block;margin-top:4px;color:#7D75A0;font-size:9px}
   #fx text{font-family:"Silkscreen","Courier New",monospace;font-weight:700;dominant-baseline:auto}
 
   .hotspot{position:absolute;border:0;padding:0;margin:0;background:transparent;
@@ -212,6 +225,15 @@ HTML = """<!DOCTYPE html>
     __SKY__
   </svg>
   <img id="scene" src="scene_night.png" alt="Workspace guru" draggable="false">
+  <!-- laptop launcher: state overlay (tertutup/membuka/redup/menyala) -->
+  <img id="lap-kosong" class="lap" draggable="false" alt=""
+       data-day="komputer_kosong.png" data-night="komputer_kosong_night.png">
+  <img id="lap-buka" class="lap" draggable="false" alt=""
+       data-day="komputer_terbuka.png" data-night="komputer_terbuka_night.png">
+  <img id="lap-tutup" class="lap" draggable="false" alt=""
+       data-day="komputer_tertutup.png" data-night="komputer_tertutup_night.png">
+  <img id="lap-glow" class="lap" draggable="false" alt=""
+       data-day="komputer_glow.png" data-night="komputer_glow_night.png">
   <svg id="fx" viewBox="0 0 __SCENE_W__ __SCENE_H__" preserveAspectRatio="none">
     <!-- angin: gorden & daun -->
     __SWAY__
@@ -220,6 +242,9 @@ HTML = """<!DOCTYPE html>
     <polygon id="sky-roomray" points="1150,400 1196,410 900,645 740,565" fill="#FFF2CC" opacity="0">
       <animate attributeName="opacity" values="0.05;0.09;0.05" dur="6s" repeatCount="indefinite"/>
     </polygon>
+
+    <!-- veil layar laptop redup -->
+    <polygon id="lap-veil" points="850,338 917,362 910,426 823,417" fill="#141430" opacity="0"/>
 
     <!-- lima bingkai aplikasi -->
     
@@ -242,6 +267,14 @@ HTML = """<!DOCTYPE html>
   <div class="icon"></div>
   <div>PUTAR PERANGKAT KE LANDSCAPE</div>
   <small>Launcher ini hanya berjalan mendatar,<br>sama seperti di tablet.</small>
+</div>
+
+<div id="drawer">
+  <div id="drawer-head">
+    <button id="drawer-back" type="button">&lt; RUANGAN</button>
+    <b>APLIKASI</b>
+  </div>
+  <div id="drawer-grid"></div>
 </div>
 
 <script>
@@ -282,10 +315,112 @@ TILES.forEach((tile) => {
   el.addEventListener("pointerdown", () => el.classList.add("is-pressed"));
   ["pointerup", "pointercancel", "pointerleave"].forEach((ev) =>
     el.addEventListener(ev, () => el.classList.remove("is-pressed")));
-  el.addEventListener("click", (e) => { e.stopPropagation(); open(tile.label); });
+  el.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (tile.label === "Jurnal") { lapClick(); return; }
+    open(tile.label);
+  });
   stage.appendChild(el);
 });
 
+
+/* ---- laptop launcher: tertutup -> membuka -> redup -> menyala -> daftar ---- */
+const LAP = {x: 768, y: 304, w: 182, h: 144};
+const lapK = document.getElementById("lap-kosong");
+const lapB = document.getElementById("lap-buka");
+const lapT = document.getElementById("lap-tutup");
+const lapG = document.getElementById("lap-glow");
+const lapV = document.getElementById("lap-veil");
+[lapK, lapB, lapT, lapG].forEach((el) => place(el, LAP.x, LAP.y, LAP.w, LAP.h));
+
+let lapState = 0;
+let lapBusy = false;
+
+function lapSet(el, on, op) {
+  el.style.display = on ? "block" : "none";
+  if (op !== undefined) el.style.opacity = op;
+}
+
+function lapGlowFull() {
+  const h = new Date().getHours();
+  return (h >= 6 && h <= 17) ? "0.55" : "1";
+}
+
+function lapApply() {
+  lapSet(lapK, false); lapSet(lapB, false); lapSet(lapT, false); lapSet(lapG, false);
+  lapV.setAttribute("opacity", "0");
+  if (lapState === 0) lapSet(lapT, true, "1");
+  else if (lapState === 2) {
+    lapSet(lapB, true, "1"); lapSet(lapG, true, "0.22");
+    lapV.setAttribute("opacity", "0.45");
+  } else if (lapState === 4) lapSet(lapG, true, lapGlowFull());
+}
+
+function lapClick() {
+  if (lapBusy) return;
+  if (lapState === 0) {
+    lapBusy = true;
+    lapSet(lapT, false);
+    lapSet(lapK, true, "1");
+    lapB.style.transition = "none";
+    lapSet(lapB, true, "0");
+    lapB.style.transform = "translateY(12px)";
+    requestAnimationFrame(() => {
+      lapB.style.transition = "opacity .52s ease, transform .52s ease";
+      lapB.style.opacity = "1";
+      lapB.style.transform = "translateY(0)";
+      lapSet(lapG, true, "0");
+      lapG.style.opacity = "0.2";
+    });
+    setTimeout(() => {
+      lapState = 2; lapBusy = false;
+      lapB.style.transition = ""; lapG.style.opacity = "0.22";
+      lapV.setAttribute("opacity", "0.45");
+      showToast("LAPTOP TERBUKA");
+    }, 540);
+  } else if (lapState === 2) {
+    lapBusy = true;
+    lapG.style.transition = "opacity .62s ease";
+    lapV.style.transition = "opacity .62s ease";
+    lapG.style.opacity = lapGlowFull();
+    lapV.setAttribute("opacity", "0");
+    setTimeout(() => {
+      lapState = 4; lapBusy = false;
+      lapG.style.transition = ""; lapV.style.transition = "";
+      showToast("LAPTOP MENYALA");
+    }, 640);
+  } else if (lapState === 4) {
+    drawer.style.display = "block";
+    showToast("DAFTAR APLIKASI");
+  }
+}
+
+/* ---- daftar aplikasi ---- */
+const drawer = document.getElementById("drawer");
+const drawerGrid = document.getElementById("drawer-grid");
+TILES.forEach((tile) => {
+  const aktif = tile.label === "Cuaca" || tile.label === "File";
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "ditem" + (aktif ? " aktif" : "");
+  btn.textContent = tile.label.toUpperCase();
+  if (!aktif) {
+    const sm = document.createElement("small");
+    sm.textContent = "SEGERA";
+    btn.appendChild(sm);
+  }
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (tile.label === "Cuaca") showToast("MEMBUKA CUACA");
+    else if (tile.label === "File") showToast("MEMBUKA FILE MANAGER");
+  });
+  drawerGrid.appendChild(btn);
+});
+document.getElementById("drawer-back").addEventListener("click", () => {
+  drawer.style.display = "none";
+});
+
+lapApply();
 
 __SKY_JS__
 
@@ -306,6 +441,10 @@ function tick() {
   if (day !== lastDay) {
     const file = day ? "scene_day.png" : "scene_night.png";
     sceneEl.src = file;
+    const mode = day ? "day" : "night";
+    document.querySelectorAll(".lap").forEach((img) => {
+      img.src = img.dataset[mode];
+    });
     document.querySelectorAll(".sway-scene").forEach((img) => img.setAttribute("href", file));
     lastDay = day;
   }
@@ -406,10 +545,26 @@ def build_html(data, scene_sizes, holes):
     return html
 
 
+LAP_FILES = [
+    "KOMPUTER_TERTUTUP.png", "KOMPUTER_TERTUTUP-night.png",
+    "KOMPUTER_KOSONG.png", "KOMPUTER_KOSONG-night.png",
+    "KOMPUTER_TERBUKA.png", "KOMPUTER_TERBUKA-night.png",
+    "KOMPUTER_GLOW.png", "KOMPUTER_GLOW-night.png",
+]
+LAP_WEB = {
+    "KOMPUTER_TERTUTUP.png": "komputer_tertutup.png", "KOMPUTER_TERTUTUP-night.png": "komputer_tertutup_night.png",
+    "KOMPUTER_KOSONG.png": "komputer_kosong.png", "KOMPUTER_KOSONG-night.png": "komputer_kosong_night.png",
+    "KOMPUTER_TERBUKA.png": "komputer_terbuka.png", "KOMPUTER_TERBUKA-night.png": "komputer_terbuka_night.png",
+    "KOMPUTER_GLOW.png": "komputer_glow.png", "KOMPUTER_GLOW-night.png": "komputer_glow_night.png",
+}
+
+
 def main() -> None:
     data = parse_data()
     sizes, holes = make_scenes()
     build_html(data, sizes, holes)
+    for f in LAP_FILES:
+        shutil.copy(ROOT / "art" / "objects" / f, WEB / LAP_WEB[f])
     print(f"scene {sizes} · {len(data['tiles'])} objek · {WEB/'index.html'}")
 
 

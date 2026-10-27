@@ -18,6 +18,7 @@ import java.util.Locale
 
 enum class Scr(val label: String) {
     HOME("Beranda"),
+    DAFTAR("Daftar Aplikasi"),
     JURNAL("Jurnal"),
     CATATAN("Buku Catatan"),
     ABSENSI("Absensi"),
@@ -241,6 +242,9 @@ const val SCENE_H = 800
 class AppState(private val ctx: Context) {
 
     var screen by mutableStateOf(Scr.HOME)
+
+    // laptop launcher: 0 tertutup, 1 membuka, 2 terbuka redup, 3 menyala (anim), 4 nyala
+    var laptopState by mutableStateOf(0)
     var journalFilter by mutableStateOf("SEMUA")
     var noteFilter by mutableStateOf("SEMUA")
     var noteQuery by mutableStateOf("")
