@@ -1,7 +1,7 @@
 """Bangun preview browser untuk launcher.
 
 Sumber kebenaran tetap Data.kt (TILES, BOARD_QUAD,
-FRAME_QUADS, RAIL_LINE, BATTERY_TEXT_QUAD, CURTAIN_RECTS,
+CALENDAR_QUAD, FRAME_QUADS, RAIL_LINE, BATTERY_TEXT_QUAD, CURTAIN_RECTS,
 LEAF_RECT, APP_ICONS, SCENE_W/H) supaya area ketuk di browser sama persis
 dengan APK.
 
@@ -14,12 +14,15 @@ kemiringan benda seperti di APK.
 import hashlib
 import re
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scene_face  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
+BULAN = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"]
+HARI = ["SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN"]
 DATA = ROOT / "android/app/src/main/java/dev/retrobit/ruangkelas/Data.kt"
 WEB = ROOT / "web"
 
@@ -64,6 +67,7 @@ def parse_data():
         h=scene_h,
         tiles=tiles,
         board=rect("BOARD_QUAD"),
+        cal=rect("CALENDAR_QUAD"),
         rail=rect("RAIL_LINE"),
         battery_text=rect("BATTERY_TEXT_QUAD"),
         frames=list_of_quads("FRAME_QUADS"),
@@ -231,6 +235,16 @@ HTML = """<!DOCTYPE html>
             stroke="rgba(24,20,48,.35)" stroke-width="1.6"/>
     </g>
 
+    <!-- kalender: halaman bisa terlipat -->
+    <g id="cal" transform="__CAL_MATRIX__">
+      <rect id="cal-pad" x="0" y="__CAL_PAD_Y__" width="__CAL_W__" height="__CAL_PAD_H__" fill="#CBB68C"/>
+      <rect x="0" y="0" width="__CAL_W__" height="__CAL_H__" fill="#F3E7C8"/>
+      <g id="cal-page" style="transform:scaleY(1);transform-origin:50% 0%;transition:transform .26s linear">
+        <text id="cal-m" x="__CAL_CX__" y="__CAL_T1__" text-anchor="middle" fill="#181430" font-size="__CAL_FS__">__CAL_MON__</text>
+        <text id="cal-d" x="__CAL_CX__" y="__CAL_T2__" text-anchor="middle" fill="#181430" font-size="__CAL_FS2__">__CAL_DAY__</text>
+        <text id="cal-w" x="__CAL_CX__" y="__CAL_T3__" text-anchor="middle" fill="#181430" font-size="__CAL_FS__">__CAL_WD__</text>
+      </g>
+    </g>
   </svg>
   <div id="tint"></div>
   <div id="scan"></div>
@@ -255,6 +269,7 @@ const railEl = document.getElementById("rail");
 const railTicks = document.getElementById("rail-ticks");
 const battEl = document.getElementById("batt");
 const tintEl = document.getElementById("tint");
+const calPage = document.getElementById("cal-page");
 let toastTimer = 0;
 let batteryLevel = 100;
 
@@ -307,6 +322,9 @@ TILES.forEach((tile) => {
   }
 })();
 
+const BULAN = ["JAN","FEB","MAR","APR","MEI","JUN","JUL","AGU","SEP","OKT","NOV","DES"];
+const HARI = ["SEN","SEL","RAB","KAM","JUM","SAB","MIN"];
+
 function ambience(h) {
   if (h >= 5 && h <= 8) return "rgba(255,217,160,.10)";
   if (h >= 9 && h <= 15) return "rgba(255,246,226,.16)";
@@ -338,6 +356,18 @@ function tick() {
     sceneEl.src = file;
     document.querySelectorAll(".sway-scene").forEach((img) => img.setAttribute("href", file));
     lastDay = day;
+  }
+
+  // kalender: kalau tanggal berganti, halaman dilipat dulu
+  const shown = document.getElementById("cal-d").textContent;
+  if (shown !== String(now.getDate())) {
+    calPage.style.transform = "scaleY(0)";
+    setTimeout(() => {
+      document.getElementById("cal-m").textContent = BULAN[now.getMonth()];
+      document.getElementById("cal-d").textContent = now.getDate();
+      document.getElementById("cal-w").textContent = HARI[(now.getDay() + 6) % 7];
+      calPage.style.transform = "scaleY(1)";
+    }, 280);
   }
 
   tintEl.style.background = ambience(now.getHours());
@@ -389,11 +419,15 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 def build_html(data, scene_sizes):
     w, h = data["w"], data["h"]
     board = data["board"]
+    cal = data["cal"]
     batt = data["battery_text"]
 
 
     board_w = ((board[2] - board[0]) ** 2 + (board[3] - board[1]) ** 2) ** 0.5
     board_h = ((board[4] - board[0]) ** 2 + (board[5] - board[1]) ** 2) ** 0.5
+
+    cal_w = ((cal[2] - cal[0]) ** 2 + (cal[3] - cal[1]) ** 2) ** 0.5
+    cal_h = ((cal[4] - cal[0]) ** 2 + (cal[5] - cal[1]) ** 2) ** 0.5
 
     batt_w = ((batt[2] - batt[0]) ** 2 + (batt[3] - batt[1]) ** 2) ** 0.5
     batt_h = ((batt[4] - batt[0]) ** 2 + (batt[5] - batt[1]) ** 2) ** 0.5
@@ -443,6 +477,22 @@ def build_html(data, scene_sizes):
 
 
 
+        # bendera
+        # kalender
+        .replace("__CAL_MATRIX__", matrix_attr(cal))
+        .replace("__CAL_W__", f"{cal_w:.2f}")
+        .replace("__CAL_H__", f"{cal_h:.2f}")
+        .replace("__CAL_PAD_Y__", f"{cal_h * 0.06:.2f}")
+        .replace("__CAL_PAD_H__", f"{cal_h * 1.13:.2f}")
+        .replace("__CAL_CX__", f"{cal_w / 2:.2f}")
+        .replace("__CAL_T1__", f"{cal_h * 0.30:.2f}")
+        .replace("__CAL_T2__", f"{cal_h * 0.74:.2f}")
+        .replace("__CAL_T3__", f"{cal_h * 0.99:.2f}")
+        .replace("__CAL_FS__", f"{cal_h * 0.22:.2f}")
+        .replace("__CAL_FS2__", f"{cal_h * 0.46:.2f}")
+        .replace("__CAL_MON__", BULAN[date.today().month - 1])
+        .replace("__CAL_DAY__", str(date.today().day))
+        .replace("__CAL_WD__", HARI[date.today().weekday()])
     )
     (WEB / "index.html").write_text(html)
     return html

@@ -20,6 +20,7 @@ from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter
 ROOT = Path(__file__).resolve().parent.parent
 ART = ROOT / "art/workspace-iso-v7c.png"
 
+CAL_BOX = (1010, 390, 110, 95)     # area pencarian kertas kalender di gambar asli
 
 # Kaca jendela: kiri-atas, kanan-atas, kiri-bawah (piksel gambar asli).
 # Dipakai untuk mengecat langit siang dan untuk efek angin.
@@ -355,7 +356,12 @@ def load_scene(mode="night"):
     raw = Image.open(ART).convert("RGB")
     im = restyle_background(grade(raw, NIGHT["gamma"], NIGHT["sat"]))
     if mode == "day":
-        im = add_daylight(im)
-        im = paint_day_sky(im, mask_from=im)
+        base = lamp_off(im)
+        im = add_daylight(base)
+        im = paint_day_sky(im, mask_from=base)
     return im
 
+
+def calendar_face():
+    """Kotak kertas kalender pada gambar asli (piksel scene)."""
+    return face_bbox(cream_mask(Image.open(ART).convert("RGB"), CAL_BOX))

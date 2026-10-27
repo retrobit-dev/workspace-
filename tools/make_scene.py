@@ -27,6 +27,7 @@ def main() -> None:
         out.parent.mkdir(parents=True, exist_ok=True)
         im.save(out, optimize=True)
         print(f"{mode:5s} {im.size} -> {out.relative_to(ROOT)}")
+    print("CALENDAR_FACE", scene_face.calendar_face())
 
 
 if __name__ == "__main__":

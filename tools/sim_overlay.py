@@ -46,6 +46,7 @@ def parse():
 
     return dict(
         board=rect("BOARD_QUAD"),
+        cal=rect("CALENDAR_QUAD"),
         rail=rect("RAIL_LINE"),
         batt=rect("BATTERY_TEXT_QUAD"),
         frames=quads("FRAME_QUADS"),
@@ -113,6 +114,15 @@ def paint_board(layer, w, h):
     d.line([w * 0.18, h * 0.215, w * 0.82, h * 0.215], fill=(24, 20, 48, 90), width=2)
 
 
+def paint_cal(layer, w, h, mon, day, wd):
+    d = ImageDraw.Draw(layer)
+    pad = h * 0.13
+    d.rectangle([0, h * 0.06, w, h + pad], fill=(203, 182, 140, 255))
+    d.rectangle([0, 0, w, h], fill=(243, 231, 200, 255))
+    text(d, (w / 2, h * 0.30), mon, ImageFont.truetype(FONT, max(5, int(h * 0.22))), (24, 20, 48, 255))
+    text(d, (w / 2, h * 0.74), day, ImageFont.truetype(FONT, max(6, int(h * 0.46))), (24, 20, 48, 255))
+    text(d, (w / 2, h * 0.99), wd, ImageFont.truetype(FONT, max(5, int(h * 0.22))), (24, 20, 48, 255))
+
 
 def icon_layer(w, h, bg, shapes):
     layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
@@ -149,6 +159,7 @@ def build(mode, hour, battery=76, second=32):
 
     draw_plane(src, data["board"], lambda w, h: _layer(w, h, lambda l: paint_board(l, w, h)))
 
+    draw_plane(src, data["cal"], lambda w, h: _layer(w, h, lambda l: paint_cal(l, w, h, "OKT", "26", "SEN")))
 
     for quad, (name, bg, shapes) in zip(data["frames"], data["icons"]):
         draw_plane(src, quad, lambda w, h, bg=bg, shapes=shapes: icon_layer(w, h, bg, shapes))
