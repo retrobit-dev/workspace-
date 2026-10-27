@@ -218,15 +218,17 @@ private fun WindSway(box: SceneBox, scene: ImageBitmap) {
             right = box.x(cur[0] + cur[2]).toPx(),
             bottom = box.y(cur[1] + cur[3]).toPx()
         ) {
+            val pivot = Offset(
+                box.x(cur[0] + cur[2] / 2).toPx(),
+                box.y(cur[1]).toPx()
+            )
+            val geser = sin(phase.value * 2.0f) * base * 0.8f
             withTransform({
                 rotate(
                     degrees = sin(phase.value * 2.0f) * 1.5f,
-                    pivot = Offset(
-                        box.x(cur[0] + cur[2] / 2).toPx(),
-                        box.y(cur[1]).toPx()
-                    )
+                    pivot = pivot
                 )
-                translate(sin(phase.value * 2.0f) * base * 0.8f, 0f)
+                translate(geser, 0f)
             }) {
                 drawScene(box, scene)
             }
@@ -250,11 +252,10 @@ private fun WindSway(box: SceneBox, scene: ImageBitmap) {
                 right = box.x(pap[2] + pap[4]).toPx(),
                 bottom = box.y(pap[3] + pap[5]).toPx()
             ) {
+                val pivot = Offset(box.x(pap[0]).toPx(), box.y(pap[1]).toPx())
+                val deg = sin(phase.value * 1.3f + i * 0.9f) * 1.6f
                 withTransform({
-                    rotate(
-                        degrees = sin(phase.value * 1.3f + i * 0.9f) * 1.6f,
-                        pivot = Offset(box.x(pap[0]).toPx(), box.y(pap[1]).toPx())
-                    )
+                    rotate(degrees = deg, pivot = pivot)
                 }) {
                     drawScene(box, scene)
                 }
