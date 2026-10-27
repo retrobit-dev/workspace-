@@ -77,6 +77,16 @@ def laptop_mask(cfg) -> np.ndarray:
     diff = np.abs(bg[CROP[1]:CROP[3], CROP[0]:CROP[2]] - sc[CROP[1]:CROP[3], CROP[0]:CROP[2]]).sum(2) > 12
     diff[:, 171:] = False          # zona tirai: ghost tak sampai sini
     m |= diff
+    # siluet laptop TERBUKA (alpha aset) utk layar+bingkai yang mengintip;
+    # hanya x>=814: kolom kiri memuat lengan lampu - jangan disentuh
+    tb = np.asarray(Image.open("art/objects/KOMPUTER_TERBUKA.png"))[:, :, 3]
+    m |= (tb > 10) & (np.arange(W)[None, :] >= 814 - CROP[0])
+    # mahkota ghost: bingkai+layar di atas garis tutup (full 844..942 x
+    # 296..354); warnanya identik dinding -> poligon geometris, bukan warna
+    crown = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(crown).polygon(
+        [(76, 2), (136, 2), (174, 60), (76, 60)], fill=255)
+    m |= np.asarray(crown) > 0
     return m
 
 
@@ -98,25 +108,52 @@ def bg_rapi(mode: str, cfg: dict) -> None:
     x0, x1 = max(0, xs.min() - 2), min(W, xs.max() + 3)
     img = bg[y0:y1, x0:x1].copy()
     m = mask_full[y0:y1, x0:x1]
+    mh, mw = m.shape
 
-    # init: rata-rata piksel bersih (percepat konvergensi)
-    img[m] = img[~m].mean(axis=0)
+    # isi struktural: zona DINDING (di atas tepi belakang meja) diisi dari
+    # piksel bersih teratas kolom yang sama; zona MEJA dari terbawah. Dua
+    # domain tak tercampur -> dinding tetap dinding, meja tetap meja.
+    ys_f = np.arange(mh)[:, None] * np.ones((1, mw))
+    ey_row = np.array([edge_y(x + x0) for x in range(mw)])[None, :]
+    wall_z = m & (ys_f < ey_row - 0.5)
+    desk_z = m & (ys_f >= ey_row - 0.5)
+    for x in range(mw):
+        cw = np.where(wall_z[:, x])[0]
+        if len(cw):
+            yt = cw.min() - 1
+            img[wall_z[:, x], x] = img[yt, x] if yt >= 0 else img[0, x]
+        cd = np.where(desk_z[:, x])[0]
+        if len(cd):
+            yb = cd.max() + 1
+            img[desk_z[:, x], x] = img[yb, x] if yb < mh else img[mh - 1, x]
 
-    # Jacobi: 4-tetangga
-    for _ in range(600):
+    # penghalusan Jacobi per zona (domain terpisah, ~800 iter sampai halus)
+    for _ in range(800):
         avg = (np.roll(img, 1, 0) + np.roll(img, -1, 0) +
                np.roll(img, 1, 1) + np.roll(img, -1, 1)) * 0.25
-        img[m] = avg[m]
+        img[wall_z] = avg[wall_z]
+    for _ in range(800):
+        avg = (np.roll(img, 1, 0) + np.roll(img, -1, 0) +
+               np.roll(img, 1, 1) + np.roll(img, -1, 1)) * 0.25
+        img[desk_z] = avg[desk_z]
 
-    # garis tepi belakang meja (hanya bila band ada di dalam mask)
-    for x in range(x0, x1):
-        yi = int(round(edge_y(x)))
-        if y0 <= yi < y1 and mask_full[yi, x]:
-            a = img[yi - 2 - y0, x - x0] if yi - 2 >= y0 else img[yi - y0, x - x0]
-            b = img[yi + 2 - y0, x - x0] if yi + 2 < y1 else img[yi - y0, x - x0]
-            img[yi - y0, x - x0] = (a + b) * 0.5 * 0.72
-            if yi + 1 < y1 and mask_full[yi + 1, x]:
-                img[yi + 1 - y0, x - x0] = (a + b) * 0.5 * 0.86
+    # haluskan interior (banding & seam melebur; boundary dijaga)
+    interior = cv2.erode(m.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
+    blur = cv2.GaussianBlur(img, (0, 0), 2.2)
+    img[interior] = blur[interior]
+
+    # garis tepi belakang meja: digambar supersample 4x (anti-alias),
+    # hanya di dalam mask; cukup menggelapkan isi yang baru
+    lx0, lx1 = max(x0, 768), min(x1, 950)
+    line_im = Image.new("L", (W * 4, H * 4), 0)
+    ImageDraw.Draw(line_im).line(
+        [(lx0 * 4, edge_y(lx0) * 4), (lx1 * 4, edge_y(lx1) * 4)],
+        fill=255, width=4)
+    line_a = np.asarray(line_im.resize((W, H), Image.LANCZOS)).astype(float) / 255.0
+    la = np.zeros((mh, mw))
+    la[y0 - y0:y1 - y0, x0 - x0:x1 - x0] = line_a[y0:y1, x0:x1]
+    la *= m
+    img *= (1.0 - (0.30 * la)[:, :, None])
 
     out = bg.copy()
     out[y0:y1, x0:x1][m] = img[m]
