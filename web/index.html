@@ -1033,7 +1033,10 @@ function skyTick(){
   const oy=(SKY.y0+(SKY.y1-SKY.y0)*f)-Math.sin(Math.PI*f)*SKY.amp;
   document.getElementById("sky-orb-pos").setAttribute("transform","translate("+ox.toFixed(1)+","+oy.toFixed(1)+")");
   setDisp("sky-sun",isDay&&SKY_WEATHER.langit<=2);
-  setDisp("sky-moon",!isDay&&SKY_WEATHER.langit<=2);
+  // bulan selalu tampak di malam hari; mendung tebal hanya membuatnya samar
+  setDisp("sky-moon",!isDay);
+  const moonEl=document.getElementById("sky-moon");
+  if(moonEl) moonEl.style.opacity=!isDay?(SKY_WEATHER.langit<=1?1:(SKY_WEATHER.langit===2?0.8:0.3)):"";
   if(isDay!==SKY_LAST_DAY){applySkyVis(isDay);SKY_LAST_DAY=isDay;}
 }
 function applySkyCode(code){

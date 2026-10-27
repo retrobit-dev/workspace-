@@ -593,11 +593,14 @@ private fun SkyAnim(
             drawCircle(Color(0xFFFFE9A8), radius = base * 15f, center = Offset(orbX, orbY))
             drawCircle(Color(0xFFFFF3C4), radius = base * 10.5f, center = Offset(orbX, orbY))
         }
-        if (!isDay && v.langit <= 2) {
-            drawCircle(Color(0xFFEDE9DA), radius = base * 13f, center = Offset(orbX, orbY), alpha = 0.95f)
-            drawCircle(Color(0xFFC9C4B4), radius = base * 3.2f, center = Offset(orbX - 4f * base, orbY + 2f * base), alpha = 0.8f)
-            drawCircle(Color(0xFFC9C4B4), radius = base * 2.1f, center = Offset(orbX + 4.5f * base, orbY - 3.5f * base), alpha = 0.8f)
-            drawCircle(Color(0xFFC9C4B4), radius = base * 1.6f, center = Offset(orbX + 1f * base, orbY + 5f * base), alpha = 0.8f)
+        // bulan SELALU ada di malam hari; awan tebal hanya membuatnya samar
+        // (digambar sebelum awan, jadi awan lewat DI DEPANNYA)
+        if (!isDay) {
+            val moonA = when (v.langit) { 2 -> 0.8f; 3 -> 0.3f; else -> 1f }
+            drawCircle(Color(0xFFEDE9DA), radius = base * 13f, center = Offset(orbX, orbY), alpha = 0.95f * moonA)
+            drawCircle(Color(0xFFC9C4B4), radius = base * 3.2f, center = Offset(orbX - 4f * base, orbY + 2f * base), alpha = 0.8f * moonA)
+            drawCircle(Color(0xFFC9C4B4), radius = base * 2.1f, center = Offset(orbX + 4.5f * base, orbY - 3.5f * base), alpha = 0.8f * moonA)
+            drawCircle(Color(0xFFC9C4B4), radius = base * 1.6f, center = Offset(orbX + 1f * base, orbY + 5f * base), alpha = 0.8f * moonA)
         }
 
         // 4) awan bergerak (jumlah & warna sesuai kondisi langit)
