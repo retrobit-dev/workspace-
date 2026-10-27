@@ -373,7 +373,7 @@ fun spriteKode(code: Int): List<String> = when (code) {
 @Composable
 fun PixelSprite(rows: List<String>, unit: Dp, modifier: Modifier = Modifier) {
     val cols = rows.maxOf { it.length }
-    Canvas(modifier.size(cols * unit, rows.size * unit)) {
+    Canvas(modifier.size(unit * cols, unit * rows.size)) {
         val u = unit.toPx()
         rows.forEachIndexed { y, row ->
             row.forEachIndexed { x, ch ->
@@ -460,9 +460,9 @@ fun CuacaScreen(onBack: () -> Unit) {
                     )
                 }
                 Spacer(Modifier.width(12.dp))
-                GhostButton("KOTA: ${(d?.kota ?: CuacaRepo.kota[cityIdx].nama)} \u25be") {
+                GhostButton("KOTA: ${(d?.kota ?: CuacaRepo.kota[cityIdx].nama)} \u25be", onClick = {
                     cityOpen = true
-                }
+                })
             }
 
             Spacer(Modifier.height(12.dp))
