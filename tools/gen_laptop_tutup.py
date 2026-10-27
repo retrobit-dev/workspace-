@@ -71,114 +71,57 @@ def laptop_mask(cfg) -> np.ndarray:
     d = ImageDraw.Draw(im)
     d.polygon(lid, fill=255)
     d.polygon([tuple(pt) for pt in cfg["deck"]], fill=255)
-    d.ellipse([8, -12, 44, 22], fill=255)   # ujung lid: ghost berkilau cyan
     m = np.asarray(im) > 0
     bg = np.asarray(Image.open(cfg["bg"]).convert("RGB")).astype(int)
     sc = np.asarray(Image.open(cfg["ref"]).convert("RGB")).astype(int)
     diff = np.abs(bg[CROP[1]:CROP[3], CROP[0]:CROP[2]] - sc[CROP[1]:CROP[3], CROP[0]:CROP[2]]).sum(2) > 12
     diff[:, 171:] = False          # zona tirai: ghost tak sampai sini
-    diff[:, :40] = False           # sisi kiri laptop: tetap tampil (sisi tertutup)
     m |= diff
     return m
 
 
-def design(xs, ys, deg):
-    xs = np.asarray(xs) / 100.0
-    ys = np.asarray(ys) / 100.0
-    cols = [np.ones_like(xs), xs, ys]
-    if deg >= 2:
-        cols += [xs * xs, xs * ys, ys * ys]
-    return np.stack(cols, 1)
-
-
 def bg_rapi(mode: str, cfg: dict) -> None:
-    """Buang ghost laptop dari background: mask = laptop_mask, isi = fit
-    polinomial (dinding deg2 & meja deg2) + garis tepi meja digambar ulang."""
+    """Buang ghost laptop dari background: mask = laptop_mask, isi = DIFUSI
+    LAPLACE (tiap piksel mask -> rata-rata 4 tetangga, iteratif sampai halus).
+    Batas = semua piksel bersih di sekeliling (buku, meja, dinding, tirai),
+    jadi isi selalu meneruskan lingkungannya tanpa bidang/rect artifisial.
+    Garis tepi belakang meja digambar ulang tipis pada posisinya."""
     bg = np.asarray(Image.open(cfg["bg"]).convert("RGB")).astype(float)
     H, W = bg.shape[:2]
     mask_full = np.zeros((H, W), bool)
     mask_full[CROP[1]:CROP[3], CROP[0]:CROP[2]] = laptop_mask(cfg)
     mask_full = cv2.dilate(mask_full.astype(np.uint8), np.ones((5, 5), np.uint8)) > 0
 
-    # dinding: sampel netral/wall bersih di atas tepi
-    wx, wy, wc = [], [], []
-    for y in range(282, 318):
-        for x in range(745, 928):
-            if not mask_full[y, x]:
-                px = bg[y, x]
-                if abs(int(px[0]) - int(px[2])) <= 20 and 55 <= px.mean() <= 215:
-                    wx.append(x)
-                    wy.append(y)
-                    wc.append(px)
-    wall_c = np.linalg.lstsq(design(wx, wy, 2), np.asarray(wc), rcond=None)[0]
-
-    # meja: sampel meja-ish bersih
-    dxs, dys, dc = [], [], []
-    for y in range(330, 452):
-        for x in range(745, 976):
-            if not mask_full[y, x]:
-                px = bg[y, x]
-                if px[0] > px[2] + 12 and px[0] > 110:
-                    dxs.append(x)
-                    dys.append(y)
-                    dc.append(px)
-    desk_c = np.linalg.lstsq(design(dxs, dys, 2), np.asarray(dc), rcond=None)[0]
-
-    xx, yy = np.meshgrid(np.arange(W), np.arange(H))
-    wall_img = np.clip((design(xx.ravel(), yy.ravel(), 2) @ wall_c), 0, 255).reshape(H, W, 3)
-    desk_img = np.clip((design(xx.ravel(), yy.ravel(), 2) @ desk_c), 0, 255).reshape(H, W, 3)
-
-    fill = bg.copy()
+    # bbox kerja = luas mask + margin
     ys, xs = np.where(mask_full)
-    eys = np.array([edge_y(x) for x in xs])
-    # zona permukaan: kanan puncak iso (x>=793) meja mulai 6px di atas garis
-    # (tepi meja tampak tebal); sisanya dinding
-    desk_zone = (xs >= 806) & (ys >= eys - 6)
-    wall_zone = ~desk_zone
-    # campur fit dgn sampel per-kolom (menjaga variasi horizontal: glow lampu)
-    col_wall = np.zeros((W, 3))
-    for x in range(W):
-        rows = [bg[y, x] for y in range(296, 318)
-                if not mask_full[y, x] and x <= 916
-                and abs(int(bg[y, x][0]) - int(bg[y, x][2])) <= 12
-                and 55 <= bg[y, x].mean() <= 215]
-        col_wall[x] = np.mean(rows, axis=0) if rows else np.nan
-    last = np.nan
-    for x in range(W):
-        if np.isnan(col_wall[x]).any():
-            col_wall[x] = last if not np.isnan(last).any() else wall_img[6, x]
-        else:
-            last = col_wall[x]
-    # meja per-kolom dari strip meja-depan (bebas kursi); rambat kanan->kiri
-    col_desk = np.full((W, 3), np.nan)
-    y_lo, y_hi = (441, 449) if mode == "day" else (439, 447)
-    for x in range(W):
-        rows = [bg[y, x] for y in range(y_lo, y_hi) if not mask_full[y, x]
-                and bg[y, x][0] > bg[y, x][2] + 12 and bg[y, x][0] > 110]
-        if rows:
-            col_desk[x] = np.mean(rows, axis=0)
-    last = np.nan
-    for x in range(W - 1, -1, -1):
-        if np.isnan(col_desk[x]).any():
-            col_desk[x] = last if not np.isnan(last).any() else desk_img[y_hi - 1, x]
-        else:
-            last = col_desk[x]
+    y0, y1 = max(0, ys.min() - 2), min(H, ys.max() + 3)
+    x0, x1 = max(0, xs.min() - 2), min(W, xs.max() + 3)
+    img = bg[y0:y1, x0:x1].copy()
+    m = mask_full[y0:y1, x0:x1]
 
-    wall_mix = np.clip(0.2 * wall_img[ys, xs] + 0.8 * col_wall[xs], 0, 255)
-    # fit meja hanya dipercaya dalam rentang sampelnya (y>=326 & x>=815);
-    # sisanya meja dari strip depan per kolom
-    fit_ok = (ys >= 326) & (xs >= 815)
-    desk_use = np.where(fit_ok[..., None], desk_img[ys, xs], col_desk[xs])
-    fill[ys[wall_zone], xs[wall_zone]] = np.clip(wall_mix[wall_zone], 0, 255)
-    fill[ys[desk_zone], xs[desk_zone]] = np.clip(desk_use[desk_zone], 0, 255)
+    # init: rata-rata piksel bersih (percepat konvergensi)
+    img[m] = img[~m].mean(axis=0)
 
-    line = np.abs(ys - eys) < 2.5
-    fill[ys[line], xs[line]] = desk_use[line] * 0.74
+    # Jacobi: 4-tetangga
+    for _ in range(600):
+        avg = (np.roll(img, 1, 0) + np.roll(img, -1, 0) +
+               np.roll(img, 1, 1) + np.roll(img, -1, 1)) * 0.25
+        img[m] = avg[m]
+
+    # garis tepi belakang meja (hanya bila band ada di dalam mask)
+    for x in range(x0, x1):
+        yi = int(round(edge_y(x)))
+        if y0 <= yi < y1 and mask_full[yi, x]:
+            a = img[yi - 2 - y0, x - x0] if yi - 2 >= y0 else img[yi - y0, x - x0]
+            b = img[yi + 2 - y0, x - x0] if yi + 2 < y1 else img[yi - y0, x - x0]
+            img[yi - y0, x - x0] = (a + b) * 0.5 * 0.72
+            if yi + 1 < y1 and mask_full[yi + 1, x]:
+                img[yi + 1 - y0, x - x0] = (a + b) * 0.5 * 0.86
 
     out = bg.copy()
-    out[mask_full] = fill[mask_full]
+    out[y0:y1, x0:x1][m] = img[m]
     Image.fromarray(out.astype(np.uint8)).save(cfg["rapi"])
-    print(f"{mode}: rapi {int(mask_full.sum())} px (wall {len(wx)}, desk {len(dxs)} sampel)")
+    print(f"{mode}: rapi laplace {int(mask_full.sum())} px, bbox {x1-x0}x{y1-y0}")
 
 
 def inset_edge(p, q, cpt, w):
