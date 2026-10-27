@@ -1,8 +1,8 @@
 """Bangun preview browser untuk launcher.
 
-Sumber kebenaran tetap Data.kt (TILES, BOARD_QUAD,
-RAIL_LINE, BATTERY_TEXT_QUAD, CURTAIN_RECTS, LEAF_RECT, SCENE_W/H) supaya
-area ketuk di browser sama persis dengan APK.
+Sumber kebenaran tetap Data.kt (TILES, BOARD_QUAD, LEAF_RECT,
+SCENE_W/H) supaya area ketuk di browser sama persis dengan APK.
+(RAIL_LINE/BATTERY/CURTAIN sudah dihapus — batang gorden cukup digambar art.)
 
   python3 tools/make_preview.py   ->  web/index.html + web/scene_day.png + web/scene_night.png
 
@@ -52,9 +52,8 @@ def parse_data():
         w=scene_w,
         h=scene_h,
         tiles=tiles,
-        board=rect("BOARD_QUAD"),
-        rail=rect("RAIL_LINE"),
-        leaf=rect("LEAF_RECT"),
+                board=rect("BOARD_QUAD"),
+                leaf=rect("LEAF_RECT"),
     )
 
 
@@ -171,10 +170,6 @@ HTML = """<!DOCTYPE html>
     <!-- angin: gorden & daun -->
     __SWAY__
 
-    <!-- rel gorden: batang logam polos -->
-    <line id="rail" x1="__RAIL_X1__" y1="__RAIL_Y1__" x2="__RAIL_X2__" y2="__RAIL_Y2__"
-          stroke="#A9AEc4" stroke-width="4" stroke-linecap="round"/>
-
     <!-- lima bingkai aplikasi -->
     
 
@@ -201,8 +196,6 @@ HTML = """<!DOCTYPE html>
 <script>
 const SCENE = {w: __SCENE_W__, h: __SCENE_H__};
 const TILES = __TILES__;
-const RAIL = __RAIL__;
-
 const stage = document.getElementById("stage");
 const sceneEl = document.getElementById("scene");
 const toast = document.getElementById("toast");
@@ -316,13 +309,7 @@ def build_html(data, scene_sizes):
         .replace("__TILES__", "[\n" + "".join(
             f'  {{label: "{t["label"]}", x: {t["x"]}, y: {t["y"]}, w: {t["w"]}, h: {t["h"]}}},\n'
             for t in data["tiles"]) + "]")
-        .replace("__RAIL__", str(data["rail"]).replace(" ", ""))
         .replace("__SWAY__", sway.replace("__W__", str(w)).replace("__H__", str(h)))
-        # rel
-        .replace("__RAIL_X1__", str(data["rail"][0]))
-        .replace("__RAIL_Y1__", str(data["rail"][1]))
-        .replace("__RAIL_X2__", str(data["rail"][2]))
-        .replace("__RAIL_Y2__", str(data["rail"][3]))
         # papan tulis
         .replace("__BOARD_MATRIX__", matrix_attr(board))
         .replace("__BOARD_W__", f"{board_w / 2:.2f}")

@@ -36,9 +36,9 @@ TILES = {  # scene coords dari Data.kt (kanvas 1280×800)
 }
 
 
-def base(mode: str, battery: int = 100) -> Image.Image:
+def base(mode: str) -> Image.Image:
     """Komposit scene + overlay (tanpa toast/highlight)."""
-    return sim_overlay.build(mode, 11 if mode == "day" else 21, battery=battery).convert("RGB")
+    return sim_overlay.build(mode, 11 if mode == "day" else 21).convert("RGB")
 
 
 def scale2(im: Image.Image, w: int = 2624, h: int = 1632) -> Image.Image:
@@ -74,11 +74,11 @@ def save(im: Image.Image, name: str) -> None:
 
 
 def launcher_shots() -> None:
-    night = scale2(base("night", 100))
+    night = scale2(base("night"))
     save(night, "launcher.png")
-    save(scale2(base("night", 55)), "launcher-kembali-dari-sampah.png")
+    save(scale2(base("night")), "launcher-kembali-dari-sampah.png")
 
-    day = scale2(base("day", 100))
+    day = scale2(base("day"))
 
     im = day.copy(); highlight(im, "jurnal"); toast(im, "JURNAL"); save(im, "launcher-ketuk-jurnal.png")
     im = night.copy(); highlight(im, "jadwal"); toast(im, "JADWAL"); save(im, "launcher-ketuk-jadwal.png")
@@ -86,7 +86,7 @@ def launcher_shots() -> None:
     im = night.copy(); highlight(im, "binder"); toast(im, "BINDER"); save(im, "launcher-ketuk-binder.png")
     im = night.copy(); highlight(im, "profil"); toast(im, "PROFIL"); save(im, "launcher-ketuk-profil.png")
     # letterbox: perangkat 2.133:1 — scene penuh lebar, atas/bawah terpotong
-    lb = scale2(base("night", 100)).crop((0, 200, 2624, 1432))
+    lb = scale2(base("night")).crop((0, 200, 2624, 1432))
     save(lb, "launcher-letterbox.png")
     lb2 = lb.copy(); toast(lb2, "JURNAL"); save(lb2, "launcher-letterbox-ketuk.png")
 

@@ -116,7 +116,7 @@ def draw_plane(img, quad, layer_maker):
     img.alpha_composite(warped)
 
 
-def build(mode, hour, battery=76, second=32):
+def build(mode, hour):
     data = parse()
     src = Image.open(RES / f"drawable-nodpi/scene_{mode}.png").convert("RGBA")
 

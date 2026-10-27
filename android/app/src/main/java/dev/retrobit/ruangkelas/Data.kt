@@ -229,9 +229,6 @@ val BOARD_QUAD = intArrayOf(334, 244, 554, 146, 334, 462)
 /** Kaca jendela (kiri-atas, kanan-atas, kiri-bawah, kanan-bawah). */
 val WINDOW_QUAD = intArrayOf(994, 128, 1144, 120, 994, 426, 1144, 418)
 
-/** Rel gorden: batang logam dari ujung kiri ke kanan jendela. */
-val RAIL_LINE = intArrayOf(896, 38, 1262, 196)
-
 /** Daun tanaman yang ikut bergoyang. */
 val LEAF_RECT = intArrayOf(1090, 476, 132, 160)
 

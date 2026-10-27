@@ -35,7 +35,6 @@ const listOfQuads = (name) => {
 
 
 const BOARD = rect("BOARD_QUAD");
-const RAIL = rect("RAIL_LINE");
 const LEAF = rect("LEAF_RECT");
 const WINDOW_QUAD = rect("WINDOW_QUAD");
 
@@ -100,12 +99,13 @@ else {
 if (document.getElementById("cal") || document.getElementById("cal-page"))
   fail("kalender masih ada (sudah dihapus total)");
 
-// ---- rel gorden polos (indikator baterai dihapus 0.16.4) ----
-const rail = document.getElementById("rail");
-if (!rail) fail("rel gorden hilang");
+// ---- batang gorden cukup digambar art; bar SVG dilarang (dikeluhkan user 0.16.6) ----
+if (document.getElementById("rail"))
+  fail("bar rel svg masih ada di dekat jendela (hapus - art sudah menggambar batangnya)");
 if (document.getElementById("rail-ticks") || document.getElementById("batt"))
   fail("indikator baterai masih ada di rail (sudah dihapus)");
-if (/BATTERY_TEXT_QUAD/.test(data)) fail("BATTERY_TEXT_QUAD masih ada di Data.kt");
+if (/BATTERY_TEXT_QUAD|RAIL_LINE/.test(data))
+  fail("BATTERY_TEXT_QUAD / RAIL_LINE masih ada di Data.kt");
 
 // ---- angin: gorden & daun bergoyang ----
 if (!document.querySelector("#fx .sway-scene, #fx image")) fail("lapisan angin tidak ada");
@@ -130,10 +130,9 @@ const labels = hotspots.map((e) => e.dataset.label);
 });
 if (labels.filter((l) => l === "Binder").length !== 1) fail("hotspot Binder (laci meja) harus tepat satu");
 if (WINDOW_QUAD.length !== 8) fail("WINDOW_QUAD harus 8 angka");
-if (RAIL.length !== 4) fail("RAIL_LINE harus 4 angka");
 if (document.querySelector("#fx #flag")) fail("#flag masih ada di svg");
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · rel polos · tirai diam · jendela→Cuaca`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai diam · jendela→Cuaca`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);
