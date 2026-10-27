@@ -447,8 +447,13 @@ private fun ambienceOf(hour: Int, isDay: Boolean): Pair<Color, Float> = when (ho
 // bolongan kaca jendela di scene (piksel gambar): langit underlay terlihat dari
 // sini; semua art (rel, bingkai, tirai, palang) tetap DI DEPAN animasi
 private val SKY_HOLES = listOf(
-    floatArrayOf(1010f, 119f, 1082f, 148f, 1082f, 337f, 1010f, 299f), // kaca kiri
-    floatArrayOf(1100f, 146f, 1192f, 193f, 1190f, 402f, 1100f, 355f), // bukaan kanan
+    floatArrayOf(1010f, 119f, 1082f, 148f, 1082f, 338f, 1010f, 300f), // kaca kiri
+    floatArrayOf(1100f, 146f, 1193f, 193f, 1190f, 404f, 1100f, 357f), // bukaan kanan
+    // celah sempit antara tirai kiri & bingkai (langit asli terlihat di art)
+    floatArrayOf(975f, 212f, 978f, 204f, 982f, 193f, 987f, 188f, 987f, 280f, 986f, 287f, 982f, 296f, 978f, 284f, 975f, 252f),
+    // segitiga kaca di kanan palang vertikal, sampai tirai kanan
+    floatArrayOf(1191f, 272f, 1194f, 289f, 1196f, 301f, 1198f, 313f, 1200f, 320f, 1202f, 346f,
+        1203f, 366f, 1200f, 375f, 1198f, 385f, 1196f, 398f, 1194f, 407f, 1191f, 407f),
 )
 
 // titik gradien langit per menit dalam hari (atas, bawah) — diinterpolasi mulus
