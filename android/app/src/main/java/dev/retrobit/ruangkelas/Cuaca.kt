@@ -95,6 +95,23 @@ object CuacaRepo {
 
     const val SUMBER = "OPEN-METEO"
 
+    /**
+     * Kode cuaca terkini untuk animasi langit di launcher:
+     * coba online dulu (sekalian isi cache); bila gagal pakai cache terakhir.
+     * Tidak pernah melempar — mengembalikan null bila sama sekali tak ada data.
+     */
+    suspend fun kodeKini(ctx: android.content.Context, cityIdx: Int): Int? =
+        withContext(Dispatchers.IO) {
+            val k = kota[cityIdx.coerceIn(0, kota.size - 1)]
+            try {
+                val d = ambil(k)
+                simpanCache(ctx, d)
+                d.now.code
+            } catch (_: Exception) {
+                muatCache(ctx)?.now?.code
+            }
+        }
+
     /** Ambil prakiraan terbaru dari Open-Meteo. Melempar pengecualian bila gagal. */
     fun ambil(k: Kota): CuacaData {
         val url = "https://api.open-meteo.com/v1/forecast" +

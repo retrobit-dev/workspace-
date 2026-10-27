@@ -141,7 +141,28 @@ if (document.querySelector("#fx #flag")) fail("#flag masih ada di svg");
 if (/image-rendering\s*:\s*pixelated/.test(rawHtml))
   fail("CSS pixelated masih ada — art 0.16.9 smooth tanpa pixelate");
 
+// ---- langit hidup (0.16.16): matahari/bulan bergerak, warna langit waktu nyata, cuaca ----
+const sky = document.getElementById("sky-anim");
+if (!sky) fail("langit hidup hilang (#sky-anim)");
+else {
+  if (sky.getAttribute("clip-path") !== "url(#skyclip)") fail("langit tidak ter-clip ke jendela");
+  if (!document.getElementById("skyclip")) fail("clipPath langit hilang");
+  if (!document.getElementById("skygrad")) fail("gradien langit hilang");
+  const orb = document.getElementById("sky-orb-pos");
+  if (!orb) fail("orb matahari/bulan hilang");
+  else if (!/^translate\(/.test(orb.getAttribute("transform") || "")) fail("posisi orb tidak diset JS");
+  if (!document.getElementById("sg0").getAttribute("stop-color")) fail("warna gradien langit belum diset");
+  const cloudT = document.querySelectorAll("#sky-clouds animateTransform[type=translate]").length;
+  if (cloudT < 3) fail(`awan bergerak kurang (${cloudT} < 3)`);
+  const rainT = document.querySelectorAll("#sky-rain animateTransform[type=translate]").length;
+  if (rainT < 100) fail(`rintikan kurang (${rainT} < 100)`);
+  ["sky-flash", "sky-snow", "sky-fog", "sky-roomray", "sky-stars", "sky-dim", "sky-sun", "sky-moon"].forEach((id) => {
+    if (!document.getElementById(id)) fail(`#${id} hilang`);
+  });
+  if (!/api\.open-meteo\.com/.test(rawHtml)) fail("langit tidak menarik kode cuaca Open-Meteo");
+}
+
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai diam · daun bergoyang · langit→Cuaca · art smooth · siang lembut`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai diam · daun bergoyang · langit→Cuaca · langit hidup (orb+cuaca) · art smooth · siang lembut`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);

@@ -33,14 +33,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -105,6 +108,18 @@ fun LauncherScreen(
     val nowMs = rememberNowMs()
     val hour = remember(nowMs) { LocalTime.now().hour }
     val isDay = hour in 6..17
+    val minute = remember(nowMs) { LocalTime.now().let { it.hour * 60 + it.minute } }
+
+    // kode cuaca untuk animasi langit: cache dulu, lalu refresh online tiap 15 menit
+    val appCtx = LocalContext.current
+    var skyCode by remember { mutableStateOf(1) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val idx = appCtx.getSharedPreferences("cuaca", Context.MODE_PRIVATE).getInt("kota", 0)
+            skyCode = CuacaRepo.kodeKini(appCtx, idx) ?: 1
+            delay(15 * 60 * 1000L)
+        }
+    }
 
     var caption by remember { mutableStateOf("") }
     var captionTick by remember { mutableStateOf(0) }
@@ -129,6 +144,9 @@ fun LauncherScreen(
 
         // angin: ekor tirai, daun, kertas pin bergoyang halus
         WindSway(box = box, scene = scene)
+
+        // langit hidup: matahari/bulan, awan, hujan, dll. (mengikuti waktu & cuaca)
+        SkyAnim(box = box, code = skyCode, isDay = isDay, minute = minute)
 
         // muka hidup: ikon bingkai, judul papan tulis
         LiveFaces(box = box, isDay = isDay)
@@ -381,6 +399,256 @@ private fun ambienceOf(hour: Int, isDay: Boolean): Pair<Color, Float> = when (ho
     in 19..22 -> Color(0xFF2B3F8F) to 0.14f    // malam biru
     else -> Color(0xFF060A22) to 0.34f         // larut
 }
+
+/* ==================== LANGIT HIDUP (0.16.16) ====================
+   Kedua kaca jendela digambar ulang terus-menerus di atas art:
+   - gradien langit mengikuti WAKTU NYATA perangkat (fajar→siang→senja→malam);
+   - matahari/bulan bergerak sepanjang busur mengikuti jam;
+   - sinar matahari saat cerah/terik, awan bergerak saat berawan,
+     langit menggelap saat mendung, rintikan saat gerimis/hujan,
+     salju, kabut, dan kilat saat badai — semua dari kode cuaca
+     Open-Meteo (CuacaRepo, cache offline). Vektor halus, bukan piksel. */
+
+// dua panel langit jendela (piksel gambar): kiri-atas, kanan-atas, kanan-bawah, kiri-bawah
+private val SKY_PANELS = listOf(
+    floatArrayOf(1000f, 90f, 1091f, 118f, 1091f, 316f, 1000f, 312f),  // kaca kiri (tertutup)
+    floatArrayOf(1095f, 117f, 1195f, 150f, 1195f, 350f, 1095f, 318f), // bukaan kanan (terbuka)
+)
+
+// titik gradien langit per menit dalam hari (atas, bawah) — diinterpolasi mulus
+private val SKY_STOPS = listOf(
+    intArrayOf(0, 0x0A0F2E, 0x18224E),
+    intArrayOf(300, 0x2E3A6E, 0xF2955F),   // 05:00 fajar
+    intArrayOf(420, 0x7FB2E8, 0xCFE6F7),   // 07:00 pagi cerah
+    intArrayOf(720, 0x4D8FE0, 0xA8CDF0),   // 12:00 siang
+    intArrayOf(990, 0x6D9BD8, 0xF7C873),   // 16:30 sore keemasan
+    intArrayOf(1080, 0x3A3F7A, 0xE86A5A),  // 18:00 senja
+    intArrayOf(1170, 0x141A44, 0x2A3568),  // 19:30 malam
+    intArrayOf(1440, 0x0A0F2E, 0x18224E),
+)
+
+private fun lerpColor(c0: Int, c1: Int, t: Float): Color {
+    fun ch(v: Int, s: Int) = ((v shr s) and 0xFF).toFloat()
+    val r = (ch(c0, 16) + (ch(c1, 16) - ch(c0, 16)) * t) / 255f
+    val g = (ch(c0, 8) + (ch(c1, 8) - ch(c0, 8)) * t) / 255f
+    val b = (ch(c0, 0) + (ch(c1, 0) - ch(c0, 0)) * t) / 255f
+    return Color(r, g, b, 1f)
+}
+
+private fun skyColors(minute: Int): Pair<Color, Color> {
+    val m = minute.coerceIn(0, 1439)
+    var i = 0
+    while (i < SKY_STOPS.size - 2 && m > SKY_STOPS[i + 1][0]) i++
+    val a = SKY_STOPS[i]
+    val b = SKY_STOPS[i + 1]
+    val t = (m - a[0]).toFloat() / (b[0] - a[0]).toFloat()
+    return lerpColor(a[1], b[1], t) to lerpColor(a[2], b[2], t)
+}
+
+/** Ringkasan efek langit dari kode cuaca WMO. */
+private data class SkyVisuals(
+    val langit: Int,          // 0 cerah, 1 cerah berawan sedikit, 2 berawan, 3 mendung
+    val hujan: Int,           // 0 tidak, 1 gerimis, 2 hujan, 3 deras
+    val salju: Boolean = false,
+    val kabut: Boolean = false,
+    val petir: Boolean = false,
+)
+
+private fun skyVisualsOf(code: Int): SkyVisuals = when (code) {
+    0 -> SkyVisuals(0, 0)
+    1 -> SkyVisuals(1, 0)
+    2 -> SkyVisuals(2, 0)
+    3 -> SkyVisuals(3, 0)
+    45, 48 -> SkyVisuals(3, 0, kabut = true)
+    in 51..57 -> SkyVisuals(2, 1)                       // gerimis
+    61, 80 -> SkyVisuals(2, 2)                          // hujan
+    63, 81 -> SkyVisuals(2, 2)
+    65, 82 -> SkyVisuals(2, 3)                          // deras
+    66, 67 -> SkyVisuals(2, 2)
+    in 71..77, 85, 86 -> SkyVisuals(2, 0, salju = true) // salju
+    95, 96, 99 -> SkyVisuals(3, 3, petir = true)        // badai
+    else -> SkyVisuals(2, 0)
+}
+
+/** acak deterministik 0..1 (tanpa kelas Random agar stabil antar frame). */
+private fun hash01(i: Int, salt: Float = 0f): Float =
+    (sin(i * 127.1f + salt * 311.7f) * 43758.5453f).let { it - it.toInt() }.let { if (it < 0) it + 1f else it }
+
+@Composable
+private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
+    val v = remember(code) { skyVisualsOf(code) }
+    // jam kontinu (nilai ≈ detik) untuk gerak awan/rintikan yang mulus
+    val clock = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        clock.animateTo(2_000_000f, tween(2_000_000_000, easing = LinearEasing))
+    }
+
+    Canvas(Modifier.fillMaxSize()) {
+        val base = box.unit.toPx()
+        fun sx(px: Float) = box.originX.toPx() + px * base
+        fun sy(px: Float) = box.originY.toPx() + px * base
+        val skyTopLeft = Offset(sx(980f), sy(50f))
+        val skySize = Size(box.w(240).toPx(), box.h(330).toPx())
+
+        val path = Path().apply {
+            for (q in SKY_PANELS) {
+                moveTo(sx(q[0]), sy(q[1]))
+                for (k in 2 until q.size step 2) lineTo(sx(q[k]), sy(q[k + 1]))
+                close()
+            }
+        }
+
+        clipPath(path) {
+            // 1) dasar gradien sesuai waktu nyata
+            val (cTop, cBot) = skyColors(minute)
+            drawRect(
+                brush = Brush.verticalGradient(listOf(cTop, cBot), startY = sy(60f), endY = sy(360f)),
+                topLeft = skyTopLeft, size = skySize
+            )
+
+            // 2) bintang berkedip saat malam yang tidak mendung
+            if (!isDay && v.langit <= 1) {
+                for (i in 0 until 16) {
+                    val sxx = sx(1004f + hash01(i) * 188f)
+                    val syy = sy(70f + hash01(i, 7f) * 170f)
+                    val tw = 0.35f + 0.65f * (0.5f + 0.5f * sin(clock.value * (2f + hash01(i, 3f) * 3f) + i))
+                    drawCircle(
+                        Color(0xFFFFF6DC), radius = base * (0.7f + hash01(i, 11f)),
+                        center = Offset(sxx, syy), alpha = tw * 0.9f
+                    )
+                }
+            }
+
+            // 3) matahari / bulan menuruni busur sesuai jam
+            val f = if (isDay) ((minute - 360).coerceAtLeast(0)).toFloat() / 660f
+            else (((minute - 1080 + 1440) % 1440)).toFloat() / 720f
+            val fx = f.coerceIn(0f, 1f)
+            val orbX = sx(1004f + 188f * fx)
+            val orbY = sy(286f - sin(fx * 3.14159265f) * 162f)
+
+            if (isDay && v.langit <= 2) {
+                val hot = code == 0 // cerah penuh = terik
+                val rayA = if (v.langit == 0) (if (hot) 0.85f else 0.6f) else 0.25f
+                for (k in 0 until 8) {
+                    val ang = (clock.value * 12f + k * 45f) * (3.14159265f / 180f)
+                    val c = cos(ang)
+                    val s = sin(ang)
+                    drawLine(
+                        Color(0xFFFFE9A8),
+                        Offset(orbX + c * 16f * base, orbY + s * 16f * base),
+                        Offset(orbX + c * 23f * base, orbY + s * 23f * base),
+                        strokeWidth = base * 1.7f, alpha = rayA, strokeCap = StrokeCap.Round
+                    )
+                }
+                val pulse = 0.55f + 0.45f * sin(clock.value * 1.4f)
+                drawCircle(Color(0xFFFFD9A0), radius = base * (if (hot) 30f else 24f), center = Offset(orbX, orbY), alpha = 0.28f * pulse)
+                drawCircle(Color(0xFFFFE9A8), radius = base * 15f, center = Offset(orbX, orbY))
+                drawCircle(Color(0xFFFFF3C4), radius = base * 10.5f, center = Offset(orbX, orbY))
+            }
+            if (!isDay && v.langit <= 2) {
+                drawCircle(Color(0xFFEDE9DA), radius = base * 13f, center = Offset(orbX, orbY), alpha = 0.95f)
+                drawCircle(Color(0xFFC9C4B4), radius = base * 3.2f, center = Offset(orbX - 4f * base, orbY + 2f * base), alpha = 0.8f)
+                drawCircle(Color(0xFFC9C4B4), radius = base * 2.1f, center = Offset(orbX + 4.5f * base, orbY - 3.5f * base), alpha = 0.8f)
+                drawCircle(Color(0xFFC9C4B4), radius = base * 1.6f, center = Offset(orbX + 1f * base, orbY + 5f * base), alpha = 0.8f)
+            }
+
+            // 4) awan bergerak (jumlah & warna sesuai kondisi langit)
+            val cloudN = when (v.langit) { 0 -> 0; 1 -> 1; 2 -> 3; else -> 5 }
+            if (cloudN > 0) {
+                val cloudColor = when (v.langit) {
+                    0, 1 -> Color(0xFFFFFFFF)
+                    2 -> Color(0xFFE8ECF2)
+                    else -> Color(0xFFB9BFCB)
+                }
+                val cloudAlpha = when (v.langit) { 0, 1 -> 0.92f; 2 -> 0.9f; else -> 0.85f }
+                for (i in 0 until cloudN) {
+                    val sp = 3.2f + hash01(i, 21f) * 2.6f
+                    val cx = 960f + ((clock.value * sp + hash01(i, 5f) * 280f) % 280f)
+                    val cy = 96f + hash01(i, 13f) * 150f
+                    val sc = (0.75f + hash01(i, 31f) * 0.8f) * base
+                    val c = Offset(sx(cx), sy(cy))
+                    drawCircle(cloudColor, 16f * sc, Offset(c.x - 14f * sc, c.y + 4f * sc), cloudAlpha)
+                    drawCircle(cloudColor, 21f * sc, c, cloudAlpha)
+                    drawCircle(cloudColor, 15f * sc, Offset(c.x + 15f * sc, c.y + 5f * sc), cloudAlpha)
+                    drawRect(cloudColor, Offset(c.x - 26f * sc, c.y + 2f * sc), Size(52f * sc, 12f * sc), cloudAlpha)
+                }
+            }
+
+            // 5) selaput gelap: mendung/hujan menggelapkan langit
+            val dim = (when (v.langit) { 2 -> 0.18f; 3 -> 0.34f; else -> 0f }) +
+                (if (v.hujan > 0) 0.08f else 0f)
+            if (dim > 0f) drawRect(Color(0xFF3A4150), skyTopLeft, skySize, dim)
+
+            // 6) rintikan hujan / gerimis
+            if (v.hujan > 0) {
+                val n = if (v.hujan == 1) 46 else if (v.hujan == 2) 96 else 150
+                val sp = if (v.hujan == 1) 90f else 130f + v.hujan * 45f
+                val len = if (v.hujan == 1) 6f else 10f
+                for (i in 0 until n) {
+                    val rx = 995f + hash01(i, 41f) * 205f
+                    val ry = 40f + ((clock.value * sp * (0.75f + hash01(i, 43f) * 0.5f) + hash01(i, 47f) * 320f) % 320f)
+                    drawLine(
+                        Color(0xFFCFE4F7), Offset(sx(rx), sy(ry)), Offset(sx(rx - 2.2f), sy(ry + len)),
+                        strokeWidth = base * 0.9f, alpha = 0.6f
+                    )
+                }
+            }
+
+            // 7) salju turun perlahan dengan goyangan
+            if (v.salju) {
+                for (i in 0 until 70) {
+                    val sway = sin(clock.value * (0.8f + hash01(i, 61f)) + i) * 6f
+                    val syy = 40f + ((clock.value * (18f + hash01(i, 63f) * 14f) + hash01(i, 65f) * 320f) % 320f)
+                    drawCircle(
+                        Color(0xFFFFFFFF), radius = base * (0.9f + hash01(i, 67f)),
+                        center = Offset(sx(995f + hash01(i, 69f) * 205f + sway), sy(syy)), alpha = 0.85f
+                    )
+                }
+            }
+
+            // 8) kabut menyelimuti
+            if (v.kabut) {
+                for (b in 0 until 3) {
+                    val fo = (clock.value * (5f + b * 2f) + b * 80f) % 300f
+                    drawRect(
+                        Color(0xFFD8DEE8),
+                        topLeft = Offset(sx(960f + fo - 150f), sy(120f + b * 70f)),
+                        size = Size(box.w(220).toPx(), base * 20f), alpha = 0.14f
+                    )
+                }
+            }
+
+            // 9) kilat badai: dua kedipan singkat tiap ~7 detik
+            if (v.petir) {
+                val ph = clock.value % 7f
+                val flash = if (ph in 3.0f..3.14f) 0.85f else if (ph in 3.3f..3.42f) 0.5f else 0f
+                if (flash > 0f) drawRect(Color(0xFFF4F6FF), skyTopLeft, skySize, flash)
+            }
+
+            // 10) kilau kaca: pita diagonal tipis agar tetap terasa kaca
+            rotate(-24f, pivot = Offset(sx(1097f), sy(200f))) {
+                drawRect(Color(0xFFFFFFFF), Offset(sx(1040f), sy(60f)), Size(base * 14f, base * 300f), 0.10f)
+                drawRect(Color(0xFFFFFFFF), Offset(sx(1090f), sy(60f)), Size(base * 5f, base * 300f), 0.08f)
+            }
+        }
+
+        // berkas cahaya matahari masuk ruangan saat siang cerah/terik
+        if (isDay && v.langit == 0) {
+            val p = 0.5f + 0.5f * sin(clock.value * 0.9f)
+            drawPath(
+                Path().apply {
+                    moveTo(sx(1075f), sy(330f))
+                    lineTo(sx(1190f), sy(355f))
+                    lineTo(sx(880f), sy(640f))
+                    lineTo(sx(700f), sy(560f))
+                    close()
+                },
+                color = Color(0xFFFFF2CC), alpha = 0.05f + 0.04f * p
+            )
+        }
+    }
+}
+
 
 /** Selaput tipis di atas scene: siang lebih terang, malam kebiruan. */
 @Composable

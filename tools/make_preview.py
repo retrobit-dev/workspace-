@@ -11,12 +11,14 @@ scene_night.png. Semua tulisan digambar di SVG dengan matriks bidang, jadi ikut
 kemiringan benda seperti di APK.
 """
 import hashlib
+import json
 import re
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scene_face  # noqa: E402
+import sky_preview  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "android/app/src/main/java/dev/retrobit/ruangkelas/Data.kt"
@@ -170,6 +172,9 @@ HTML = """<!DOCTYPE html>
     <!-- angin: gorden & daun -->
     __SWAY__
 
+    <!-- langit hidup: matahari/bulan, awan, hujan (waktu nyata + cuaca Open-Meteo) -->
+    __SKY__
+
     <!-- lima bingkai aplikasi -->
     
 
@@ -236,6 +241,8 @@ TILES.forEach((tile) => {
 });
 
 
+__SKY_JS__
+
 function ambience(h) {
   if (h >= 5 && h <= 8) return "rgba(255,217,160,.10)";
   if (h >= 9 && h <= 15) return "rgba(58,70,112,.14)";  // siang lembut, meredam silau (0.16.10)
@@ -290,6 +297,14 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 """
 
 
+def sky_url() -> str:
+    return (
+        "https://api.open-meteo.com/v1/forecast"
+        f"?latitude={sky_preview.JEMBER['lat']}&longitude={sky_preview.JEMBER['lon']}"
+        "&current=weather_code"
+    )
+
+
 def build_html(data, scene_sizes):
     w, h = data["w"], data["h"]
     board = data["board"]
@@ -313,6 +328,11 @@ def build_html(data, scene_sizes):
             f'  {{label: "{t["label"]}", x: {t["x"]}, y: {t["y"]}, w: {t["w"]}, h: {t["h"]}}},\n'
             for t in data["tiles"]) + "]")
         .replace("__SWAY__", sway.replace("__W__", str(w)).replace("__H__", str(h)))
+        # langit hidup (waktu nyata + cuaca)
+        .replace("__SKY__", sky_preview.group())
+        .replace("__SKY_JS__", sky_preview.JS
+                 .replace("__SKY_STOPS__", json.dumps(sky_preview.SKY_STOPS))
+                 .replace("__SKY_URL__", sky_url()))
         # papan tulis
         .replace("__BOARD_MATRIX__", matrix_attr(board))
         .replace("__BOARD_W__", f"{board_w / 2:.2f}")
