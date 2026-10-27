@@ -37,7 +37,7 @@ diverifikasi visual identik). Status terakhir: **LULUS day & night**.
 | TEMPAT_SAMPAH | Tempat sampah | 4,635,103,130 | 46 |
 | KERTAS_1 | Kertas kusut 1 | 96,704,49,47 | 47 |
 | KERTAS_2 | Kertas kusut 2 | 66,732,44,40 | 48 |
-| TANAMAN | Tanaman pot di sudut | 1040,390,246,322 | 50 |
+| TANAMAN | Tanaman pot di sudut | 1034,384,246,322 | 50 |
 
 > `bbox` pada manifest = jendela potong aset (inti + margin bayangan).
 > `inti_bbox` = kotak inti objek tanpa margin. TANAMAN ber-flag
