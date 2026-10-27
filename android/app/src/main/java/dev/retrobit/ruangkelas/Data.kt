@@ -235,6 +235,18 @@ val LEAF_RECT = intArrayOf(1055, 470, 150, 160)
 /** Panel tirai kanan yang dianimasikan (ditiup angin dari luar jendela). */
 val CURTAIN_R_RECT = intArrayOf(1183, 90, 97, 330)
 
+/**
+ * Kertas di papan pin yang beranimasi lembut.
+ * Format: [pinX, pinY, left, top, lebar, tinggi] — pivot tepat di pin.
+ */
+val PAPER_RECTS = listOf(
+    intArrayOf(215, 300, 184, 293, 58, 76),
+    intArrayOf(146, 327, 128, 316, 36, 40),
+    intArrayOf(90, 357, 76, 350, 36, 50),
+    intArrayOf(135, 380, 118, 373, 46, 54),
+    intArrayOf(190, 372, 174, 366, 36, 44)
+)
+
 
 const val SCENE_W = 1280
 const val SCENE_H = 800

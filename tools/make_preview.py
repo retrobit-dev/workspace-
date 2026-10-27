@@ -54,8 +54,40 @@ def parse_data():
         tiles=tiles,
                 board=rect("BOARD_QUAD"),
                 curtain=rect("CURTAIN_R_RECT"),
+                papers=list_of_quads("PAPER_RECTS"),
                 leaf=rect("LEAF_RECT"),
     )
+
+
+def sway_rotate_group(items, scene_name, deg, dur, id_base, delay0, translate_amp=0.0):
+    """Kelompok gambar yang berotasi di sekitar pivot (engsel/pin) + geseran opsional.
+
+    items: list [pivotX, pivotY, left, top, w, h].
+    """
+    out = []
+    for i, (px, py, l, t, w, h) in enumerate(items):
+        idx = id_base + i
+        begin = delay0 + i * 0.5
+        img = f"""      <image class="sway-scene" href="{scene_name}" x="0" y="0" width="__W__" height="__H__">"""
+        if translate_amp:
+            img += f"""
+        <animateTransform attributeName="transform" type="translate"
+          values="{-translate_amp},0; {translate_amp},0; {-translate_amp},0" dur="{dur}s"
+          begin="{begin}s" repeatCount="indefinite" calcMode="spline"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>"""
+        img += "\n      </image>"
+        out.append(f"""
+    <g clip-path="url(#c{idx})">
+      <g>
+        <animateTransform attributeName="transform" type="rotate"
+          values="{-deg} {px} {py}; {deg} {px} {py}; {-deg} {px} {py}" dur="{dur}s"
+          begin="{begin}s" repeatCount="indefinite" calcMode="spline"
+          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
+{img}
+      </g>
+    </g>
+    <clipPath id="c{idx}"><rect x="{l}" y="{t}" width="{w}" height="{h}"/></clipPath>""")
+    return "\n".join(out)
 
 
 # ------------------------------------------------------------------ gambar scene
@@ -300,9 +332,17 @@ def build_html(data, scene_sizes):
     board_h = ((board[4] - board[0]) ** 2 + (board[5] - board[1]) ** 2) ** 0.5
 
     sway_scene = "scene_night.png"
-    # tirai kanan ditiup angin dari luar (cepat, lebar) + daun bergoyang (pot tidak ikut)
-    sway = (sway_group([data["curtain"]], sway_scene, 3.2, 2.6, id_base=0)
-            + sway_group([data["leaf"]], sway_scene, 2.0, 5.2, id_base=1, delay0=0.4))
+    # tirai kanan: terpegang di ring, bawah mengayun (rotasi di rel + geser tipis);
+    # kertas di papan pin bergoyang lembut (pivot di pin); daun bergoyang (pot diam)
+    cur = data["curtain"]
+    sway = (
+        sway_rotate_group(
+            [(cur[0] + cur[2] // 2, cur[1], cur[0], cur[1], cur[2], cur[3])],
+            sway_scene, 1.5, 2.6, id_base=0, delay0=0.0, translate_amp=0.8,
+        )
+        + sway_rotate_group(data["papers"], sway_scene, 1.6, 4.2, id_base=1, delay0=0.3)
+        + sway_group([data["leaf"]], sway_scene, 2.0, 5.2, id_base=6, delay0=0.4)
+    )
 
     html = (
         HTML.replace("__RATIO__", f"{w} / {h}")

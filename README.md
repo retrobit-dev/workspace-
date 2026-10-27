@@ -40,7 +40,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.16.10-debug.apk`](dist/RuangKelas-0.16.10-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.16.11-debug.apk`](dist/RuangKelas-0.16.11-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | diarsipkan — lihat [`arsip/0.15.12/`](arsip/0.15.12) (ambil dari sejarah git) |
@@ -49,7 +49,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.16.10-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.16.11-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -158,6 +158,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.16.10-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.16.11-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.

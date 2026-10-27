@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -208,16 +209,27 @@ private fun WindSway(box: SceneBox, scene: ImageBitmap) {
 
     Canvas(Modifier.fillMaxSize()) {
         val base = box.unit.toPx()
-        // tirai kanan: ditiup angin dari luar jendela — hanya panelnya yang bergeser
+        // tirai kanan: terpegang di ring rel, bagian bawah mengayun bebas —
+        // digerakkan dengan ROTASI di sekitar rel + geseran tipis
         val cur = CURTAIN_R_RECT
-        val geser = sin(phase.value * 2.0f) * base * 3.2f
         clipRect(
             left = box.x(cur[0]).toPx(),
             top = box.y(cur[1]).toPx(),
             right = box.x(cur[0] + cur[2]).toPx(),
             bottom = box.y(cur[1] + cur[3]).toPx()
         ) {
-            drawScene(box, scene, dx = geser)
+            withTransform({
+                rotate(
+                    degrees = sin(phase.value * 2.0f) * 1.5f,
+                    pivot = Offset(
+                        box.x(cur[0] + cur[2] / 2).toPx(),
+                        box.y(cur[1]).toPx()
+                    )
+                )
+                translate(sin(phase.value * 2.0f) * base * 0.8f, 0f)
+            }) {
+                drawScene(box, scene)
+            }
         }
         // daun tanaman bergoyang (pot tidak ikut dianimasikan)
         val leaf = LEAF_RECT
@@ -229,6 +241,24 @@ private fun WindSway(box: SceneBox, scene: ImageBitmap) {
             bottom = box.y(leaf[1] + leaf[3]).toPx()
         ) {
             drawScene(box, scene, dx = dx)
+        }
+        // kertas di papan pin: bergoyang lembut, pivot tepat di pin masing-masing
+        PAPER_RECTS.forEachIndexed { i, pap ->
+            clipRect(
+                left = box.x(pap[2]).toPx(),
+                top = box.y(pap[3]).toPx(),
+                right = box.x(pap[2] + pap[4]).toPx(),
+                bottom = box.y(pap[3] + pap[5]).toPx()
+            ) {
+                withTransform({
+                    rotate(
+                        degrees = sin(phase.value * 1.3f + i * 0.9f) * 1.6f,
+                        pivot = Offset(box.x(pap[0]).toPx(), box.y(pap[1]).toPx())
+                    )
+                }) {
+                    drawScene(box, scene)
+                }
+            }
         }
     }
 }
