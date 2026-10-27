@@ -14,6 +14,8 @@ import hashlib
 import json
 import re
 import sys
+
+from PIL import Image, ImageDraw, ImageChops, ImageFilter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -61,14 +63,41 @@ def parse_data():
 
 # ------------------------------------------------------------------ gambar scene
 
+# bolongan kaca jendela (piksel gambar) — cermin SKY_HOLES di Launcher.kt
+SKY_HOLES = [
+    (1010, 119, 1082, 148, 1082, 337, 1010, 299),  # kaca kiri
+    (1100, 146, 1192, 193, 1190, 402, 1100, 355),  # bukaan kanan
+]
+
+
+def punch_holes(im):
+    """Buat kaca jendela transparan agar langit underlay terlihat melaluinya."""
+    im = im.convert("RGBA")
+    mask = Image.new("L", im.size, 255)
+    d = ImageDraw.Draw(mask)
+    for q in SKY_HOLES:
+        d.polygon(q, fill=0)
+    mask = mask.filter(ImageFilter.GaussianBlur(1.2))
+    im.putalpha(ImageChops.multiply(im.getchannel("A"), mask))
+    box = im.getchannel("A").crop((990, 90, 1220, 440))
+    hist = box.histogram()
+    n = sum(hist[:200])  # piksel tembus
+    return im, n
+
+
 def make_scenes():
     WEB.mkdir(exist_ok=True)
     sizes = {}
+    holes_total = 0
     for mode in ("night", "day"):
         im = scene_face.load_scene(mode)
+        im, n = punch_holes(im)
+        if n < 15000:
+            raise SystemExit(f"bolongan kaca scene {mode} terlalu kecil ({n} px) — periksa SKY_HOLES")
         im.save(WEB / f"scene_{mode}.png", optimize=True)
         sizes[mode] = im.size
-    return sizes
+        holes_total += n
+    return sizes, holes_total
 
 
 # ------------------------------------------------------------------------- SVG
@@ -138,7 +167,7 @@ HTML = """<!DOCTYPE html>
   /* ukuran stage dipastikan lewat JS (fit()) — CSS di atas hanya fallback */
   #scene{position:absolute;inset:0;width:100%;height:100%;display:block;
     pointer-events:none}
-  #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+  #fx,#sky-under{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   #fx text{font-family:"Silkscreen","Courier New",monospace;font-weight:700;dominant-baseline:auto}
 
   .hotspot{position:absolute;border:0;padding:0;margin:0;background:transparent;
@@ -167,13 +196,20 @@ HTML = """<!DOCTYPE html>
 </head>
 <body>
 <div id="stage">
+  <!-- sky-holes: __HOLES__ -->
+  <svg id="sky-under" viewBox="0 0 __SCENE_W__ __SCENE_H__" preserveAspectRatio="none">
+    <!-- langit hidup (UNDERLAY): dirender DI BAWAH scene; terlihat lewat bolongan kaca -->
+    __SKY__
+  </svg>
   <img id="scene" src="scene_night.png" alt="Workspace guru" draggable="false">
   <svg id="fx" viewBox="0 0 __SCENE_W__ __SCENE_H__" preserveAspectRatio="none">
     <!-- angin: gorden & daun -->
     __SWAY__
 
-    <!-- langit hidup: matahari/bulan, awan, hujan (waktu nyata + cuaca Open-Meteo) -->
-    __SKY__
+    <!-- berkas cahaya matahari ke ruangan (overlay, siang cerah) -->
+    <polygon id="sky-roomray" points="1150,400 1196,410 900,645 740,565" fill="#FFF2CC" opacity="0">
+      <animate attributeName="opacity" values="0.05;0.09;0.05" dur="6s" repeatCount="indefinite"/>
+    </polygon>
 
     <!-- lima bingkai aplikasi -->
     
@@ -305,7 +341,7 @@ def sky_url() -> str:
     )
 
 
-def build_html(data, scene_sizes):
+def build_html(data, scene_sizes, holes):
     w, h = data["w"], data["h"]
     board = data["board"]
 
@@ -333,6 +369,7 @@ def build_html(data, scene_sizes):
         .replace("__SKY_JS__", sky_preview.JS
                  .replace("__SKY_STOPS__", json.dumps(sky_preview.SKY_STOPS))
                  .replace("__SKY_URL__", sky_url()))
+        .replace("__HOLES__", str(holes))
         # papan tulis
         .replace("__BOARD_MATRIX__", matrix_attr(board))
         .replace("__BOARD_W__", f"{board_w / 2:.2f}")
@@ -361,8 +398,8 @@ def build_html(data, scene_sizes):
 
 def main() -> None:
     data = parse_data()
-    sizes = make_scenes()
-    build_html(data, sizes)
+    sizes, holes = make_scenes()
+    build_html(data, sizes, holes)
     print(f"scene {sizes} · {len(data['tiles'])} objek · {WEB/'index.html'}")
 
 

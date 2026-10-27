@@ -141,12 +141,13 @@ if (document.querySelector("#fx #flag")) fail("#flag masih ada di svg");
 if (/image-rendering\s*:\s*pixelated/.test(rawHtml))
   fail("CSS pixelated masih ada — art 0.16.9 smooth tanpa pixelate");
 
-// ---- langit hidup (0.16.16): matahari/bulan bergerak, warna langit waktu nyata, cuaca ----
-const sky = document.getElementById("sky-anim");
-if (!sky) fail("langit hidup hilang (#sky-anim)");
+// ---- langit hidup (0.16.18 UNDERLAY): svg sebelum scene + scene bolong kaca ----
+const skyUnder = document.getElementById("sky-under");
+const sceneImg = document.getElementById("scene");
+if (!skyUnder) fail("underlay langit hilang (#sky-under)");
 else {
-  if (sky.getAttribute("clip-path") !== "url(#skyclip)") fail("langit tidak ter-clip ke jendela");
-  if (!document.getElementById("skyclip")) fail("clipPath langit hilang");
+  if (!(skyUnder.compareDocumentPosition(sceneImg) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING))
+    fail("#sky-under harus berada SEBELUM #scene (underlay, bukan overlay)");
   if (!document.getElementById("skygrad")) fail("gradien langit hilang");
   const orb = document.getElementById("sky-orb-pos");
   if (!orb) fail("orb matahari/bulan hilang");
@@ -161,6 +162,9 @@ else {
   });
   if (!/api\.open-meteo\.com/.test(rawHtml)) fail("langit tidak menarik kode cuaca Open-Meteo");
 }
+const holesM = rawHtml.match(/sky-holes:\s*(\d+)/);
+if (!holesM || +holesM[1] < 15000)
+  fail(`bolongan kaca scene kurang (${holesM ? holesM[1] : "tidak ada"} < 15000 px) — scene harus transparan di kaca`);
 
 console.log(errors === 0
   ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai diam · daun bergoyang · langit→Cuaca · langit hidup (orb+cuaca) · art smooth · siang lembut`

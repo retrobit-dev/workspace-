@@ -1,5 +1,9 @@
 """Generator SVG langit dinamis untuk preview web (cermin SkyAnim di Launcher.kt).
 
+UNDERLAY: SVG ini dirender SEBELUM <img id=scene>; scene PNG punya bolongan
+kaca transparan (SKY_HOLES) sehingga langit terlihat melaluinya dan semua art
+(rel, bingkai, tirai, palang) otomatis berada DI DEPAN animasi.
+
 Geometri & palet sama dengan APK: dua panel langit jendela kanan, busur
 matahari/bulan, gradien langit per menit, awan/hujan/salju/kabut/kilat dari
 kode cuaca WMO (Open-Meteo, cache localStorage). Semua gerak memakai
@@ -96,9 +100,8 @@ def group() -> str:
         <stop id="sg0" offset="0" stop-color="#4D8FE0"/>
         <stop id="sg1" offset="1" stop-color="#A8CDF0"/>
       </linearGradient>
-      <clipPath id="skyclip"><path d="{clip_path()}"/></clipPath>
     </defs>
-    <g id="sky-anim" clip-path="url(#skyclip)" data-weather="1">
+    <g id="sky-anim" data-weather="1">
       <rect x="1006" y="115" width="198" height="295" fill="url(#skygrad)"/>
       <g id="sky-stars" style="display:none">{''.join(stars)}</g>
       <g id="sky-orb"><g id="sky-orb-pos" transform="translate(1146,208)">
@@ -133,9 +136,7 @@ def group() -> str:
         <rect x="1150" y="140" width="5" height="270" fill="#FFFFFF" opacity="0.08"/>
       </g>
     </g>
-    <polygon id="sky-roomray" points="1150,400 1196,410 900,645 740,565" fill="#FFF2CC" opacity="0">
-      <animate attributeName="opacity" values="0.05;0.09;0.05" dur="6s" repeatCount="indefinite"/>
-    </polygon>'''
+'''
 
 
 # JS pengendali langit: gradien + posisi orb per detik; cuaca dari Open-Meteo
