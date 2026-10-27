@@ -11,7 +11,7 @@
   :root{
     --ink:#0E0D1A; --night:#15142A; --cream:#F8E9C8; --cream2:#E3CDA6;
     --amber:#F2AB3F; --screen:#D7F7CD;
-    --ratio: 1312 / 816;
+    --ratio: 1280 / 800;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%;overflow:hidden;background:var(--ink)}
@@ -58,83 +58,73 @@
 <body>
 <div id="stage">
   <img id="scene" src="scene_night.png" alt="Workspace guru" draggable="false">
-  <svg id="fx" viewBox="0 0 1312 816" preserveAspectRatio="none">
+  <svg id="fx" viewBox="0 0 1280 800" preserveAspectRatio="none">
     <!-- angin: gorden & daun -->
     
     <g clip-path="url(#c0)">
-      <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1312" height="816">
+      <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1280" height="800">
         <animateTransform attributeName="transform" type="translate"
           values="-2.2,0; 2.2,0; -2.2,0" dur="5.2s"
           begin="0.0s" repeatCount="indefinite" calcMode="spline"
           keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
       </image>
     </g>
-    <clipPath id="c0"><rect x="995" y="78" width="40" height="308"/></clipPath>
+    <clipPath id="c0"><rect x="1198" y="158" width="38" height="300"/></clipPath>
 
     <g clip-path="url(#c1)">
-      <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1312" height="816">
+      <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1280" height="800">
         <animateTransform attributeName="transform" type="translate"
           values="-2.2,0; 2.2,0; -2.2,0" dur="5.2s"
           begin="0.9s" repeatCount="indefinite" calcMode="spline"
           keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
       </image>
     </g>
-    <clipPath id="c1"><rect x="1216" y="224" width="34" height="246"/></clipPath>
-
-    <g clip-path="url(#c2)">
-      <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1312" height="816">
-        <animateTransform attributeName="transform" type="translate"
-          values="-2.2,0; 2.2,0; -2.2,0" dur="5.2s"
-          begin="1.8s" repeatCount="indefinite" calcMode="spline"
-          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
-      </image>
-    </g>
-    <clipPath id="c2"><rect x="1088" y="470" width="170" height="200"/></clipPath>
+    <clipPath id="c1"><rect x="1090" y="476" width="132" height="160"/></clipPath>
 
     <!-- rel gorden = indikator baterai -->
-    <line id="rail" x1="1006" y1="57" x2="1288" y2="198"
+    <line id="rail" x1="938" y1="36" x2="1244" y2="192"
           stroke="#77B8D9" stroke-width="3.4" stroke-linecap="round"/>
     <g id="rail-ticks" stroke="#0E0D1A" stroke-width="1.2"></g>
 
     <!-- persentase baterai di dinding di atas rel -->
-    <g id="batt-g" transform="matrix(108.000,26.000,0.000,44.000,1014.000,0.000)">
-      <text id="batt" x="55.54" y="37.84" text-anchor="middle"
-            fill="#E3CDA6" font-size="25.52">100%</text>
+    <g id="batt-g" transform="matrix(116.000,28.000,0.000,50.000,966.000,4.000)">
+      <text id="batt" x="59.67" y="43.00" text-anchor="middle"
+            fill="#E3CDA6" font-size="29.00">100%</text>
     </g>
 
     <!-- lima bingkai aplikasi -->
     <g id="icons">
-    <polygon points="77.0,241.0 107.0,226.0 107.0,278.0 77.0,293.0" fill="#1FBF5B"/>
-    <polygon points="83.0,247.4 101.0,238.4 101.0,261.2 90.8,266.3 86.0,278.1 86.3,268.6 83.0,270.2" fill="#FFFFFF"/>
-    <polygon points="151.0,202.0 181.0,187.0 181.0,239.0 151.0,254.0" fill="#E03A3A"/>
-    <polygon points="157.6,210.1 163.0,207.4 166.0,226.7 169.0,204.4 174.4,201.7 168.4,234.9 163.6,237.3" fill="#FFFFFF"/>
-    <polygon points="225.0,164.0 255.0,149.0 255.0,201.0 225.0,216.0" fill="#1DB954"/>
-    <polygon points="231.0,176.6 249.0,169.7 249.0,174.9 231.0,181.8" fill="#FFFFFF"/>
-    <polygon points="231.6,185.7 248.4,179.3 248.4,183.5 231.6,189.8" fill="#FFFFFF"/>
-    <polygon points="232.2,193.7 247.8,188.0 247.8,191.1 232.2,196.8" fill="#FFFFFF"/>
-    <polygon points="299.0,124.0 329.0,110.0 329.0,163.0 299.0,177.0" fill="#D63B32"/>
-    <polygon points="306.2,132.3 306.2,162.0 323.0,139.3" fill="#FFFFFF"/>
-    <polygon points="374.0,86.0 404.0,72.0 403.0,125.0 373.0,139.0" fill="#1E2C63"/>
-    <polygon points="388.8,87.5 397.7,89.6 397.5,103.4 388.2,122.5 379.5,111.8 379.7,98.0" fill="#FFFFFF"/>
-    <polygon points="388.7,94.9 393.4,96.9 393.3,104.3 388.3,114.0 383.7,108.8 383.8,101.4" fill="#1E2C63"/>
+    <polygon points="79.0,235.0 109.0,222.0 109.0,275.0 79.0,288.0" fill="#1FBF5B"/>
+    <polygon points="85.0,241.9 103.0,234.1 103.0,257.5 92.8,261.9 88.0,273.5 88.3,263.8 85.0,265.3" fill="#FFFFFF"/>
+    <polygon points="151.0,198.0 181.0,185.0 181.0,238.0 151.0,251.0" fill="#E03A3A"/>
+    <polygon points="157.6,206.8 163.0,204.5 166.0,224.4 169.0,201.9 174.4,199.5 168.4,232.9 163.6,234.9" fill="#FFFFFF"/>
+    <polygon points="222.0,161.0 252.0,148.0 252.0,201.0 222.0,214.0" fill="#1DB954"/>
+    <polygon points="228.0,174.3 246.0,168.6 246.0,173.9 228.0,179.6" fill="#FFFFFF"/>
+    <polygon points="228.6,183.6 245.4,178.4 245.4,182.7 228.6,187.8" fill="#FFFFFF"/>
+    <polygon points="229.2,191.8 244.8,187.2 244.8,190.3 229.2,195.0" fill="#FFFFFF"/>
+    <polygon points="294.0,123.0 324.0,109.0 324.0,163.0 294.0,177.0" fill="#D63B32"/>
+    <polygon points="301.2,131.5 301.2,161.8 318.0,138.8" fill="#FFFFFF"/>
+    <polygon points="366.0,85.0 396.0,79.0 396.0,133.0 366.0,139.0" fill="#1E2C63"/>
+    <polygon points="381.0,90.6 390.0,95.3 390.0,109.4 381.0,126.3 372.0,113.0 372.0,98.9" fill="#FFFFFF"/>
+    <polygon points="381.0,98.2 385.8,101.6 385.8,109.1 381.0,117.6 376.2,111.0 376.2,103.5" fill="#1E2C63"/>
     </g>
 
     <!-- judul papan tulis -->
-    <g id="board" transform="matrix(230.000,-118.000,0.000,192.000,344.000,250.000)">
-      <text id="board-title" x="129.25" y="30.72" text-anchor="middle"
-            fill="#181430" font-size="22.08" letter-spacing="1">JADWAL MENGAJAR</text>
-      <line x1="46.53" y1="41.28" x2="211.97" y2="41.28"
+    <g id="board" transform="matrix(220.000,-98.000,0.000,218.000,334.000,244.000)">
+      <text id="board-title" x="120.42" y="34.88" text-anchor="middle"
+            fill="#181430" font-size="20.72" letter-spacing="1">JADWAL MENGAJAR</text>
+      <line x1="43.35" y1="46.87" x2="197.49" y2="46.87"
             stroke="rgba(24,20,48,.35)" stroke-width="1.6"/>
     </g>
 
     <!-- kalender: halaman bisa terlipat -->
-    <g id="cal" transform="matrix(43.000,20.000,-13.000,46.000,1043.000,405.000)">
-      <rect id="cal-pad" x="0" y="2.87" width="47.42" height="54.02" fill="#CBB68C"/>
-      <rect x="0" y="0" width="47.42" height="47.80" fill="#F3E7C8"/>
+    <g id="cal" transform="matrix(38.000,-12.000,14.000,50.000,1016.000,400.000)">
+      <rect id="cal-pad" x="0" y="3.12" width="39.85" height="58.67" fill="#CBB68C"/>
+      <rect x="0" y="0" width="39.85" height="51.92" fill="#F3E7C8"/>
       <g id="cal-page" style="transform:scaleY(1);transform-origin:50% 0%;transition:transform .26s linear">
-        <text id="cal-m" x="23.71" y="14.34" text-anchor="middle" fill="#181430" font-size="10.52">OKT</text>
-        <text id="cal-d" x="23.71" y="35.37" text-anchor="middle" fill="#181430" font-size="21.99">27</text>
-        <text id="cal-w" x="23.71" y="47.32" text-anchor="middle" fill="#181430" font-size="10.52">SEL</text>
+        <text id="cal-m" x="19.92" y="15.58" text-anchor="middle" fill="#181430" font-size="11.42">OKT</text>
+        <text id="cal-d" x="19.92" y="38.42" text-anchor="middle" fill="#181430" font-size="23.88">27</text>
+        <text id="cal-w" x="19.92" y="51.40" text-anchor="middle" fill="#181430" font-size="11.42">SEL</text>
       </g>
     </g>
   </svg>
@@ -150,28 +140,27 @@
 </div>
 
 <script>
-const SCENE = {w: 1312, h: 816};
+const SCENE = {w: 1280, h: 800};
 const TILES = [
-  {label: "Jurnal", x: 756, y: 314, w: 196, h: 126},
-  {label: "Nilai", x: 686, y: 306, w: 112, h: 92},
-  {label: "Kalkulator", x: 905, y: 436, w: 74, h: 52},
-  {label: "Alat Tulis", x: 980, y: 372, w: 50, h: 66},
-  {label: "Kalender", x: 1022, y: 392, w: 80, h: 90},
-  {label: "Binder", x: 688, y: 536, w: 158, h: 158},
-  {label: "Absensi", x: 334, y: 124, w: 252, h: 330},
-  {label: "Catatan", x: 70, y: 265, w: 168, h: 190},
-  {label: "Jadwal", x: 352, y: 248, w: 214, h: 192},
-  {label: "Profil", x: 712, y: 36, w: 76, h: 124},
-  {label: "Binder", x: 60, y: 425, w: 255, h: 310},
-  {label: "Kelas", x: 1024, y: 95, w: 230, h: 300},
-  {label: "File", x: 12, y: 646, w: 92, h: 122},
-  {label: "WhatsApp", x: 70, y: 218, w: 48, h: 82},
-  {label: "Vivaldi", x: 144, y: 179, w: 48, h: 82},
-  {label: "Spotify", x: 218, y: 141, w: 48, h: 82},
-  {label: "YouTube", x: 292, y: 102, w: 48, h: 82},
-  {label: "Sinaga Jateng", x: 366, y: 63, w: 48, h: 83},
+  {label: "Jurnal", x: 766, y: 296, w: 178, h: 172},
+  {label: "Nilai", x: 658, y: 286, w: 124, h: 94},
+  {label: "Kalkulator", x: 886, y: 412, w: 96, h: 64},
+  {label: "Alat Tulis", x: 936, y: 352, w: 58, h: 80},
+  {label: "Kalender", x: 1002, y: 380, w: 82, h: 96},
+  {label: "Binder", x: 836, y: 494, w: 128, h: 116},
+  {label: "Absensi", x: 64, y: 268, w: 172, h: 178},
+  {label: "Catatan", x: 72, y: 448, w: 226, h: 258},
+  {label: "Jadwal", x: 340, y: 168, w: 216, h: 286},
+  {label: "Profil", x: 694, y: 30, w: 74, h: 140},
+  {label: "Kelas", x: 982, y: 114, w: 168, h: 324},
+  {label: "File", x: 12, y: 632, w: 84, h: 104},
+  {label: "WhatsApp", x: 66, y: 216, w: 56, h: 90},
+  {label: "Vivaldi", x: 138, y: 180, w: 56, h: 90},
+  {label: "Spotify", x: 210, y: 146, w: 58, h: 92},
+  {label: "YouTube", x: 282, y: 108, w: 58, h: 92},
+  {label: "Sinaga Jateng", x: 354, y: 70, w: 58, h: 92},
 ];
-const RAIL = [1006,57,1288,198];
+const RAIL = [938,36,1244,192];
 
 const stage = document.getElementById("stage");
 const sceneEl = document.getElementById("scene");
@@ -304,9 +293,9 @@ if (navigator.getBattery) {
 // (CSS min()/calc() gagal di sebagian webview — ukuran dihitung JS di sini)
 function fit() {
   var st = document.getElementById("stage");
-  var s = Math.min(window.innerWidth / 1312, window.innerHeight / 816);
-  st.style.width = Math.floor(1312 * s) + "px";
-  st.style.height = Math.floor(816 * s) + "px";
+  var s = Math.min(window.innerWidth / 1280, window.innerHeight / 800);
+  st.style.width = Math.floor(1280 * s) + "px";
+  st.style.height = Math.floor(800 * s) + "px";
 }
 window.addEventListener("resize", fit);
 window.addEventListener("orientationchange", fit);

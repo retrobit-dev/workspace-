@@ -195,79 +195,74 @@ data class TileInfo(
 )
 
 /**
- * Objek di gambar isometrik (koordinat = piksel gambar 1312 × 816).
+ * Objek di gambar isometrik (koordinat = piksel gambar 1280 × 800).
  *
- * Selain 12 objek utama, lima bingkai foto di atas rak buku jadi pintasan
- * aplikasi, dan foto user di kiri jam dinding membuka profil & pengaturan.
+ * Dibangun ulang dari awal (0.16.0): canvas 1280×800 (kelipatan grid 32),
+ * lampu meja menyala di malam hari, kalender meja hidup, lima bingkai
+ * pintasan aplikasi, papan tulis, papan pin, rak buku, jendela, gorden,
+ * tanaman, dan tempat sampah.
  */
 val TILES = listOf(
     // --- meja kerja ---
-    TileInfo("Jurnal", Scr.JURNAL, "book", 756, 314, 196, 126),          // laptop
-    TileInfo("Nilai", Scr.NILAI, "chart", 686, 306, 112, 92),            // tumpukan buku
-    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 905, 436, 74, 52),    // kalkulator kanan laptop
-    TileInfo("Alat Tulis", Scr.KIT, "pencil", 980, 372, 50, 66),         // tempat pensil
-    TileInfo("Kalender", Scr.KALENDER, "calendar", 1022, 392, 80, 90),   // kalender meja tebal
-    TileInfo("Binder", Scr.BINDER, "folder", 688, 536, 158, 158),        // laci meja
+    TileInfo("Jurnal", Scr.JURNAL, "book", 766, 296, 178, 172),          // laptop
+    TileInfo("Nilai", Scr.NILAI, "chart", 658, 286, 124, 94),            // tumpukan buku
+    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 886, 412, 96, 64),    // kalkulator
+    TileInfo("Alat Tulis", Scr.KIT, "pencil", 936, 352, 58, 80),         // tempat pensil
+    TileInfo("Kalender", Scr.KALENDER, "calendar", 1002, 380, 82, 96),   // kalender meja
+    TileInfo("Binder", Scr.BINDER, "folder", 836, 494, 128, 116),        // laci meja
 
     // --- dinding ---
-    TileInfo("Absensi", Scr.ABSENSI, "check", 334, 124, 252, 330),       // papan tulis
-    TileInfo("Catatan", Scr.CATATAN, "pencil", 70, 265, 168, 190),       // papan pin di atas rak
-    TileInfo("Jadwal", Scr.JADWAL, "board", 352, 248, 214, 192),         // papan tulis "JADWAL MENGAJAR"
-    TileInfo("Profil", Scr.PROFIL, "face", 712, 36, 76, 124),            // foto user
+    TileInfo("Absensi", Scr.ABSENSI, "check", 64, 268, 172, 178),        // papan pin
+    TileInfo("Catatan", Scr.CATATAN, "pencil", 72, 448, 226, 258),       // rak buku
+    TileInfo("Jadwal", Scr.JADWAL, "board", 340, 168, 216, 286),         // papan tulis
+    TileInfo("Profil", Scr.PROFIL, "face", 694, 30, 74, 140),            // bingkai di atas meja
 
     // --- sisi kiri & kanan ---
-    TileInfo("Binder", Scr.BINDER, "folder", 60, 425, 255, 310),         // rak buku penuh
-    TileInfo("Kelas", Scr.KELAS, "grid", 1024, 95, 230, 300),            // jendela terbuka
-    TileInfo("File", Scr.HOME, "trash", 12, 646, 92, 122),               // tempat sampah
+    TileInfo("Kelas", Scr.KELAS, "grid", 982, 114, 168, 324),            // jendela terbuka
+    TileInfo("File", Scr.HOME, "trash", 12, 632, 84, 104),               // tempat sampah
 
-    // --- 5 bingkai aplikasi di atas papan pin ---
-    TileInfo("WhatsApp", Scr.KIT, "chat", 70, 218, 48, 82),
-    TileInfo("Vivaldi", Scr.KIT, "globe", 144, 179, 48, 82),
-    TileInfo("Spotify", Scr.KIT, "music", 218, 141, 48, 82),
-    TileInfo("YouTube", Scr.KIT, "play", 292, 102, 48, 82),
-    TileInfo("Sinaga Jateng", Scr.KIT, "shield", 366, 63, 48, 83)
+    // --- 5 bingkai aplikasi di dinding kiri ---
+    TileInfo("WhatsApp", Scr.KIT, "chat", 66, 216, 56, 90),
+    TileInfo("Vivaldi", Scr.KIT, "globe", 138, 180, 56, 90),
+    TileInfo("Spotify", Scr.KIT, "music", 210, 146, 58, 92),
+    TileInfo("YouTube", Scr.KIT, "play", 282, 108, 58, 92),
+    TileInfo("Sinaga Jateng", Scr.KIT, "shield", 354, 70, 58, 92)
 )
 
-/**
- * Jam digital: sejajar dengan foto user, tingginya sama dengan bingkai foto.
- * Bendera Indonesia menempel tepat di kanan jam, tinggi sama, lebar menyesuaikan.
- */
-
 /** Papan tulis: judul "JADWAL MENGAJAR" di bagian atas, rata tengah. */
-val BOARD_QUAD = intArrayOf(344, 250, 574, 132, 344, 442)
+val BOARD_QUAD = intArrayOf(334, 244, 554, 146, 334, 462)
 
 /**
  * Kertas kalender meja: bidang miring supaya tulisan ikut arah muka kalender.
  * Urutan: kiri-atas, kanan-atas, kiri-bawah, kanan-bawah (piksel gambar).
  */
-val CALENDAR_QUAD = intArrayOf(1043, 405, 1086, 425, 1030, 451, 1073, 470)
+val CALENDAR_QUAD = intArrayOf(1016, 400, 1054, 388, 1030, 450, 1068, 438)
 
 /** Kertas di dalam lima bingkai (kiri-atas, kanan-atas, kiri-bawah). */
 val FRAME_QUADS = listOf(
-    intArrayOf(77, 241, 107, 226, 77, 293),
-    intArrayOf(151, 202, 181, 187, 151, 254),
-    intArrayOf(225, 164, 255, 149, 225, 216),
-    intArrayOf(299, 124, 329, 110, 299, 177),
-    intArrayOf(374, 86, 404, 72, 373, 139)
+    intArrayOf(79, 235, 109, 222, 79, 288),
+    intArrayOf(151, 198, 181, 185, 151, 251),
+    intArrayOf(222, 161, 252, 148, 222, 214),
+    intArrayOf(294, 123, 324, 109, 294, 177),
+    intArrayOf(366, 85, 396, 79, 366, 139)
 )
 
 /** Kaca jendela (kiri-atas, kanan-atas, kiri-bawah, kanan-bawah). */
-val WINDOW_QUAD = intArrayOf(1062, 112, 1200, 178, 1062, 332, 1200, 398)
+val WINDOW_QUAD = intArrayOf(994, 128, 1144, 120, 994, 426, 1144, 418)
 
 /** Rel gorden: dari titik kiri ke kanan, dipakai juga sebagai penunjuk baterai. */
-val RAIL_LINE = intArrayOf(1006, 57, 1288, 198)
+val RAIL_LINE = intArrayOf(938, 36, 1244, 192)
 
 /** Persentase baterai di dinding, tepat di atas rel, mengikuti arah dinding. */
-val BATTERY_TEXT_QUAD = intArrayOf(1014, 0, 1122, 26, 1014, 44)
+val BATTERY_TEXT_QUAD = intArrayOf(966, 4, 1082, 32, 966, 54)
 
-/** Area gorden kiri & kanan yang ikut bergoyang saat ada hembusan angin. */
+/** Area gorden yang ikut bergoyang saat ada hembusan angin. */
 val CURTAIN_RECTS = listOf(
-    intArrayOf(995, 78, 40, 308),
-    intArrayOf(1216, 224, 34, 246)
+    intArrayOf(1198, 158, 38, 300)
 )
 
 /** Daun tanaman yang ikut bergoyang. */
-val LEAF_RECT = intArrayOf(1088, 470, 170, 200)
+val LEAF_RECT = intArrayOf(1090, 476, 132, 160)
 
 /** Nama aplikasi di lima bingkai + paket Android-nya (untuk tautan pintasan). */
 val APP_PACKAGES = mapOf(
@@ -318,8 +313,8 @@ val APP_ICONS = listOf(
         shape("#1E2C63", "0.50,0.30 0.66,0.38 0.66,0.52 0.50,0.66 0.34,0.52 0.34,0.38")
     ))
 )
-const val SCENE_W = 1312
-const val SCENE_H = 816
+const val SCENE_W = 1280
+const val SCENE_H = 800
 
 /* ---------------- state aplikasi ---------------- */
 

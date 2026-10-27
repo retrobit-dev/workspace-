@@ -1,9 +1,9 @@
 // Cek preview tanpa browser: hotspot & semua lapisan hidup harus memakai
-// koordinat yang sama dengan Data.kt (sumber kebenaran), plus aturan v7:
-//   · tidak ada jam analog, hanya jam digital
-//   · (0.15.6) jam digital & bendera dihapus; Jadwal lewat papan tulis
-//   · bendera di kanan jam DIHAPUS (0.15.5)
-//   · kalender punya halaman yang bisa terlipat
+// koordinat yang sama dengan Data.kt (sumber kebenaran), aturan era rebuild
+// 0.16.0 (canvas 1280×800):
+//   · 17 zona ketuk (satu Binder — laci meja; rak buku = Catatan)
+//   · tidak ada jam analog/digital & bendera; Jadwal lewat papan tulis
+//   · kalender meja hidup: halaman bisa terlipat, tanggal ikut hari ini
 //   · rel gorden = indikator baterai + persen di dinding
 //   · siang/malam mengikuti jam, gorden & daun bergoyang
 //
@@ -53,7 +53,7 @@ const { document } = dom.window;
 
 const hotspots = [...document.querySelectorAll(".hotspot")];
 if (hotspots.length !== tiles.length) fail(`jumlah hotspot ${hotspots.length} != ${tiles.length} tile`);
-if (tiles.length !== 18) fail(`TILES berisi ${tiles.length} objek, harusnya 18`);
+if (tiles.length !== 17) fail(`TILES berisi ${tiles.length} objek, harusnya 17`);
 
 tiles.forEach((tile, i) => {
   const el = hotspots[i];
@@ -118,7 +118,7 @@ if (!close(battM[4], BATT[0], 0.5) || !close(battM[5], BATT[1], 0.5)) fail("pers
 
 // ---- angin: gorden & daun bergoyang ----
 if (!document.querySelector("#fx .sway-scene, #fx image")) fail("lapisan angin tidak ada");
-if (curtainRects.length !== 2) fail(`CURTAIN_RECTS harus 2, ada ${curtainRects.length}`);
+if (curtainRects.length !== 1) fail(`CURTAIN_RECTS harus 1, ada ${curtainRects.length}`);
 if (LEAF.length !== 4) fail("LEAF_RECT harus 4 angka");
 
 // ---- ikon bingkai ----
@@ -144,13 +144,13 @@ if (!document.getElementById("tint").style.background) fail("selaput suasana bel
 
 // ---- label wajib ----
 const labels = hotspots.map((e) => e.dataset.label);
-["Kalkulator", "Alat Tulis", "Kalender", "Jadwal", "Profil", "File"].forEach((k) => {
+["Jurnal", "Nilai", "Kalkulator", "Alat Tulis", "Kalender", "Jadwal", "Profil", "File", "Catatan", "Absensi", "Kelas"].forEach((k) => {
   if (!labels.includes(k)) fail(`hotspot "${k}" hilang`);
 });
 ["WhatsApp", "Vivaldi", "Spotify", "YouTube", "Sinaga Jateng"].forEach((k) => {
   if (!labels.includes(k)) fail(`bingkai aplikasi "${k}" hilang`);
 });
-if (labels.filter((l) => l === "Binder").length < 2) fail("hotspot rak & laci harus dua");
+if (labels.filter((l) => l === "Binder").length !== 1) fail("hotspot Binder (laci meja) harus tepat satu");
 if (WINDOW_QUAD.length !== 8) fail("WINDOW_QUAD harus 8 angka");
 if (RAIL.length !== 4) fail("RAIL_LINE harus 4 angka");
 if (BATT.length !== 6) fail("BATTERY_TEXT_QUAD harus 6 angka");

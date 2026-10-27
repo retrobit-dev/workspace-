@@ -27,13 +27,13 @@ AMBER = (242, 171, 63)
 CREAM2 = (227, 205, 166)
 MUTED = (125, 117, 160)
 
-TILES = {  # scene coords dari Data.kt
-    "jurnal": (756, 314, 196, 126),
-    "jadwal": (352, 248, 214, 192),
-    "kalkulator": (905, 436, 74, 52),
-    "binder": (688, 536, 158, 158),
-    "profil": (712, 36, 76, 124),
-    "spotify": (218, 141, 48, 82),
+TILES = {  # scene coords dari Data.kt (kanvas 1280×800)
+    "jurnal": (766, 296, 178, 172),
+    "jadwal": (340, 168, 216, 286),
+    "kalkulator": (886, 412, 96, 64),
+    "binder": (836, 494, 128, 116),
+    "profil": (694, 30, 74, 140),
+    "spotify": (210, 146, 58, 92),
 }
 
 
@@ -108,7 +108,7 @@ def battery_panel() -> None:
     ]
     y = 297
     for battery, pct, l1, l2, l3, color in rows:
-        shot = base("day", battery).crop((860, 0, 1312, 310)).resize((panel_w, band_h), Image.NEAREST)
+        shot = base("day", battery).crop((880, 0, 1282, 278)).resize((panel_w, band_h), Image.NEAREST)
         im.paste(shot, (W - panel_w, y))
         d.text((20, y + 40), pct, font=ImageFont.truetype(str(FONT_BOLD), 30), fill=color)
         f = ImageFont.truetype(str(FONT_BOLD), 13)

@@ -374,10 +374,15 @@ private inline fun DrawScope.withPlane(plane: Plane, block: (android.graphics.Ca
 
 private val FaceInk = Color(0xFF181430)
 
+/** Nama bulan & hari (3 huruf) untuk muka kalender meja. */
+private val BULAN = arrayOf("JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES")
+private val HARI = arrayOf("SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN")
+
 /**
  * Semua muka hidup di atas gambar:
  *  - ikon aplikasi di lima bingkai,
  *  - judul "JADWAL MENGAJAR" di papan tulis,
+ *  - bulan/tanggal/hari di kalender meja,
  *  - rel gorden sebagai penunjuk baterai + persentasenya di dinding.
  */
 @Composable
@@ -428,6 +433,23 @@ private fun LiveFaces(box: SceneBox, battery: Int, isDay: Boolean) {
             }
             drawPath(bg, icon.bg.toPixelColor())
             icon.shapes.forEach { part -> drawIconShape(plane, part) }
+        }
+
+        // ---------------- tanggal di kalender meja ----------------
+        val cal = planeOf(box, CALENDAR_QUAD, this)
+        withPlane(cal) { native ->
+            val today = java.time.LocalDate.now()
+            val bulan = BULAN[today.monthValue - 1]
+            val hari = HARI[today.dayOfWeek.value - 1]
+            paint.color = FaceInk.toArgb()
+            paint.textAlign = Paint.Align.CENTER
+            paint.typeface = typeface
+            paint.textSize = minOf(cal.height * 0.20f, cal.width * 0.86f / 3.4f)
+            native.drawText(bulan, cal.width / 2f, cal.height * 0.32f, paint)
+            paint.textSize = minOf(cal.height * 0.44f, cal.width * 0.86f / 2.1f)
+            native.drawText(today.dayOfMonth.toString(), cal.width / 2f, cal.height * 0.78f, paint)
+            paint.textSize = minOf(cal.height * 0.20f, cal.width * 0.86f / 3.4f)
+            native.drawText(hari, cal.width / 2f, cal.height * 0.98f, paint)
         }
 
         // ---------------- rel gorden = penunjuk baterai ----------------
