@@ -144,13 +144,7 @@ fun LauncherScreen(
                 tile = tile,
                 box = box,
                 onTap = {
-                    val pkg = APP_PACKAGES[tile.label]
                     when {
-                        pkg != null -> {
-                            val ok = launchApp(ctx, pkg)
-                            caption = if (ok) "MEMBUKA ${tile.label.uppercase()}"
-                            else "${tile.label.uppercase()} · TIDAK TERPASANG"
-                        }
                         tile.label == "File" ->
                             caption = if (openFileManager(ctx)) "MEMBUKA FILE MANAGER"
                             else "FILE MANAGER TIDAK DITEMUKAN"
@@ -374,15 +368,9 @@ private inline fun DrawScope.withPlane(plane: Plane, block: (android.graphics.Ca
 
 private val FaceInk = Color(0xFF181430)
 
-/** Nama bulan & hari (3 huruf) untuk muka kalender meja. */
-private val BULAN = arrayOf("JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES")
-private val HARI = arrayOf("SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN")
-
 /**
  * Semua muka hidup di atas gambar:
- *  - ikon aplikasi di lima bingkai,
  *  - judul "JADWAL MENGAJAR" di papan tulis,
- *  - bulan/tanggal/hari di kalender meja,
  *  - rel gorden sebagai penunjuk baterai + persentasenya di dinding.
  */
 @Composable
@@ -417,41 +405,6 @@ private fun LiveFaces(box: SceneBox, battery: Int, isDay: Boolean) {
             )
         }
 
-        // ---------------- ikon aplikasi di lima bingkai ----------------
-        APP_ICONS.forEachIndexed { i, icon ->
-            val q = FRAME_QUADS.getOrNull(i) ?: return@forEachIndexed
-            val plane = planeOf(box, q, this)
-            // latar kertas ikut kemiringan bingkai (bukan kotak lurus)
-            val u = plane.tr - plane.tl
-            val v = plane.bl - plane.tl
-            val bg = Path().apply {
-                moveTo(plane.tl.x, plane.tl.y)
-                lineTo(plane.tl.x + u.x, plane.tl.y + u.y)
-                lineTo(plane.tl.x + u.x + v.x, plane.tl.y + u.y + v.y)
-                lineTo(plane.tl.x + v.x, plane.tl.y + v.y)
-                close()
-            }
-            drawPath(bg, icon.bg.toPixelColor())
-            icon.shapes.forEach { part -> drawIconShape(plane, part) }
-        }
-
-        // ---------------- tanggal di kalender meja ----------------
-        val cal = planeOf(box, CALENDAR_QUAD, this)
-        withPlane(cal) { native ->
-            val today = java.time.LocalDate.now()
-            val bulan = BULAN[today.monthValue - 1]
-            val hari = HARI[today.dayOfWeek.value - 1]
-            paint.color = FaceInk.toArgb()
-            paint.textAlign = Paint.Align.CENTER
-            paint.typeface = typeface
-            paint.textSize = minOf(cal.height * 0.20f, cal.width * 0.86f / 3.4f)
-            native.drawText(bulan, cal.width / 2f, cal.height * 0.32f, paint)
-            paint.textSize = minOf(cal.height * 0.44f, cal.width * 0.86f / 2.1f)
-            native.drawText(today.dayOfMonth.toString(), cal.width / 2f, cal.height * 0.78f, paint)
-            paint.textSize = minOf(cal.height * 0.20f, cal.width * 0.86f / 3.4f)
-            native.drawText(hari, cal.width / 2f, cal.height * 0.98f, paint)
-        }
-
         // ---------------- rel gorden = penunjuk baterai ----------------
         drawBatteryRail(box, battery, isDay)
     }
@@ -468,22 +421,6 @@ private fun wallQuad(rect: IntArray): IntArray {
 /** "#RRGGBB" -> Color. */
 private fun String.toPixelColor(): Color =
     Color(0xFF000000L or (removePrefix("#").toLongOrNull(16) ?: 0xFFFFFFL))
-
-/** Satu potongan ikon, digambar mengikuti vektor bidang bingkai (jadi ikut miring). */
-private fun DrawScope.drawIconShape(plane: Plane, part: IconShape) {
-    val u = plane.tr - plane.tl
-    val v = plane.bl - plane.tl
-    val pts = part.points
-    if (pts.size < 6) return
-    val cell = Path()
-    for (i in pts.indices step 2) {
-        val x = plane.tl.x + u.x * pts[i] + v.x * pts[i + 1]
-        val y = plane.tl.y + u.y * pts[i] + v.y * pts[i + 1]
-        if (i == 0) cell.moveTo(x, y) else cell.lineTo(x, y)
-    }
-    cell.close()
-    drawPath(cell, part.color.toPixelColor())
-}
 
 /**
  * Rel gorden sekaligus indikator baterai:

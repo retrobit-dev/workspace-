@@ -33,7 +33,6 @@ TILES = {  # scene coords dari Data.kt (kanvas 1280×800)
     "kalkulator": (886, 412, 96, 64),
     "binder": (836, 494, 128, 116),
     "profil": (694, 30, 74, 140),
-    "spotify": (210, 146, 58, 92),
 }
 
 
@@ -86,9 +85,6 @@ def launcher_shots() -> None:
     im = night.copy(); highlight(im, "kalkulator"); toast(im, "KALKULATOR"); save(im, "launcher-ketuk-kalkulator.png")
     im = night.copy(); highlight(im, "binder"); toast(im, "BINDER"); save(im, "launcher-ketuk-binder.png")
     im = night.copy(); highlight(im, "profil"); toast(im, "PROFIL"); save(im, "launcher-ketuk-profil.png")
-    im = night.copy(); highlight(im, "spotify"); toast(im, "SPOTIFY · TIDAK TERPASANG")
-    save(im, "launcher-ketuk-pintasan.png")
-
     # letterbox: perangkat 2.133:1 — scene penuh lebar, atas/bawah terpotong
     lb = scale2(base("night", 100)).crop((0, 200, 2624, 1432))
     save(lb, "launcher-letterbox.png")

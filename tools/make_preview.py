@@ -1,9 +1,8 @@
 """Bangun preview browser untuk launcher.
 
 Sumber kebenaran tetap Data.kt (TILES, BOARD_QUAD,
-CALENDAR_QUAD, FRAME_QUADS, RAIL_LINE, BATTERY_TEXT_QUAD, CURTAIN_RECTS,
-LEAF_RECT, APP_ICONS, SCENE_W/H) supaya area ketuk di browser sama persis
-dengan APK.
+RAIL_LINE, BATTERY_TEXT_QUAD, CURTAIN_RECTS, LEAF_RECT, SCENE_W/H) supaya
+area ketuk di browser sama persis dengan APK.
 
   python3 tools/make_preview.py   ->  web/index.html + web/scene_day.png + web/scene_night.png
 
@@ -14,15 +13,12 @@ kemiringan benda seperti di APK.
 import hashlib
 import re
 import sys
-from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import scene_face  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-BULAN = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"]
-HARI = ["SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN"]
 DATA = ROOT / "android/app/src/main/java/dev/retrobit/ruangkelas/Data.kt"
 WEB = ROOT / "web"
 
@@ -52,28 +48,15 @@ def parse_data():
         block = block[: block.index("\n)\n")]
         return [_ints(m) for m in re.findall(r"intArrayOf\(([-\d,\s]+)\)", block)]
 
-    icons = []
-    for name, bg, body in re.findall(
-        r'AppIcon\("([^"]+)",\s*"(#[0-9A-Fa-f]+)",\s*listOf\((.*?)\)\)', src, re.S
-    ):
-        shapes = [
-            {"color": c, "points": [float(v) for v in pts.replace(",", " ").split()]}
-            for c, pts in re.findall(r'shape\("([^"]+)",\s*"([^"]+)"\)', body)
-        ]
-        icons.append({"name": name, "bg": bg, "shapes": shapes})
-
     return dict(
         w=scene_w,
         h=scene_h,
         tiles=tiles,
         board=rect("BOARD_QUAD"),
-        cal=rect("CALENDAR_QUAD"),
         rail=rect("RAIL_LINE"),
         battery_text=rect("BATTERY_TEXT_QUAD"),
-        frames=list_of_quads("FRAME_QUADS"),
         curtains=list_of_quads("CURTAIN_RECTS"),
         leaf=rect("LEAF_RECT"),
-        icons=icons,
     )
 
 
@@ -105,28 +88,6 @@ def matrix_attr(quad):
 def quad_polygon(quad):
     ax, ay, bx, by, cx, cy = quad[:6]
     return f"{ax},{ay} {bx},{by} {bx + cx - ax},{by + cy - ay} {cx},{cy}"
-
-
-def icon_svg(frames, icons):
-    out = []
-    for frame, icon in zip(frames, icons):
-        ax, ay, bx, by, cx, cy = frame
-        ux, uy = bx - ax, by - ay
-        vx, vy = cx - ax, cy - ay
-
-        def p(u, v):
-            return ax + ux * u + vx * v, ay + uy * u + vy * v
-
-        corners = [p(0, 0), p(1, 0), p(1, 1), p(0, 1)]
-        out.append('<polygon points="%s" fill="%s"/>' % (
-            " ".join(f"{x:.1f},{y:.1f}" for x, y in corners), icon["bg"]))
-        for part in icon["shapes"]:
-            pts = part["points"]
-            pairs = [(pts[i], pts[i + 1]) for i in range(0, len(pts) - 1, 2)]
-            out.append('<polygon points="%s" fill="%s"/>' % (
-                " ".join(f"{x:.1f},{y:.1f}" for x, y in (p(u, v) for u, v in pairs)),
-                part["color"]))
-    return "\n    ".join(out)
 
 
 def sway_group(rects, scene_name, amp, dur):
@@ -167,7 +128,7 @@ HTML = """<!DOCTYPE html>
   body{touch-action:manipulation;user-select:none;
     font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
 
-  /* letterbox: gambar selalu 1312:816, sisa layar hitam — sama seperti APK */
+  /* letterbox: gambar selalu 1280:800, sisa layar hitam — sama seperti APK */
   #stage{
     position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
     aspect-ratio:var(--ratio);
@@ -223,9 +184,7 @@ HTML = """<!DOCTYPE html>
     </g>
 
     <!-- lima bingkai aplikasi -->
-    <g id="icons">
-    __ICONS__
-    </g>
+    
 
     <!-- judul papan tulis -->
     <g id="board" transform="__BOARD_MATRIX__">
@@ -235,16 +194,6 @@ HTML = """<!DOCTYPE html>
             stroke="rgba(24,20,48,.35)" stroke-width="1.6"/>
     </g>
 
-    <!-- kalender: halaman bisa terlipat -->
-    <g id="cal" transform="__CAL_MATRIX__">
-      <rect id="cal-pad" x="0" y="__CAL_PAD_Y__" width="__CAL_W__" height="__CAL_PAD_H__" fill="#CBB68C"/>
-      <rect x="0" y="0" width="__CAL_W__" height="__CAL_H__" fill="#F3E7C8"/>
-      <g id="cal-page" style="transform:scaleY(1);transform-origin:50% 0%;transition:transform .26s linear">
-        <text id="cal-m" x="__CAL_CX__" y="__CAL_T1__" text-anchor="middle" fill="#181430" font-size="__CAL_FS__">__CAL_MON__</text>
-        <text id="cal-d" x="__CAL_CX__" y="__CAL_T2__" text-anchor="middle" fill="#181430" font-size="__CAL_FS2__">__CAL_DAY__</text>
-        <text id="cal-w" x="__CAL_CX__" y="__CAL_T3__" text-anchor="middle" fill="#181430" font-size="__CAL_FS__">__CAL_WD__</text>
-      </g>
-    </g>
   </svg>
   <div id="tint"></div>
   <div id="scan"></div>
@@ -269,7 +218,6 @@ const railEl = document.getElementById("rail");
 const railTicks = document.getElementById("rail-ticks");
 const battEl = document.getElementById("batt");
 const tintEl = document.getElementById("tint");
-const calPage = document.getElementById("cal-page");
 let toastTimer = 0;
 let batteryLevel = 100;
 
@@ -322,8 +270,6 @@ TILES.forEach((tile) => {
   }
 })();
 
-const BULAN = ["JAN","FEB","MAR","APR","MEI","JUN","JUL","AGU","SEP","OKT","NOV","DES"];
-const HARI = ["SEN","SEL","RAB","KAM","JUM","SAB","MIN"];
 
 function ambience(h) {
   if (h >= 5 && h <= 8) return "rgba(255,217,160,.10)";
@@ -358,18 +304,6 @@ function tick() {
     lastDay = day;
   }
 
-  // kalender: kalau tanggal berganti, halaman dilipat dulu
-  const shown = document.getElementById("cal-d").textContent;
-  if (shown !== String(now.getDate())) {
-    calPage.style.transform = "scaleY(0)";
-    setTimeout(() => {
-      document.getElementById("cal-m").textContent = BULAN[now.getMonth()];
-      document.getElementById("cal-d").textContent = now.getDate();
-      document.getElementById("cal-w").textContent = HARI[(now.getDay() + 6) % 7];
-      calPage.style.transform = "scaleY(1)";
-    }, 280);
-  }
-
   tintEl.style.background = ambience(now.getHours());
   paintRail(day);
 }
@@ -389,7 +323,7 @@ if (navigator.getBattery) {
   }).catch(() => {});
 }
 
-// pastikan stage selalu 1312:816 muat penuh di viewport apa pun
+// pastikan stage selalu 1280:800 muat penuh di viewport apa pun
 // (CSS min()/calc() gagal di sebagian webview — ukuran dihitung JS di sini)
 function fit() {
   var st = document.getElementById("stage");
@@ -419,15 +353,11 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 def build_html(data, scene_sizes):
     w, h = data["w"], data["h"]
     board = data["board"]
-    cal = data["cal"]
     batt = data["battery_text"]
 
 
     board_w = ((board[2] - board[0]) ** 2 + (board[3] - board[1]) ** 2) ** 0.5
     board_h = ((board[4] - board[0]) ** 2 + (board[5] - board[1]) ** 2) ** 0.5
-
-    cal_w = ((cal[2] - cal[0]) ** 2 + (cal[3] - cal[1]) ** 2) ** 0.5
-    cal_h = ((cal[4] - cal[0]) ** 2 + (cal[5] - cal[1]) ** 2) ** 0.5
 
     batt_w = ((batt[2] - batt[0]) ** 2 + (batt[3] - batt[1]) ** 2) ** 0.5
     batt_h = ((batt[4] - batt[0]) ** 2 + (batt[5] - batt[1]) ** 2) ** 0.5
@@ -445,7 +375,6 @@ def build_html(data, scene_sizes):
             for t in data["tiles"]) + "]")
         .replace("__RAIL__", str(data["rail"]).replace(" ", ""))
         .replace("__SWAY__", sway.replace("__W__", str(w)).replace("__H__", str(h)))
-        .replace("__ICONS__", icon_svg(data["frames"], data["icons"]))
         # rel
         .replace("__RAIL_X1__", str(data["rail"][0]))
         .replace("__RAIL_Y1__", str(data["rail"][1]))
@@ -477,22 +406,6 @@ def build_html(data, scene_sizes):
 
 
 
-        # bendera
-        # kalender
-        .replace("__CAL_MATRIX__", matrix_attr(cal))
-        .replace("__CAL_W__", f"{cal_w:.2f}")
-        .replace("__CAL_H__", f"{cal_h:.2f}")
-        .replace("__CAL_PAD_Y__", f"{cal_h * 0.06:.2f}")
-        .replace("__CAL_PAD_H__", f"{cal_h * 1.13:.2f}")
-        .replace("__CAL_CX__", f"{cal_w / 2:.2f}")
-        .replace("__CAL_T1__", f"{cal_h * 0.30:.2f}")
-        .replace("__CAL_T2__", f"{cal_h * 0.74:.2f}")
-        .replace("__CAL_T3__", f"{cal_h * 0.99:.2f}")
-        .replace("__CAL_FS__", f"{cal_h * 0.22:.2f}")
-        .replace("__CAL_FS2__", f"{cal_h * 0.46:.2f}")
-        .replace("__CAL_MON__", BULAN[date.today().month - 1])
-        .replace("__CAL_DAY__", str(date.today().day))
-        .replace("__CAL_WD__", HARI[date.today().weekday()])
     )
     (WEB / "index.html").write_text(html)
     return html
@@ -502,7 +415,7 @@ def main() -> None:
     data = parse_data()
     sizes = make_scenes()
     build_html(data, sizes)
-    print(f"scene {sizes} · {len(data['tiles'])} objek · {len(data['icons'])} bingkai · {WEB/'index.html'}")
+    print(f"scene {sizes} · {len(data['tiles'])} objek · {WEB/'index.html'}")
 
 
 if __name__ == "__main__":

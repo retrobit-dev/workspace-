@@ -11,12 +11,8 @@ import math
 import re
 from pathlib import Path
 
-from datetime import date
-
 from PIL import Image, ImageDraw, ImageFont
 
-BULAN = ["JAN", "FEB", "MAR", "APR", "MEI", "JUN", "JUL", "AGU", "SEP", "OKT", "NOV", "DES"]
-HARI = ["SEN", "SEL", "RAB", "KAM", "JUM", "SAB", "MIN"]
 
 ROOT = Path(__file__).resolve().parent.parent
 RES = ROOT / "android/app/src/main/res"
@@ -41,21 +37,10 @@ def parse():
         block = src[start:src.index("\n)", start)]
         return [[int(v) for v in m.split(",")] for m in re.findall(r"intArrayOf\(([-\d,\s]+)\)", block)]
 
-    icons = []
-    for name, bg, body in re.findall(r'AppIcon\("([^"]+)",\s*"(#[0-9A-Fa-f]+)",\s*listOf\((.*?)\)\)', src, re.S):
-        shapes = []
-        for color, pts in re.findall(r'shape\("(#[0-9A-Fa-f]+)",\s*"([^"]+)"\)', body):
-            nums = [float(v) for v in pts.replace(",", " ").split()]
-            shapes.append((color, list(zip(nums[0::2], nums[1::2]))))
-        icons.append((name, bg, shapes))
-
     return dict(
         board=rect("BOARD_QUAD"),
-        cal=rect("CALENDAR_QUAD"),
         rail=rect("RAIL_LINE"),
         batt=rect("BATTERY_TEXT_QUAD"),
-        frames=quads("FRAME_QUADS"),
-        icons=icons,
         curtains=quads("CURTAIN_RECTS"),
         leaf=rect("LEAF_RECT"),
     )
@@ -119,25 +104,6 @@ def paint_board(layer, w, h):
     d.line([w * 0.18, h * 0.215, w * 0.82, h * 0.215], fill=(24, 20, 48, 90), width=2)
 
 
-def paint_cal(layer, w, h, mon, day, wd):
-    d = ImageDraw.Draw(layer)
-    pad = h * 0.13
-    d.rectangle([0, h * 0.06, w, h + pad], fill=(203, 182, 140, 255))
-    d.rectangle([0, 0, w, h], fill=(243, 231, 200, 255))
-    text(d, (w / 2, h * 0.30), mon, ImageFont.truetype(FONT, max(5, int(h * 0.22))), (24, 20, 48, 255))
-    text(d, (w / 2, h * 0.74), day, ImageFont.truetype(FONT, max(6, int(h * 0.46))), (24, 20, 48, 255))
-    text(d, (w / 2, h * 0.99), wd, ImageFont.truetype(FONT, max(5, int(h * 0.22))), (24, 20, 48, 255))
-
-
-def icon_layer(w, h, bg, shapes):
-    layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-    d = ImageDraw.Draw(layer)
-    d.rectangle([0, 0, w, h], fill=hexc(bg))
-    for color, pts in shapes:
-        d.polygon([(u * w, v * h) for u, v in pts], fill=hexc(color))
-    return layer
-
-
 def quad6(q):
     """Data.kt kadang menyimpan 4 titik; bidang butuh kiri-atas, kanan-atas, kiri-bawah."""
     return tuple(q[:6])
@@ -157,18 +123,10 @@ def build(mode, hour, battery=76, second=32):
     data = parse()
     src = Image.open(RES / f"drawable-nodpi/scene_{mode}.png").convert("RGBA")
 
-    digital = "14:07" if mode == "day" else "21:44"
-    datestr = "SEN 26 OKT"
 
 
 
     draw_plane(src, data["board"], lambda w, h: _layer(w, h, lambda l: paint_board(l, w, h)))
-
-    draw_plane(src, data["cal"], lambda w, h: _layer(w, h, lambda l: paint_cal(
-        l, w, h, BULAN[date.today().month - 1], str(date.today().day), HARI[date.today().weekday()])))
-
-    for quad, (name, bg, shapes) in zip(data["frames"], data["icons"]):
-        draw_plane(src, quad, lambda w, h, bg=bg, shapes=shapes: icon_layer(w, h, bg, shapes))
 
     d = ImageDraw.Draw(src)
     x1, y1, x2, y2 = data["rail"]

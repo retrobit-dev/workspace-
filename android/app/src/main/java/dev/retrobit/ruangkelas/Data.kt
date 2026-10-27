@@ -208,7 +208,6 @@ val TILES = listOf(
     TileInfo("Nilai", Scr.NILAI, "chart", 658, 286, 124, 94),            // tumpukan buku
     TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 886, 412, 96, 64),    // kalkulator
     TileInfo("Alat Tulis", Scr.KIT, "pencil", 936, 352, 58, 80),         // tempat pensil
-    TileInfo("Kalender", Scr.KALENDER, "calendar", 1002, 380, 82, 96),   // kalender meja
     TileInfo("Binder", Scr.BINDER, "folder", 836, 494, 128, 116),        // laci meja
 
     // --- dinding ---
@@ -221,30 +220,12 @@ val TILES = listOf(
     TileInfo("Kelas", Scr.KELAS, "grid", 982, 114, 168, 324),            // jendela terbuka
     TileInfo("File", Scr.HOME, "trash", 12, 632, 84, 104),               // tempat sampah
 
-    // --- 5 bingkai aplikasi di dinding kiri ---
-    TileInfo("WhatsApp", Scr.KIT, "chat", 66, 216, 56, 90),
-    TileInfo("Vivaldi", Scr.KIT, "globe", 138, 180, 56, 90),
-    TileInfo("Spotify", Scr.KIT, "music", 210, 146, 58, 92),
-    TileInfo("YouTube", Scr.KIT, "play", 282, 108, 58, 92),
-    TileInfo("Sinaga Jateng", Scr.KIT, "shield", 354, 70, 58, 92)
 )
 
 /** Papan tulis: judul "JADWAL MENGAJAR" di bagian atas, rata tengah. */
 val BOARD_QUAD = intArrayOf(334, 244, 554, 146, 334, 462)
 
-/**
- * Kertas kalender meja: bidang miring supaya tulisan ikut arah muka kalender.
- * Urutan: kiri-atas, kanan-atas, kiri-bawah, kanan-bawah (piksel gambar).
- */
-val CALENDAR_QUAD = intArrayOf(1016, 400, 1054, 388, 1030, 450, 1068, 438)
 
-/** Kertas di dalam lima bingkai (kiri-atas, kanan-atas, kiri-bawah). */
-val FRAME_QUADS = listOf(
-    intArrayOf(79, 235, 109, 222, 79, 288),
-    intArrayOf(151, 198, 181, 185, 151, 251),
-    intArrayOf(222, 161, 252, 148, 222, 214),
-    intArrayOf(294, 123, 324, 109, 294, 177),
-    intArrayOf(366, 85, 396, 79, 366, 139)
 )
 
 /** Kaca jendela (kiri-atas, kanan-atas, kiri-bawah, kanan-bawah). */
@@ -264,55 +245,9 @@ val CURTAIN_RECTS = listOf(
 /** Daun tanaman yang ikut bergoyang. */
 val LEAF_RECT = intArrayOf(1090, 476, 132, 160)
 
-/** Nama aplikasi di lima bingkai + paket Android-nya (untuk tautan pintasan). */
-val APP_PACKAGES = mapOf(
-    "WhatsApp" to "com.whatsapp",
-    "Vivaldi" to "com.vivaldi.browser",
-    "Spotify" to "com.spotify.music",
-    "YouTube" to "com.google.android.youtube",
-    "Sinaga Jateng" to "id.jateng.sinaga"
-)
 
 /* ---------------- ikon aplikasi di lima bingkai ---------------- */
 
-/**
- * Satu potongan ikon: warna ("#RRGGBB") + titik-titik poligon dalam koordinat
- * ternormalisasi 0..1 pada kertas bingkai (0,0 = kiri-atas kertas).
- * Semua digambar mengikuti kemiringan bingkai, jadi ikon tidak pernah "datar".
- */
-data class IconShape(val color: String, val points: FloatArray)
-
-data class AppIcon(val name: String, val bg: String, val shapes: List<IconShape>)
-
-private fun shape(color: String, points: String): IconShape =
-    IconShape(color, points.trim().split(" ").flatMap { pair ->
-        pair.split(",").map { it.toFloat() }
-    }.toFloatArray())
-
-/**
- * Lima bingkai di atas papan pin = pintasan aplikasi.
- * Bentuknya sengaja tebal & sederhana supaya tetap terbaca di bingkai kecil.
- */
-val APP_ICONS = listOf(
-    AppIcon("WhatsApp", "#1FBF5B", listOf(
-        shape("#FFFFFF", "0.20,0.18 0.80,0.18 0.80,0.62 0.46,0.62 0.30,0.80 0.31,0.62 0.20,0.62")
-    )),
-    AppIcon("Vivaldi", "#E03A3A", listOf(
-        shape("#FFFFFF", "0.22,0.22 0.40,0.22 0.50,0.62 0.60,0.22 0.78,0.22 0.58,0.80 0.42,0.80")
-    )),
-    AppIcon("Spotify", "#1DB954", listOf(
-        shape("#FFFFFF", "0.20,0.30 0.80,0.34 0.80,0.44 0.20,0.40"),
-        shape("#FFFFFF", "0.22,0.48 0.78,0.52 0.78,0.60 0.22,0.56"),
-        shape("#FFFFFF", "0.24,0.64 0.76,0.68 0.76,0.74 0.24,0.70")
-    )),
-    AppIcon("YouTube", "#D63B32", listOf(
-        shape("#FFFFFF", "0.24,0.22 0.24,0.78 0.80,0.50")
-    )),
-    AppIcon("Sinaga Jateng", "#1E2C63", listOf(
-        shape("#FFFFFF", "0.50,0.16 0.80,0.28 0.80,0.54 0.50,0.82 0.20,0.54 0.20,0.28"),
-        shape("#1E2C63", "0.50,0.30 0.66,0.38 0.66,0.52 0.50,0.66 0.34,0.52 0.34,0.38")
-    ))
-)
 const val SCENE_W = 1280
 const val SCENE_H = 800
 
