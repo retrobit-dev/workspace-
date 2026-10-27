@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.BlurMaskFilter
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.graphics.Matrix
@@ -150,9 +149,14 @@ fun LauncherScreen(
             val opts = BitmapFactory.Options().apply { inScaled = false }
             val bmp = BitmapFactory.decodeResource(ctx.resources, res, opts)
                 .copy(Bitmap.Config.ARGB_8888, true)
-            val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+            val clear = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                 xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
-                maskFilter = BlurMaskFilter(1.2f, android.graphics.BlurMaskFilter.Style.NORMAL)
+            }
+            // garis tepi CLEAR tipis = transisi halus tanpa MaskFilter
+            val edge = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+                xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
+                style = android.graphics.Paint.Style.STROKE
+                strokeWidth = 2.4f
             }
             val c = android.graphics.Canvas(bmp)
             val sc = bmp.width.toFloat() / SCENE_W
@@ -162,7 +166,8 @@ fun LauncherScreen(
                 for (k in 2 until q.size step 2) hole.lineTo(q[k] * sc, q[k + 1] * sc)
                 hole.close()
             }
-            c.drawPath(hole, paint)
+            c.drawPath(hole, clear)
+            c.drawPath(hole, edge)
             bmp.asImageBitmap()
         }
 
