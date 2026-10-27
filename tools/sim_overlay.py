@@ -39,7 +39,6 @@ def parse():
 
     return dict(
         board=rect("BOARD_QUAD"),
-        curtains=quads("CURTAIN_RECTS"),
         leaf=rect("LEAF_RECT"),
     )
 

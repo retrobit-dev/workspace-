@@ -54,7 +54,6 @@ def parse_data():
         tiles=tiles,
         board=rect("BOARD_QUAD"),
         rail=rect("RAIL_LINE"),
-        curtains=list_of_quads("CURTAIN_RECTS"),
         leaf=rect("LEAF_RECT"),
     )
 
@@ -307,7 +306,7 @@ def build_html(data, scene_sizes):
     board_h = ((board[4] - board[0]) ** 2 + (board[5] - board[1]) ** 2) ** 0.5
 
     sway_scene = "scene_night.png"
-    sway = sway_group(data["curtains"] + [data["leaf"]], sway_scene, 2.2, 5.2)
+    sway = sway_group([data["leaf"]], sway_scene, 2.2, 5.2)  # hanya daun; tirai diam
 
     html = (
         HTML.replace("__RATIO__", f"{w} / {h}")

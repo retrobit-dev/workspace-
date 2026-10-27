@@ -12,8 +12,9 @@ baru di kanvas 1280×800 — kelipatan rapi grid piksel 32. Mode siang kini
 gambar tersendiri: lampu padam, matahari & awan di jendela; malam: lampu
 menyala dengan genangan cahaya hangat. Konsep launcher tetap: ketuk objek →
 buka aplikasi (11 zona), bingkai dinding kosong sebagai hiasan, jendela
-membuka keluar dengan gorden kiri–kanan, suasana siang/malam mengikuti jam
-perangkat.**
+terbuka keluar saat siang dan tertutup rapat saat malam (tirai menutup,
+tidak dianimasikan), ketuk jendela membuka aplikasi Cuaca, suasana
+siang/malam mengikuti jam perangkat.**
 
 
 Perbaikan 0.15.12: membalik arah 0.15.11 — bukan lagi ruangan kosong tanpa
@@ -39,7 +40,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.16.4-debug.apk`](dist/RuangKelas-0.16.4-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.16.5-debug.apk`](dist/RuangKelas-0.16.5-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | diarsipkan — lihat [`arsip/0.15.12/`](arsip/0.15.12) (ambil dari sejarah git) |
@@ -48,7 +49,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.16.4-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.16.5-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -77,7 +78,7 @@ Koordinat ketuk disimpan di `Data.kt` (`TILES`, satuan piksel gambar 1312 × 816
 | Papan pin (atas rak) | Buku Catatan |
 | Papan tulis "Jadwal Mengajar" | Jadwal |
 | Foto user di dinding | Profil & pengaturan launcher |
-| Jendela | Kelas |
+| Jendela | Cuaca (kerangka, aplikasi menyusul) |
 | Tempat sampah (sudut kiri bawah) | File manager: aplikasi berkas bawaan, atau pemilih dokumen Android |
 | Bingkai-bingkai dinding | Hiasan kosong |
 
@@ -157,6 +158,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.16.4-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.16.5-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.

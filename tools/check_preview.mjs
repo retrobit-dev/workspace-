@@ -33,7 +33,6 @@ const listOfQuads = (name) => {
   return [...block.matchAll(/intArrayOf\(([-\d,\s]+)\)/g)].map((m) => m[1].split(",").map((v) => +v.trim()));
 };
 
-const curtainRects = listOfQuads("CURTAIN_RECTS");
 
 const BOARD = rect("BOARD_QUAD");
 const RAIL = rect("RAIL_LINE");
@@ -110,7 +109,7 @@ if (/BATTERY_TEXT_QUAD/.test(data)) fail("BATTERY_TEXT_QUAD masih ada di Data.kt
 
 // ---- angin: gorden & daun bergoyang ----
 if (!document.querySelector("#fx .sway-scene, #fx image")) fail("lapisan angin tidak ada");
-if (curtainRects.length !== 2) fail(`CURTAIN_RECTS harus 2 (kiri+kanan), ada ${curtainRects.length}`);
+if (/CURTAIN_RECTS/.test(data)) fail("CURTAIN_RECTS masih ada di Data.kt (animasi tirai dihentikan)");
 if (LEAF.length !== 4) fail("LEAF_RECT harus 4 angka");
 
 // ---- bingkai dinding kosong (ikon pintasan dihapus 0.16.1) ----
@@ -126,7 +125,7 @@ if (!document.getElementById("tint").style.background) fail("selaput suasana bel
 
 // ---- label wajib ----
 const labels = hotspots.map((e) => e.dataset.label);
-["Jurnal", "Nilai", "Kalkulator", "Alat Tulis", "Binder", "Jadwal", "Profil", "File", "Catatan", "Absensi", "Kelas"].forEach((k) => {
+["Jurnal", "Nilai", "Kalkulator", "Alat Tulis", "Binder", "Jadwal", "Profil", "File", "Catatan", "Absensi", "Cuaca"].forEach((k) => {
   if (!labels.includes(k)) fail(`hotspot "${k}" hilang`);
 });
 if (labels.filter((l) => l === "Binder").length !== 1) fail("hotspot Binder (laci meja) harus tepat satu");
@@ -135,6 +134,6 @@ if (RAIL.length !== 4) fail("RAIL_LINE harus 4 angka");
 if (document.querySelector("#fx #flag")) fail("#flag masih ada di svg");
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · bingkai kosong · tanpa kalender · rel polos · 2 gorden`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · rel polos · tirai diam · jendela→Cuaca`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);

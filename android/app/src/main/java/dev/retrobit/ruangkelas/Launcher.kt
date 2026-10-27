@@ -208,17 +208,7 @@ private fun WindSway(box: SceneBox, scene: ImageBitmap) {
 
     Canvas(Modifier.fillMaxSize()) {
         val base = box.unit.toPx()
-        CURTAIN_RECTS.forEachIndexed { i, rect ->
-            val amount = sin(phase.value + i * 1.1f) * base * 1.6f
-            val left = box.x(rect[0]).toPx()
-            val top = box.y(rect[1]).toPx()
-            val w = box.w(rect[2]).toPx()
-            val h = box.h(rect[3]).toPx()
-            clipRect(left = left, top = top, right = left + w, bottom = top + h) {
-                drawScene(box, scene, dx = amount)
-            }
-        }
-        // daun tanaman bergoyang sedikit lebih cepat
+        // daun tanaman bergoyang (tirai tidak dianimasikan — ditutup saat malam)
         val leaf = LEAF_RECT
         val dx = sin(phase.value * 1.7f) * base * 1.2f
         val left = box.x(leaf[0]).toPx()

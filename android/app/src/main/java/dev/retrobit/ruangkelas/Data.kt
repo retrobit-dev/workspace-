@@ -27,6 +27,7 @@ enum class Scr(val label: String) {
     KALKULATOR("Kalkulator"),
     BINDER("Binder Materi"),
     KELAS("Kelas"),
+    CUACA("Cuaca"),
     PROFIL("Profil"),
     KIT("Design Kit")
 }
@@ -217,7 +218,7 @@ val TILES = listOf(
     TileInfo("Profil", Scr.PROFIL, "face", 694, 30, 74, 140),            // bingkai di atas meja
 
     // --- sisi kiri & kanan ---
-    TileInfo("Kelas", Scr.KELAS, "grid", 898, 96, 254, 326),             // jendela terbuka keluar
+    TileInfo("Cuaca", Scr.CUACA, "grid", 898, 96, 254, 326),             // jendela → aplikasi Cuaca
     TileInfo("File", Scr.HOME, "trash", 12, 632, 84, 104),               // tempat sampah
 
 )
@@ -230,12 +231,6 @@ val WINDOW_QUAD = intArrayOf(994, 128, 1144, 120, 994, 426, 1144, 418)
 
 /** Rel gorden: batang logam dari ujung kiri ke kanan jendela. */
 val RAIL_LINE = intArrayOf(896, 38, 1262, 196)
-
-/** Gorden kiri & kanan yang ikut bergoyang saat ada hembusan angin. */
-val CURTAIN_RECTS = listOf(
-    intArrayOf(928, 58, 66, 276),
-    intArrayOf(1150, 148, 66, 318)
-)
 
 /** Daun tanaman yang ikut bergoyang. */
 val LEAF_RECT = intArrayOf(1090, 476, 132, 160)
