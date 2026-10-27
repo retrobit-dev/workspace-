@@ -54,7 +54,6 @@ def parse_data():
         tiles=tiles,
         board=rect("BOARD_QUAD"),
         rail=rect("RAIL_LINE"),
-        battery_text=rect("BATTERY_TEXT_QUAD"),
         curtains=list_of_quads("CURTAIN_RECTS"),
         leaf=rect("LEAF_RECT"),
     )
@@ -173,16 +172,9 @@ HTML = """<!DOCTYPE html>
     <!-- angin: gorden & daun -->
     __SWAY__
 
-    <!-- rel gorden = indikator baterai -->
+    <!-- rel gorden: batang logam polos -->
     <line id="rail" x1="__RAIL_X1__" y1="__RAIL_Y1__" x2="__RAIL_X2__" y2="__RAIL_Y2__"
-          stroke="#77B8D9" stroke-width="3.4" stroke-linecap="round"/>
-    <g id="rail-ticks" stroke="#0E0D1A" stroke-width="1.2"></g>
-
-    <!-- persentase baterai di dinding di atas rel -->
-    <g id="batt-g" transform="__BATT_MATRIX__">
-      <text id="batt" x="__BATT_W__" y="__BATT_H__" text-anchor="middle"
-            fill="#E3CDA6" font-size="__BATT_SIZE__">100%</text>
-    </g>
+          stroke="#A9AEc4" stroke-width="4" stroke-linecap="round"/>
 
     <!-- lima bingkai aplikasi -->
     
@@ -215,13 +207,8 @@ const RAIL = __RAIL__;
 const stage = document.getElementById("stage");
 const sceneEl = document.getElementById("scene");
 const toast = document.getElementById("toast");
-const railEl = document.getElementById("rail");
-const railTicks = document.getElementById("rail-ticks");
-const battEl = document.getElementById("batt");
 const tintEl = document.getElementById("tint");
 let toastTimer = 0;
-let batteryLevel = 100;
-
 function pct(v, total) { return (v / total * 100).toFixed(4) + "%"; }
 
 function place(el, x, y, w, h) {
@@ -256,21 +243,6 @@ TILES.forEach((tile) => {
   stage.appendChild(el);
 });
 
-// ---------------- rel gorden: tanda tiap 10% ----------------
-(function buildTicks() {
-  const ns = "http://www.w3.org/2000/svg";
-  for (let i = 1; i <= 9; i++) {
-    const t = i / 10;
-    const x = RAIL[0] + (RAIL[2] - RAIL[0]) * t;
-    const y = RAIL[1] + (RAIL[3] - RAIL[1]) * t;
-    const line = document.createElementNS(ns, "line");
-    line.setAttribute("x1", x); line.setAttribute("y1", y - 5);
-    line.setAttribute("x2", x); line.setAttribute("y2", y + 5);
-    line.dataset.index = i;
-    railTicks.appendChild(line);
-  }
-})();
-
 
 function ambience(h) {
   if (h >= 5 && h <= 8) return "rgba(255,217,160,.10)";
@@ -278,18 +250,6 @@ function ambience(h) {
   if (h >= 16 && h <= 18) return "rgba(255,154,92,.12)";
   if (h >= 19 && h <= 22) return "rgba(43,63,143,.14)";
   return "rgba(6,10,34,.34)";
-}
-
-function paintRail(day) {
-  const colour = batteryLevel <= 15 ? "#D9483B" : batteryLevel <= 40 ? "#E0A03A"
-    : day ? "#9FD8B0" : "#77B8D9";
-  railEl.setAttribute("stroke", colour);
-  [...railTicks.children].forEach((line) => {
-    const i = +line.dataset.index;
-    line.setAttribute("stroke", batteryLevel >= i * 10 ? "#0E0D1A" : "rgba(255,255,255,.4)");
-  });
-  battEl.textContent = batteryLevel + "%";
-  battEl.setAttribute("fill", batteryLevel <= 15 ? "#EF6A5B" : "#E3CDA6");
 }
 
 let lastDay = null;
@@ -306,23 +266,10 @@ function tick() {
   }
 
   tintEl.style.background = ambience(now.getHours());
-  paintRail(day);
 }
 
 tick();
 setInterval(tick, 1000);
-
-// baterai: di browser memakai Battery Status API (kalau tersedia)
-if (navigator.getBattery) {
-  navigator.getBattery().then((b) => {
-    const sync = () => {
-      batteryLevel = Math.round(b.level * 100);
-      paintRail(lastDay);
-    };
-    sync();
-    b.addEventListener("levelchange", sync);
-  }).catch(() => {});
-}
 
 // pastikan stage selalu 1280:800 muat penuh di viewport apa pun
 // (CSS min()/calc() gagal di sebagian webview — ukuran dihitung JS di sini)
@@ -354,14 +301,10 @@ document.addEventListener("pointerdown", lockLandscape, { once: true });
 def build_html(data, scene_sizes):
     w, h = data["w"], data["h"]
     board = data["board"]
-    batt = data["battery_text"]
 
 
     board_w = ((board[2] - board[0]) ** 2 + (board[3] - board[1]) ** 2) ** 0.5
     board_h = ((board[4] - board[0]) ** 2 + (board[5] - board[1]) ** 2) ** 0.5
-
-    batt_w = ((batt[2] - batt[0]) ** 2 + (batt[3] - batt[1]) ** 2) ** 0.5
-    batt_h = ((batt[4] - batt[0]) ** 2 + (batt[5] - batt[1]) ** 2) ** 0.5
 
     sway_scene = "scene_night.png"
     sway = sway_group(data["curtains"] + [data["leaf"]], sway_scene, 2.2, 5.2)
@@ -381,11 +324,6 @@ def build_html(data, scene_sizes):
         .replace("__RAIL_Y1__", str(data["rail"][1]))
         .replace("__RAIL_X2__", str(data["rail"][2]))
         .replace("__RAIL_Y2__", str(data["rail"][3]))
-        # persentase baterai
-        .replace("__BATT_MATRIX__", matrix_attr(batt))
-        .replace("__BATT_W__", f"{batt_w / 2:.2f}")
-        .replace("__BATT_H__", f"{batt_h * 0.86:.2f}")
-        .replace("__BATT_SIZE__", f"{batt_h * 0.58:.2f}")
         # papan tulis
         .replace("__BOARD_MATRIX__", matrix_attr(board))
         .replace("__BOARD_W__", f"{board_w / 2:.2f}")

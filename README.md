@@ -7,12 +7,13 @@ bawaannya — aplikasi itu dibuat menyusul, satu per satu.
 
 **Status: v0.16.0 — TAMPILAN DIBANGUN ULANG DARI AWAL. Ruang kerja klasik
 yang sama (lampu meja anglepoise, papan tulis beroda, papan pin, rak buku,
-lima bingkai pintasan, jendela, gorden, tanaman, tempat sampah) digambar
+jendela yang membuka keluar, gorden kiri–kanan, tanaman, tempat sampah) digambar
 baru di kanvas 1280×800 — kelipatan rapi grid piksel 32. Mode siang kini
 gambar tersendiri: lampu padam, matahari & awan di jendela; malam: lampu
 menyala dengan genangan cahaya hangat. Konsep launcher tetap: ketuk objek →
-buka aplikasi (17 zona, termasuk 5 pintasan di bingkai), kalender meja hidup,
-rel gorden = indikator baterai, suasana siang/malam mengikuti jam perangkat.**
+buka aplikasi (11 zona), bingkai dinding kosong sebagai hiasan, jendela
+membuka keluar dengan gorden kiri–kanan, suasana siang/malam mengikuti jam
+perangkat.**
 
 
 Perbaikan 0.15.12: membalik arah 0.15.11 — bukan lagi ruangan kosong tanpa
@@ -38,7 +39,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.16.3-debug.apk`](dist/RuangKelas-0.16.3-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.16.4-debug.apk`](dist/RuangKelas-0.16.4-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | diarsipkan — lihat [`arsip/0.15.12/`](arsip/0.15.12) (ambil dari sejarah git) |
@@ -47,7 +48,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.16.3-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.16.4-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -78,10 +79,10 @@ Koordinat ketuk disimpan di `Data.kt` (`TILES`, satuan piksel gambar 1312 × 816
 | Foto user di dinding | Profil & pengaturan launcher |
 | Jendela | Kelas |
 | Tempat sampah (sudut kiri bawah) | File manager: aplikasi berkas bawaan, atau pemilih dokumen Android |
-| 5 bingkai di atas papan pin | Pintasan: WhatsApp, Vivaldi, Spotify, YouTube, Sinaga Jateng |
+| Bingkai-bingkai dinding | Hiasan kosong |
 
-Judul papan tulis, ikon aplikasi, dan persentase baterai bukan gambar
-mati: `Launcher.kt` menggambarnya di atas scene setiap detik.
+Judul papan tulis bukan gambar mati: `Launcher.kt` menggambarnya di atas
+scene mengikuti bidang miring papan.
 
 - **Papan tulis** (`BOARD_QUAD`) diberi judul **"Jadwal Mengajar"** rata tengah di bagian
   atas, dengan garis tipis di bawahnya. Mengetuknya membuka `Jadwal`; ke depan di sinilah
@@ -94,12 +95,9 @@ mati: `Launcher.kt` menggambarnya di atas scene setiap detik.
 (`WindSway`) sehingga ruangan terasa bergerak: gorden berayun pelan, daun sedikit lebih
 cepat.
 
-**Rel gorden = penunjuk baterai.** Warna rel mengikuti suasana (hijau mint saat siang,
-biru saat malam) dan berubah kuning di bawah 40% serta merah di bawah 15%; tanda tiap
-10% di sepanjang rel menunjukkan sisa daya, dan **persentasenya ditulis di dinding di
-atas rel** mengikuti arah dinding (`BATTERY_TEXT_QUAD`). Datanya dari `BatteryManager`
-(`ACTION_BATTERY_CHANGED`); di browser memakai Battery Status API. Lihat
-[`docs/screens/baterai-gorden.png`](docs/screens/baterai-gorden.png).
+**Jendela & gorden.** Jendela membuka keluar (daun kaca berayun ke arah langit).
+Gorden kiri dan kanan bergantung pada rel logam dan bergoyang pelan mengikuti angin;
+rel kini batang polos tanpa indikator apa pun. Lihat
 
 **Siang & malam.** `scene_face.load_scene("day"|"night")` menghasilkan dua gambar:
 malam (grade navy pekat) dan siang (eksposur naik + pendar hangat di jendela + pantulan
@@ -120,12 +118,11 @@ npm run preview:build   # bangun ulang web/ dari art + TILES
 ```
 
 `web/index.html` dibuat oleh `tools/make_preview.py` yang membaca `TILES`,
-`CLOCK_RECT`, `FLAG_RECT`, `BOARD_QUAD`, `CALENDAR_QUAD`, `FRAME_QUADS`, `APP_ICONS`,
-`RAIL_LINE`, `BATTERY_TEXT_QUAD`, `CURTAIN_RECTS`, `LEAF_RECT`, dan `SCENE_W/H`
+`BOARD_QUAD`, `RAIL_LINE`, `CURTAIN_RECTS`, `LEAF_RECT`, dan `SCENE_W/H`
 langsung dari `Data.kt` — jadi area ketuk di browser identik dengan di APK. Gambar
 penuh layar, tanpa sidebar/tab/header, objek menyala saat ditekan,
-gorden bergoyang, rel baterai ikut berubah, dan suasana siang/malam
-otomatis mengikuti jam browser.
+gorden kiri–kanan bergoyang, dan suasana siang/malam otomatis mengikuti
+jam browser.
 
 Cek cepat tanpa browser: `node tools/check_preview.mjs` (jsdom) memastikan
 setiap hotspot berada tepat di atas objeknya.
@@ -147,7 +144,7 @@ tools/check_preview.mjs            uji area ketuk preview (jsdom)
 web/                               preview statis: index.html + scene_night.png + scene_day.png
 android/app/src/main/java/dev/retrobit/ruangkelas/
 ├── App.kt                         MainActivity (fullscreen) + Root
-├── Launcher.kt                    gambar penuh layar + 17 area ketuk + angin + rel baterai
+├── Launcher.kt                    gambar penuh layar + 11 area ketuk + angin
 ├── Data.kt                        model, data contoh, simpan/muat JSON, TILES
 ├── Theme.kt                       token warna + font pixel
 └── Ui.kt                          komponen dasar untuk aplikasi yang akan datang
@@ -160,6 +157,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.16.3-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.16.4-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.

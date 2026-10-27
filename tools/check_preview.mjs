@@ -37,7 +37,6 @@ const curtainRects = listOfQuads("CURTAIN_RECTS");
 
 const BOARD = rect("BOARD_QUAD");
 const RAIL = rect("RAIL_LINE");
-const BATT = rect("BATTERY_TEXT_QUAD");
 const LEAF = rect("LEAF_RECT");
 const WINDOW_QUAD = rect("WINDOW_QUAD");
 
@@ -102,19 +101,16 @@ else {
 if (document.getElementById("cal") || document.getElementById("cal-page"))
   fail("kalender masih ada (sudah dihapus total)");
 
-// ---- rel gorden = baterai ----
-if (!document.getElementById("rail")) fail("rel gorden baterai hilang");
-const ticks = document.querySelectorAll("#rail-ticks line");
-if (ticks.length !== 9) fail(`tanda rel ${ticks.length}, harusnya 9 (tiap 10%)`);
-if (!document.getElementById("batt")) fail("persentase baterai di dinding hilang");
-const battG = document.getElementById("batt-g").getAttribute("transform") || "";
-if (!/matrix/.test(battG)) fail("persentase baterai tidak mengikuti arah dinding");
-const battM = battG.match(/matrix\(([^)]+)\)/)[1].split(",").map(Number);
-if (!close(battM[4], BATT[0], 0.5) || !close(battM[5], BATT[1], 0.5)) fail("persen baterai tidak di BATTERY_TEXT_QUAD");
+// ---- rel gorden polos (indikator baterai dihapus 0.16.4) ----
+const rail = document.getElementById("rail");
+if (!rail) fail("rel gorden hilang");
+if (document.getElementById("rail-ticks") || document.getElementById("batt"))
+  fail("indikator baterai masih ada di rail (sudah dihapus)");
+if (/BATTERY_TEXT_QUAD/.test(data)) fail("BATTERY_TEXT_QUAD masih ada di Data.kt");
 
 // ---- angin: gorden & daun bergoyang ----
 if (!document.querySelector("#fx .sway-scene, #fx image")) fail("lapisan angin tidak ada");
-if (curtainRects.length !== 1) fail(`CURTAIN_RECTS harus 1, ada ${curtainRects.length}`);
+if (curtainRects.length !== 2) fail(`CURTAIN_RECTS harus 2 (kiri+kanan), ada ${curtainRects.length}`);
 if (LEAF.length !== 4) fail("LEAF_RECT harus 4 angka");
 
 // ---- bingkai dinding kosong (ikon pintasan dihapus 0.16.1) ----
@@ -126,9 +122,6 @@ if (!/scene_(day|night)\.png/.test(scene.getAttribute("src") || "")) fail("scene
 
 // ---- waktu & kalender hidup ----
 const now = new Date();
-for (const id of ["batt"]) {
-  if (!document.getElementById(id).textContent.trim()) fail(`${id} kosong`);
-}
 if (!document.getElementById("tint").style.background) fail("selaput suasana belum diset");
 
 // ---- label wajib ----
@@ -139,10 +132,9 @@ const labels = hotspots.map((e) => e.dataset.label);
 if (labels.filter((l) => l === "Binder").length !== 1) fail("hotspot Binder (laci meja) harus tepat satu");
 if (WINDOW_QUAD.length !== 8) fail("WINDOW_QUAD harus 8 angka");
 if (RAIL.length !== 4) fail("RAIL_LINE harus 4 angka");
-if (BATT.length !== 6) fail("BATTERY_TEXT_QUAD harus 6 angka");
 if (document.querySelector("#fx #flag")) fail("#flag masih ada di svg");
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · bingkai kosong · tanpa kalender · rel baterai ${ticks.length} tanda`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · bingkai kosong · tanpa kalender · rel polos · 2 gorden`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);

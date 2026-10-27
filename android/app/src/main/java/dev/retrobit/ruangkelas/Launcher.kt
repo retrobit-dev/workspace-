@@ -1,13 +1,10 @@
 package dev.retrobit.ruangkelas
 
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.graphics.Paint
-import android.os.BatteryManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -106,7 +103,6 @@ fun LauncherScreen(
     state: AppState,
     onOpen: (TileInfo) -> Unit = {}
 ) {
-    val battery = rememberBatteryLevel()
     val nowMs = rememberNowMs()
     val hour = remember(nowMs) { LocalTime.now().hour }
     val isDay = hour in 6..17
@@ -136,8 +132,7 @@ fun LauncherScreen(
         WindSway(box = box, scene = scene)
 
         // muka hidup: ikon bingkai, judul papan tulis
-        LiveFaces(box = box, battery = battery, isDay = isDay)
-        BatteryLabel(box = box, battery = battery)
+        LiveFaces(box = box, isDay = isDay)
 
         TILES.forEach { tile ->
             LauncherHotspot(
@@ -148,7 +143,6 @@ fun LauncherScreen(
                         tile.label == "File" ->
                             caption = if (openFileManager(ctx)) "MEMBUKA FILE MANAGER"
                             else "FILE MANAGER TIDAK DITEMUKAN"
-                        tile.label == "Kelas" -> caption = "KELAS · BATERAI $battery%"
                         else -> caption = tile.label
                     }
                     captionTick++
@@ -296,33 +290,6 @@ private fun launchApp(ctx: Context, pkg: String): Boolean {
     return runCatching { ctx.startActivity(intent) }.isSuccess
 }
 
-/**
- * Persentase baterai perangkat, dipakai rel gorden dan angka di dinding.
- */
-@Composable
-private fun rememberBatteryLevel(): Int {
-    val ctx = LocalContext.current
-    var level by remember { mutableStateOf(readBattery(ctx)) }
-    DisposableEffect(ctx) {
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context?, intent: Intent?) {
-                val l = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-                val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
-                if (l >= 0 && scale > 0) level = l * 100 / scale
-            }
-        }
-        ctx.registerReceiver(receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-        onDispose { runCatching { ctx.unregisterReceiver(receiver) } }
-    }
-    return level
-}
-
-private fun readBattery(ctx: Context): Int {
-    val bm = ctx.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
-    val level = bm?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: 100
-    return if (level in 0..100) level else 100
-}
-
 @Composable
 private fun rememberNowMs(): Long {
     var now by remember { mutableStateOf(System.currentTimeMillis()) }
@@ -370,11 +337,10 @@ private val FaceInk = Color(0xFF181430)
 
 /**
  * Semua muka hidup di atas gambar:
- *  - judul "JADWAL MENGAJAR" di papan tulis,
- *  - rel gorden sebagai penunjuk baterai + persentasenya di dinding.
+ *  - judul "JADWAL MENGAJAR" di papan tulis.
  */
 @Composable
-private fun LiveFaces(box: SceneBox, battery: Int, isDay: Boolean) {
+private fun LiveFaces(box: SceneBox, isDay: Boolean) {
     val ctx = LocalContext.current
     val paint = remember { Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER } }
     val typeface = remember {
@@ -405,8 +371,6 @@ private fun LiveFaces(box: SceneBox, battery: Int, isDay: Boolean) {
             )
         }
 
-        // ---------------- rel gorden = penunjuk baterai ----------------
-        drawBatteryRail(box, battery, isDay)
     }
 }
 
@@ -421,70 +385,6 @@ private fun wallQuad(rect: IntArray): IntArray {
 /** "#RRGGBB" -> Color. */
 private fun String.toPixelColor(): Color =
     Color(0xFF000000L or (removePrefix("#").toLongOrNull(16) ?: 0xFFFFFFL))
-
-/**
- * Rel gorden sekaligus indikator baterai:
- * warnanya mengikuti suasana (siang/malam) dan memerah saat baterai menipis.
- * Persentasenya ditulis di dinding tepat di atas rel, mengikuti arah dinding.
- */
-private fun DrawScope.drawBatteryRail(box: SceneBox, battery: Int, isDay: Boolean) {
-    val x1 = box.x(RAIL_LINE[0]).toPx()
-    val y1 = box.y(RAIL_LINE[1]).toPx()
-    val x2 = box.x(RAIL_LINE[2]).toPx()
-    val y2 = box.y(RAIL_LINE[3]).toPx()
-
-    val mood = when {
-        battery <= 15 -> Color(0xFFD9483B)
-        battery <= 40 -> Color(0xFFE0A03A)
-        isDay -> Color(0xFF9FD8B0)
-        else -> Color(0xFF77B8D9)
-    }
-
-    drawLine(color = Color(0x88000000), start = Offset(x1, y1 + 3f), end = Offset(x2, y2 + 3f),
-        strokeWidth = max(5f, box.unit.toPx() * 6f), cap = StrokeCap.Round)
-    drawLine(color = mood, start = Offset(x1, y1), end = Offset(x2, y2),
-        strokeWidth = max(3f, box.unit.toPx() * 3.4f), cap = StrokeCap.Round)
-
-    // tanda tiap 10% di sepanjang rel
-    for (i in 1..9) {
-        val t = i / 10f
-        val px = x1 + (x2 - x1) * t
-        val py = y1 + (y2 - y1) * t
-        val filled = battery >= i * 10
-        drawLine(
-            color = if (filled) Color(0xFF0E0D1A) else Color(0x66FFFFFF),
-            start = Offset(px, py - box.unit.toPx() * 4f),
-            end = Offset(px, py + box.unit.toPx() * 4f),
-            strokeWidth = max(1f, box.unit.toPx() * 1.2f)
-        )
-    }
-}
-
-/**
- * Angka persentase baterai di dinding di atas rel, ditulis mengikuti bidang dinding.
- */
-@Composable
-private fun BatteryLabel(box: SceneBox, battery: Int) {
-    val ctx = LocalContext.current
-    val paint = remember {
-        Paint(Paint.ANTI_ALIAS_FLAG).apply { textAlign = Paint.Align.CENTER }
-    }
-    val typeface = remember {
-        runCatching { ctx.resources.getFont(R.font.silkscreen_bold) }.getOrNull()
-    }
-    Canvas(Modifier.fillMaxSize()) {
-        paint.typeface = typeface
-        val plane = planeOf(box, BATTERY_TEXT_QUAD, this)
-        withPlane(plane) { native ->
-            paint.color = (if (battery <= 15) Color(0xFFEF6A5B) else Cream2).toArgb()
-            paint.textSize = plane.height * 0.58f
-            val text = "$battery%"
-            val measured = paint.measureText(text)
-            if (measured > plane.width * 0.94f) paint.textSize *= plane.width * 0.94f / measured
-            native.drawText(text, plane.width / 2f, plane.height * 0.86f, paint)
-        }
-    }
-}
 
 /** Warna & kepekatan selaput suasana untuk satu jam. */
 private fun ambienceOf(hour: Int, isDay: Boolean): Pair<Color, Float> = when (hour) {

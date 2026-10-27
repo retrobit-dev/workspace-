@@ -217,7 +217,7 @@ val TILES = listOf(
     TileInfo("Profil", Scr.PROFIL, "face", 694, 30, 74, 140),            // bingkai di atas meja
 
     // --- sisi kiri & kanan ---
-    TileInfo("Kelas", Scr.KELAS, "grid", 982, 114, 168, 324),            // jendela terbuka
+    TileInfo("Kelas", Scr.KELAS, "grid", 898, 96, 254, 326),             // jendela terbuka keluar
     TileInfo("File", Scr.HOME, "trash", 12, 632, 84, 104),               // tempat sampah
 
 )
@@ -228,15 +228,13 @@ val BOARD_QUAD = intArrayOf(334, 244, 554, 146, 334, 462)
 /** Kaca jendela (kiri-atas, kanan-atas, kiri-bawah, kanan-bawah). */
 val WINDOW_QUAD = intArrayOf(994, 128, 1144, 120, 994, 426, 1144, 418)
 
-/** Rel gorden: dari titik kiri ke kanan, dipakai juga sebagai penunjuk baterai. */
-val RAIL_LINE = intArrayOf(938, 36, 1244, 192)
+/** Rel gorden: batang logam dari ujung kiri ke kanan jendela. */
+val RAIL_LINE = intArrayOf(896, 38, 1262, 196)
 
-/** Persentase baterai di dinding, tepat di atas rel, mengikuti arah dinding. */
-val BATTERY_TEXT_QUAD = intArrayOf(966, 4, 1082, 32, 966, 54)
-
-/** Area gorden yang ikut bergoyang saat ada hembusan angin. */
+/** Gorden kiri & kanan yang ikut bergoyang saat ada hembusan angin. */
 val CURTAIN_RECTS = listOf(
-    intArrayOf(1198, 158, 38, 300)
+    intArrayOf(928, 58, 66, 276),
+    intArrayOf(1150, 148, 66, 318)
 )
 
 /** Daun tanaman yang ikut bergoyang. */

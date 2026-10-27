@@ -39,8 +39,6 @@ def parse():
 
     return dict(
         board=rect("BOARD_QUAD"),
-        rail=rect("RAIL_LINE"),
-        batt=rect("BATTERY_TEXT_QUAD"),
         curtains=quads("CURTAIN_RECTS"),
         leaf=rect("LEAF_RECT"),
     )
@@ -129,37 +127,6 @@ def build(mode, hour, battery=76, second=32):
     draw_plane(src, data["board"], lambda w, h: _layer(w, h, lambda l: paint_board(l, w, h)))
 
     d = ImageDraw.Draw(src)
-    x1, y1, x2, y2 = data["rail"]
-    if battery <= 15:
-        mood = (217, 72, 59, 255)
-    elif battery <= 40:
-        mood = (224, 160, 58, 255)
-    else:
-        mood = (159, 216, 176, 255) if mode == "day" else (119, 184, 217, 255)
-    d.line([x1, y1 + 3, x2, y2 + 3], fill=(0, 0, 0, 136), width=7)
-    d.line([x1, y1, x2, y2], fill=mood, width=4)
-    for i in range(1, 10):
-        t = i / 10
-        px, py = x1 + (x2 - x1) * t, y1 + (y2 - y1) * t
-        col = (14, 13, 26, 255) if battery >= i * 10 else (255, 255, 255, 102)
-        d.line([px, py - 5, px, py + 5], fill=col, width=1)
-
-    bt = data["batt"]
-
-    def paint_batt(w, h):
-        layer = Image.new("RGBA", (w, h), (0, 0, 0, 0))
-        dd = ImageDraw.Draw(layer)
-        fs = int(h * 0.58)
-        f = ImageFont.truetype(FONT, fs)
-        while dd.textlength(f"{battery}%", font=f) > w * 0.94 and fs > 4:
-            fs -= 1
-            f = ImageFont.truetype(FONT, fs)
-        text(dd, (w / 2, h * 0.86), f"{battery}%", f,
-             (239, 106, 91, 255) if battery <= 15 else CREAM2)
-        return layer
-
-    draw_plane(src, bt, paint_batt)
-
     # selaput suasana, sama dengan ambienceOf() di Launcher.kt
     if hour in range(5, 9):
         tint = (255, 217, 160)

@@ -91,34 +91,9 @@ def launcher_shots() -> None:
     lb2 = lb.copy(); toast(lb2, "JURNAL"); save(lb2, "launcher-letterbox-ketuk.png")
 
 
-def battery_panel() -> None:
-    """Tiga keadaan rel gorden (siang) berdampingan dengan labelnya."""
-    W, H = 1006, 2192
-    panel_w, band_h = 778, 539
-    im = Image.new("RGB", (W, H), (19, 17, 34))
-    d = ImageDraw.Draw(im)
-    rows = [
-        (100, "100%", "REL MINT (SIANG) ·", "SEMUA TANDA 10% ·", "PENUH", AMBER),
-        (55, "55%", "KUNING: TANDAI", "MULAI HABIS", "", AMBER),
-        (12, "12%", "MERAH: SEGERA", "ISI DAYA", "", (237, 106, 91)),
-    ]
-    y = 297
-    for battery, pct, l1, l2, l3, color in rows:
-        shot = base("day", battery).crop((880, 0, 1282, 278)).resize((panel_w, band_h), Image.NEAREST)
-        im.paste(shot, (W - panel_w, y))
-        d.text((20, y + 40), pct, font=ImageFont.truetype(str(FONT_BOLD), 30), fill=color)
-        f = ImageFont.truetype(str(FONT_BOLD), 13)
-        for i, line in enumerate((l1, l2, l3)):
-            if line:
-                d.text((20, y + 100 + i * 22), line, font=f, fill=MUTED)
-        y += band_h + 129
-    save(im, "baterai-gorden.png")
-
-
 def main() -> None:
     SCREENS.mkdir(parents=True, exist_ok=True)
     launcher_shots()
-    battery_panel()
 
 
 if __name__ == "__main__":
