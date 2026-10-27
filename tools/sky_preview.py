@@ -12,10 +12,10 @@ import math
 
 # (kiri-atas, kanan-atas, kanan-bawah, kiri-bawah) — piksel gambar 1280x800
 SKY_PANELS = [
-    (1000, 90, 1091, 118, 1091, 316, 1000, 312),   # kaca kiri (tertutup)
-    (1095, 117, 1195, 150, 1195, 350, 1095, 318),  # bukaan kanan (terbuka)
+    (1010, 119, 1082, 148, 1082, 337, 1010, 299),  # kaca kiri (tertutup)
+    (1100, 146, 1192, 193, 1190, 402, 1100, 355),  # bukaan kanan (terbuka)
 ]
-SKY_ARC = (1004, 286, 1192, 286)  # x awal/akhir busur orb; puncak y = 116
+SKY_ARC = (1108, 336, 1185, 372)  # busur orb (panel kanan); puncak = base-146
 SKY_STOPS = [  # (menit, warna-atas, warna-bawah) — gradien sesuai waktu nyata
     (0, "#0A0F2E", "#18224E"), (300, "#2E3A6E", "#F2955F"), (420, "#7FB2E8", "#CFE6F7"),
     (720, "#4D8FE0", "#A8CDF0"), (990, "#6D9BD8", "#F7C873"), (1080, "#3A3F7A", "#E86A5A"),
@@ -41,9 +41,9 @@ def clip_path() -> str:
 def group() -> str:
     clouds: list[str] = []
     for i in range(5):  # awan: lahir tersembunyi di kiri, loop ke kanan, wrap tersembunyi
-        cy = 96 + _h(i, 13) * 150
+        cy = 130 + _h(i, 13) * 220
         sc = 0.75 + _h(i, 31) * 0.8
-        dur = round(280 / (3.2 + _h(i, 21) * 2.6), 2)
+        dur = round(198 / (3.2 + _h(i, 21) * 2.6), 2)
         clouds.append(f'''<g transform="translate({-40},0)">
       <g transform="scale({sc:.2f})">
         <circle cx="-14" cy="4" r="16" class="sky-cloud-fill"/>
@@ -52,38 +52,38 @@ def group() -> str:
         <rect x="-26" y="2" width="52" height="12" rx="6" class="sky-cloud-fill"/>
       </g>
       <animateTransform attributeName="transform" type="translate"
-        from="{-40},{cy:.0f}" to="240,{cy:.0f}" dur="{dur}s" begin="{-_h(i, 5) * dur:.2f}s" repeatCount="indefinite"/>
+        from="{-40},{cy:.0f}" to="158,{cy:.0f}" dur="{dur}s" begin="{-_h(i, 5) * dur:.2f}s" repeatCount="indefinite"/>
     </g>''')
 
     rains: list[str] = []
     for i in range(150):  # 0-45 gerimis, 46-95 hujan, 96-149 deras
-        rx = 995 + _h(i, 41) * 205
+        rx = 1100 + _h(i, 41) * 98
         dur = 3.6 if i < 46 else (2.5 if i < 96 else 2.0)
-        rains.append(f'''<line x1="{rx:.1f}" y1="400" x2="{rx - 2.2:.1f}" y2="410">
+        rains.append(f'''<line x1="{rx:.1f}" y1="450" x2="{rx - 2.2:.1f}" y2="460">
       <animateTransform attributeName="transform" type="translate"
-        from="0,-440" to="0,-42" dur="{dur}s" begin="{-_h(i, 47) * dur:.2f}s" repeatCount="indefinite"/>
+        from="0,-490" to="0,-90" dur="{dur}s" begin="{-_h(i, 47) * dur:.2f}s" repeatCount="indefinite"/>
     </line>''')
 
     snows: list[str] = []
     for i in range(70):
         dur = round(14 + _h(i, 63) * 8, 1)
-        snows.append(f'''<circle cx="{995 + _h(i, 69) * 205:.1f}" cy="400" r="{0.9 + _h(i, 67):.2f}">
+        snows.append(f'''<circle cx="{1100 + _h(i, 69) * 98:.1f}" cy="450" r="{0.9 + _h(i, 67):.2f}">
       <animateTransform attributeName="transform" type="translate"
-        from="0,-430" to="0,-32" dur="{dur}s" begin="{-_h(i, 65) * dur:.2f}s" repeatCount="indefinite"/>
+        from="0,-490" to="0,-80" dur="{dur}s" begin="{-_h(i, 65) * dur:.2f}s" repeatCount="indefinite"/>
     </circle>''')
 
     stars: list[str] = []
     for i in range(16):
         dur = round(1.6 + _h(i, 3) * 1.8, 2)
-        stars.append(f'''<circle cx="{1004 + _h(i, 0) * 188:.1f}" cy="{70 + _h(i, 7) * 170:.1f}" r="{0.7 + _h(i, 11):.2f}">
+        stars.append(f'''<circle cx="{1010 + _h(i, 0) * 190:.1f}" cy="{130 + _h(i, 7) * 270:.1f}" r="{0.7 + _h(i, 11):.2f}">
       <animate attributeName="opacity" values="0.2;0.95;0.2" dur="{dur}s" begin="{-_h(i, 5) * dur:.2f}s" repeatCount="indefinite"/>
     </circle>''')
 
     fogs: list[str] = []
     for b in range(3):
-        fogs.append(f'''<rect x="880" y="{120 + b * 70}" width="220" height="20" opacity="0.14">
+        fogs.append(f'''<rect x="1066" y="{160 + b * 80}" width="108" height="18" opacity="0.14">
       <animateTransform attributeName="transform" type="translate"
-        values="0 0;120 0;0 0" dur="{14 + b * 4}s" repeatCount="indefinite"/>
+        values="-30 0;30 0;-30 0" dur="{14 + b * 4}s" repeatCount="indefinite"/>
     </rect>''')
 
     rays = "\n        ".join(
@@ -92,16 +92,16 @@ def group() -> str:
     )
     return f'''
     <defs>
-      <linearGradient id="skygrad" gradientUnits="userSpaceOnUse" x1="1097" y1="60" x2="1097" y2="360">
+      <linearGradient id="skygrad" gradientUnits="userSpaceOnUse" x1="1150" y1="115" x2="1150" y2="410">
         <stop id="sg0" offset="0" stop-color="#4D8FE0"/>
         <stop id="sg1" offset="1" stop-color="#A8CDF0"/>
       </linearGradient>
       <clipPath id="skyclip"><path d="{clip_path()}"/></clipPath>
     </defs>
     <g id="sky-anim" clip-path="url(#skyclip)" data-weather="1">
-      <rect x="980" y="50" width="240" height="330" fill="url(#skygrad)"/>
+      <rect x="1006" y="115" width="198" height="295" fill="url(#skygrad)"/>
       <g id="sky-stars" style="display:none">{''.join(stars)}</g>
-      <g id="sky-orb"><g id="sky-orb-pos" transform="translate(1098,116)">
+      <g id="sky-orb"><g id="sky-orb-pos" transform="translate(1146,208)">
         <g id="sky-sun">
           <circle r="26" fill="#FFD9A0" opacity="0.28">
             <animate attributeName="opacity" values="0.16;0.34;0.16" dur="2.8s" repeatCount="indefinite"/>
@@ -120,20 +120,20 @@ def group() -> str:
         </g>
       </g></g>
       <g id="sky-clouds" class="sky-cloud-host">{''.join(clouds)}</g>
-      <rect id="sky-dim" x="980" y="50" width="240" height="330" fill="#3A4150" opacity="0"/>
+      <rect id="sky-dim" x="1006" y="115" width="198" height="295" fill="#3A4150" opacity="0"/>
       <g id="sky-rain" style="display:none">{''.join(rains)}</g>
       <g id="sky-snow" style="display:none">{''.join(snows)}</g>
       <g id="sky-fog" style="display:none">{''.join(fogs)}</g>
-      <rect id="sky-flash" x="980" y="50" width="240" height="330" fill="#F4F6FF" opacity="0">
+      <rect id="sky-flash" x="1006" y="115" width="198" height="295" fill="#F4F6FF" opacity="0">
         <animate attributeName="opacity" values="0;0;0.85;0;0.5;0;0;0"
           keyTimes="0;0.42;0.433;0.44;0.452;0.47;0.9;1" dur="7s" repeatCount="indefinite"/>
       </rect>
-      <g transform="rotate(-24 1097 200)">
-        <rect x="1040" y="40" width="14" height="320" fill="#FFFFFF" opacity="0.10"/>
-        <rect x="1090" y="40" width="5" height="320" fill="#FFFFFF" opacity="0.08"/>
+      <g transform="rotate(-24 1150 275)">
+        <rect x="1112" y="140" width="12" height="270" fill="#FFFFFF" opacity="0.10"/>
+        <rect x="1150" y="140" width="5" height="270" fill="#FFFFFF" opacity="0.08"/>
       </g>
     </g>
-    <polygon id="sky-roomray" points="1075,330 1190,355 880,640 700,560" fill="#FFF2CC" opacity="0">
+    <polygon id="sky-roomray" points="1150,400 1196,410 900,645 740,565" fill="#FFF2CC" opacity="0">
       <animate attributeName="opacity" values="0.05;0.09;0.05" dur="6s" repeatCount="indefinite"/>
     </polygon>'''
 
@@ -141,7 +141,7 @@ def group() -> str:
 # JS pengendali langit: gradien + posisi orb per detik; cuaca dari Open-Meteo
 JS = r"""
 const SKY_STOPS = __SKY_STOPS__;
-const SKY = {x0:1004, x1:1192, peak:124, base:286};
+const SKY = {x0:1108, x1:1185, y0:336, y1:372, amp:146};
 let SKY_WEATHER = {langit:1, hujan:0, salju:false, kabut:false, petir:false, code:1};
 
 function skyStored(){try{return localStorage.getItem("rk-sky-code");}catch(e){return null;}}
@@ -215,7 +215,7 @@ function skyTick(){
   if(isDay) f=Math.min(1,Math.max(0,(m-360)/660));
   else f=(((m-1080+1440)%1440))/720;
   const ox=SKY.x0+(SKY.x1-SKY.x0)*f;
-  const oy=SKY.base-Math.sin(Math.PI*f)*(SKY.base-SKY.peak);
+  const oy=(SKY.y0+(SKY.y1-SKY.y0)*f)-Math.sin(Math.PI*f)*SKY.amp;
   document.getElementById("sky-orb-pos").setAttribute("transform","translate("+ox.toFixed(1)+","+oy.toFixed(1)+")");
   setDisp("sky-sun",isDay&&SKY_WEATHER.langit<=2);
   setDisp("sky-moon",!isDay&&SKY_WEATHER.langit<=2);

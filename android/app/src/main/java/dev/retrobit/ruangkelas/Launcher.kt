@@ -412,8 +412,8 @@ private fun ambienceOf(hour: Int, isDay: Boolean): Pair<Color, Float> = when (ho
 
 // dua panel langit jendela (piksel gambar): kiri-atas, kanan-atas, kanan-bawah, kiri-bawah
 private val SKY_PANELS = listOf(
-    floatArrayOf(1000f, 90f, 1091f, 118f, 1091f, 316f, 1000f, 312f),  // kaca kiri (tertutup)
-    floatArrayOf(1095f, 117f, 1195f, 150f, 1195f, 350f, 1095f, 318f), // bukaan kanan (terbuka)
+    floatArrayOf(1010f, 119f, 1082f, 148f, 1082f, 337f, 1010f, 299f), // kaca kiri (tertutup)
+    floatArrayOf(1100f, 146f, 1192f, 193f, 1190f, 402f, 1100f, 355f), // bukaan kanan (terbuka)
 )
 
 // titik gradien langit per menit dalam hari (atas, bawah) — diinterpolasi mulus
@@ -488,8 +488,8 @@ private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
         val base = box.unit.toPx()
         fun sx(px: Float) = box.originX.toPx() + px * base
         fun sy(px: Float) = box.originY.toPx() + px * base
-        val skyTopLeft = Offset(sx(980f), sy(50f))
-        val skySize = Size(box.w(240).toPx(), box.h(330).toPx())
+        val skyTopLeft = Offset(sx(1006f), sy(115f))
+        val skySize = Size(box.w(198).toPx(), box.h(295).toPx())
 
         val path = Path().apply {
             for (q in SKY_PANELS) {
@@ -510,8 +510,8 @@ private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
             // 2) bintang berkedip saat malam yang tidak mendung
             if (!isDay && v.langit <= 1) {
                 for (i in 0 until 16) {
-                    val sxx = sx(1004f + hash01(i) * 188f)
-                    val syy = sy(70f + hash01(i, 7f) * 170f)
+                    val sxx = sx(1010f + hash01(i) * 190f)
+                    val syy = sy(130f + hash01(i, 7f) * 270f)
                     val tw = 0.35f + 0.65f * (0.5f + 0.5f * sin(clock.value * (2f + hash01(i, 3f) * 3f) + i))
                     drawCircle(
                         Color(0xFFFFF6DC), radius = base * (0.7f + hash01(i, 11f)),
@@ -524,8 +524,8 @@ private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
             val f = if (isDay) ((minute - 360).coerceAtLeast(0)).toFloat() / 660f
             else (((minute - 1080 + 1440) % 1440)).toFloat() / 720f
             val fx = f.coerceIn(0f, 1f)
-            val orbX = sx(1004f + 188f * fx)
-            val orbY = sy(286f - sin(fx * 3.14159265f) * 162f)
+            val orbX = sx(1108f + 77f * fx)
+            val orbY = sy(336f + 36f * fx - sin(fx * 3.14159265f) * 146f)
 
             if (isDay && v.langit <= 2) {
                 val hot = code == 0 // cerah penuh = terik
@@ -564,8 +564,8 @@ private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
                 val cloudAlpha = when (v.langit) { 0, 1 -> 0.92f; 2 -> 0.9f; else -> 0.85f }
                 for (i in 0 until cloudN) {
                     val sp = 3.2f + hash01(i, 21f) * 2.6f
-                    val cx = 960f + ((clock.value * sp + hash01(i, 5f) * 280f) % 280f)
-                    val cy = 96f + hash01(i, 13f) * 150f
+                    val cx = 1066f + ((clock.value * sp + hash01(i, 5f) * 198f) % 198f)
+                    val cy = 130f + hash01(i, 13f) * 220f
                     val sc = (0.75f + hash01(i, 31f) * 0.8f) * base
                     val c = Offset(sx(cx), sy(cy))
                     drawCircle(cloudColor, 16f * sc, Offset(c.x - 14f * sc, c.y + 4f * sc), cloudAlpha)
@@ -586,8 +586,8 @@ private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
                 val sp = if (v.hujan == 1) 90f else 130f + v.hujan * 45f
                 val len = if (v.hujan == 1) 6f else 10f
                 for (i in 0 until n) {
-                    val rx = 995f + hash01(i, 41f) * 205f
-                    val ry = 40f + ((clock.value * sp * (0.75f + hash01(i, 43f) * 0.5f) + hash01(i, 47f) * 320f) % 320f)
+                    val rx = 1100f + hash01(i, 41f) * 98f
+                    val ry = 150f + ((clock.value * sp * (0.75f + hash01(i, 43f) * 0.5f) + hash01(i, 47f) * 300f) % 300f)
                     drawLine(
                         Color(0xFFCFE4F7), Offset(sx(rx), sy(ry)), Offset(sx(rx - 2.2f), sy(ry + len)),
                         strokeWidth = base * 0.9f, alpha = 0.6f
@@ -599,10 +599,10 @@ private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
             if (v.salju) {
                 for (i in 0 until 70) {
                     val sway = sin(clock.value * (0.8f + hash01(i, 61f)) + i) * 6f
-                    val syy = 40f + ((clock.value * (18f + hash01(i, 63f) * 14f) + hash01(i, 65f) * 320f) % 320f)
+                    val syy = 150f + ((clock.value * (18f + hash01(i, 63f) * 14f) + hash01(i, 65f) * 300f) % 300f)
                     drawCircle(
                         Color(0xFFFFFFFF), radius = base * (0.9f + hash01(i, 67f)),
-                        center = Offset(sx(995f + hash01(i, 69f) * 205f + sway), sy(syy)), alpha = 0.85f
+                        center = Offset(sx(1100f + hash01(i, 69f) * 98f + sway), sy(syy)), alpha = 0.85f
                     )
                 }
             }
@@ -610,11 +610,11 @@ private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
             // 8) kabut menyelimuti
             if (v.kabut) {
                 for (b in 0 until 3) {
-                    val fo = (clock.value * (5f + b * 2f) + b * 80f) % 300f
+                    val fo = (clock.value * (5f + b * 2f) + b * 53f) % 160f - 30f
                     drawRect(
                         Color(0xFFD8DEE8),
-                        topLeft = Offset(sx(960f + fo - 150f), sy(120f + b * 70f)),
-                        size = Size(box.w(220).toPx(), base * 20f), alpha = 0.14f
+                        topLeft = Offset(sx(1096f + fo), sy(160f + b * 80f)),
+                        size = Size(box.w(108).toPx(), base * 18f), alpha = 0.14f
                     )
                 }
             }
@@ -627,9 +627,9 @@ private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
             }
 
             // 10) kilau kaca: pita diagonal tipis agar tetap terasa kaca
-            rotate(-24f, pivot = Offset(sx(1097f), sy(200f))) {
-                drawRect(Color(0xFFFFFFFF), Offset(sx(1040f), sy(60f)), Size(base * 14f, base * 300f), 0.10f)
-                drawRect(Color(0xFFFFFFFF), Offset(sx(1090f), sy(60f)), Size(base * 5f, base * 300f), 0.08f)
+            rotate(-24f, pivot = Offset(sx(1150f), sy(275f))) {
+                drawRect(Color(0xFFFFFFFF), Offset(sx(1112f), sy(140f)), Size(base * 12f, base * 270f), 0.10f)
+                drawRect(Color(0xFFFFFFFF), Offset(sx(1150f), sy(140f)), Size(base * 5f, base * 270f), 0.08f)
             }
         }
 
@@ -638,10 +638,10 @@ private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
             val p = 0.5f + 0.5f * sin(clock.value * 0.9f)
             drawPath(
                 Path().apply {
-                    moveTo(sx(1075f), sy(330f))
-                    lineTo(sx(1190f), sy(355f))
-                    lineTo(sx(880f), sy(640f))
-                    lineTo(sx(700f), sy(560f))
+                    moveTo(sx(1150f), sy(400f))
+                    lineTo(sx(1196f), sy(410f))
+                    lineTo(sx(900f), sy(645f))
+                    lineTo(sx(740f), sy(565f))
                     close()
                 },
                 color = Color(0xFFFFF2CC), alpha = 0.05f + 0.04f * p
