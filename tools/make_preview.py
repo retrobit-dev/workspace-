@@ -338,9 +338,12 @@ def build_html(data, scene_sizes):
     sway = (
         sway_rotate_group(
             [(cur[0] + cur[2] // 2, cur[1], cur[0], cur[1], cur[2], cur[3])],
-            sway_scene, 1.5, 2.6, id_base=0, delay0=0.0, translate_amp=0.8,
+            sway_scene, 3.5, 2.2, id_base=0, delay0=0.0, translate_amp=1.0,
         )
-        + sway_rotate_group(data["papers"], sway_scene, 1.6, 4.2, id_base=1, delay0=0.3)
+        + "\n".join(
+            sway_rotate_group([pap], sway_scene, 7.0, 3.4 + i * 0.25, id_base=1 + i, delay0=0.3 + i * 0.5)
+            for i, pap in enumerate(data["papers"])
+        )
         + sway_group([data["leaf"]], sway_scene, 2.0, 5.2, id_base=6, delay0=0.4)
     )
 
