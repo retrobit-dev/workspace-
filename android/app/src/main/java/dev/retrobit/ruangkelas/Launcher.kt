@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.BlurMaskFilter
-import android.graphics.BlurMaskFilter.Style
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.graphics.Matrix
@@ -153,7 +152,7 @@ fun LauncherScreen(
                 .copy(Bitmap.Config.ARGB_8888, true)
             val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
                 xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
-                maskFilter = BlurMaskFilter(1.2f, Style.NORMAL)
+                maskFilter = BlurMaskFilter(1.2f, android.graphics.BlurMaskFilter.Style.NORMAL)
             }
             val c = android.graphics.Canvas(bmp)
             val sc = bmp.width.toFloat() / SCENE_W
