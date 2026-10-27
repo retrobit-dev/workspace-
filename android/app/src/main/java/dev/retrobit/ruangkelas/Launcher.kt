@@ -161,7 +161,8 @@ fun LauncherScreen(
             val c = android.graphics.Canvas(bmp)
             val sc = bmp.width.toFloat() / SCENE_W
             val hole = android.graphics.Path()
-            for (q in SKY_HOLES) {
+            val holes = if (isDay) SKY_HOLES_DAY else SKY_HOLES_NIGHT
+            for (q in holes) {
                 hole.moveTo(q[0] * sc, q[1] * sc)
                 for (k in 2 until q.size step 2) hole.lineTo(q[k] * sc, q[k + 1] * sc)
                 hole.close()
@@ -526,7 +527,7 @@ private fun hash01(i: Int, salt: Float = 0f): Float =
 
 /**
  * UNDERLAY langit: digambar SEBELUM scene. Scene memilik bolongan kaca transparan
- * (SKY_HOLES), jadi art — rel, bingkai, tirai, palang — otomatis berada di depan
+ * (SKY_HOLES_DAY/NIGHT), jadi art — rel, bingkai, tirai, palang — otomatis berada di depan
  * animasi. Yang digambar di luar bolongan pun tertutup scene, tak perlu klip presisi.
  */
 @Composable
