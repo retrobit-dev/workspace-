@@ -537,7 +537,7 @@ private fun SkyAnim(box: SceneBox, code: Int, isDay: Boolean, minute: Int) {
                         Color(0xFFFFE9A8),
                         Offset(orbX + c * 16f * base, orbY + s * 16f * base),
                         Offset(orbX + c * 23f * base, orbY + s * 23f * base),
-                        strokeWidth = base * 1.7f, alpha = rayA, strokeCap = StrokeCap.Round
+                        strokeWidth = base * 1.7f, alpha = rayA, cap = StrokeCap.Round
                     )
                 }
                 val pulse = 0.55f + 0.45f * sin(clock.value * 1.4f)
