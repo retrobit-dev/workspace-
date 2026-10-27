@@ -101,7 +101,8 @@ python3 tools/compose.py --tanpa KOMPUTER,KALKULATOR --out art/scene-tanpa-lapto
 
 Laptop (KOMPUTER) kini interaktif: tertutup -> membuka -> redup -> menyala ->
 klik = Daftar Aplikasi. Aset state (dibuat `tools/gen_laptop_tutup.py`, crop
-diperluas (768,304)-(950,448), alpha feather; TIDAK termasuk compose scene):
+diperluas (768,294)-(950,448), alpha = siluet laptop (quad lid ∪ deck ∪
+diff bg-vs-scene); TIDAK termasuk compose scene):
 
 - `KOMPUTER_TERTUTUP{,-night}.png` — tutup tertutup + mouse, di atas meja-rapi.
 - `KOMPUTER_KOSONG{,-night}.png` — meja-rapi + mouse (awal animasi membuka).
@@ -110,7 +111,9 @@ diperluas (768,304)-(950,448), alpha feather; TIDAK termasuk compose scene):
 - `KOMPUTER_GLOW{,-night}.png` — cahaya menyala (overlay alpha; malam 1.0,
   siang 0.55).
 
-"Meja-rapi" = `background_{day,night}_rapi.png`: laptop & ghost dibuang dari
-background dengan fit polinomial 2D per kanal (dinding & meja) sehingga
-gradasi lampu malam & perspektif meja tetap mengalir. Veil layar redup
-digambar runtime pada quad (850,338)(917,362)(910,426)(823,417).
+"Meja-rapi" = `background_{day,night}_rapi.png`: ghost laptop dibuang dari
+background (mask siluet) — dinding = campur fit polinomial deg-2 + sampel
+kolom, meja = fit deg-2 (rentang sampel) + strip meja-depan per kolom,
+garis tepi belakang meja digambar ulang (puncak iso (793,290); kanan
+0.500x-104). Sisi kiri ghost dipertahankan = punggung clamshell tertutup.
+Veil layar redup digambar runtime pada quad (850,338)(917,362)(910,426)(823,417).
