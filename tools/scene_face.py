@@ -345,47 +345,6 @@ def add_daylight(im):
     return Image.alpha_composite(out.convert("RGBA"), glow).convert("RGB")
 
 
-def night_standing(im):
-    """Nyalakan standing lamp di kiri meja utk suasana malam.
-
-    Interior tudung & bohlam digambar netral di base art; di sini diganti
-    menjadi hangat terang + pendar kecil di sekitar tudung.
-    """
-    px = im.load()
-    # interior globe + bohlam: warna gading netral di base (grade menggesernya,
-    # jadi dicari lewat rentang, bukan warna persis), dibatasi area shade.
-    for y in range(132, 143):
-        for x in range(926, 978):
-            r, g, b = px[x, y]
-            if r > 165 and g > 150 and b > 115 and r >= b:
-                px[x, y] = (252, 218, 122) if y < 137 else (244, 178, 70)
-    # pendar lembut di dinding sekitar tudung (radial, hanya piksel navy)
-    cx, cy = 944, 138
-    for y in range(70, 240):
-        for x in range(852, 1000):
-            r, g, b = px[x, y]
-            if b <= r:
-                continue                       # bukan dinding navy
-            d = (((x - cx) * 1.2) ** 2 + (y - cy) ** 2) ** 0.5
-            w = max(0.0, 1.0 - d / 150.0) ** 1.6 * 0.5
-            if w <= 0.02:
-                continue
-            px[x, y] = (int(r + (86 - r) * w), int(g + (64 - g) * w), int(b + (58 - b) * w))
-    return im
-
-
-def day_standing_off(im):
-    """Siang: kaca globe standing lamp digelapkan (add_daylight membuatnya
-    ter-clipping putih seolah menyala)."""
-    px = im.load()
-    for y in range(132, 143):
-        for x in range(926, 978):
-            r, g, b = px[x, y]
-            if r > 200 and g > 195 and b > 170:
-                px[x, y] = (176, 166, 148)
-    return im
-
-
 def load_scene(mode="night"):
     """Gambar scene siap pakai untuk suasana ``night`` atau ``day``.
 
@@ -396,11 +355,7 @@ def load_scene(mode="night"):
     raw = Image.open(ART).convert("RGB")
     im = restyle_background(grade(raw, NIGHT["gamma"], NIGHT["sat"]))
     if mode == "day":
-        base = lamp_off(im)
-        im = add_daylight(base)
-        im = day_standing_off(im)
-        im = paint_day_sky(im, mask_from=base)
-    else:
-        im = night_standing(im)
+        im = add_daylight(im)
+        im = paint_day_sky(im, mask_from=im)
     return im
 

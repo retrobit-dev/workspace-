@@ -5,7 +5,7 @@ satu layar berisi gambar workspace isometrik ukuran penuh. Tanpa sidebar, tanpa 
 tanpa header, tanpa panel. Setiap objek di gambar bisa diketuk untuk membuka aplikasi
 bawaannya — aplikasi itu dibuat menyusul, satu per satu.
 
-**Status: v0.15.10 — standing lamp dipindah ke sudut atas ruangan (pojok
+**Status: v0.15.11 — standing lamp dipindah ke sudut atas ruangan (pojok
 pertemuan dinding, di antara meja dan papan tulis, tepat kiri gorden);
 sebelumnya sudut ruangan, tepi meja, buku, dan laptop yang sempat bergeser di
 0.15.8 sudah dikembalikan seperti semula; arah cahaya malam tetap sama seperti
@@ -15,7 +15,7 @@ berjudul "Jadwal Mengajar"; gorden & daun tanaman bergoyang; rel gorden jadi
 penunjuk baterai dengan persentase tertulis di dinding; tempat sampah membuka
 file manager; suasana siang/malam mengikuti jam perangkat.**
 
-Perbaikan 0.15.10: standing lamp berpindah ke sudut atas ruangan — pangkal
+Perbaikan 0.15.11: standing lamp berpindah ke sudut atas ruangan — pangkal
 tiangnya berdiri di balik tepi meja tepat di garis pojok dinding, kepala
 lampunya setinggi jendela dan menunduk ke arah meja; bekas posisi lama di
 sebelah papan tulis dirapikan. Dan sebelumnya, 0.15.9: 0.15.8 ternyata merusak sudut ruangan dan memotong meja,
@@ -37,7 +37,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 | | |
 |---|---|
-| APK siap pasang | [`dist/RuangKelas-0.15.10-debug.apk`](dist/RuangKelas-0.15.10-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.15.11-debug.apk`](dist/RuangKelas-0.15.11-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | [`preview-ruang-kelas.html`](preview-ruang-kelas.html) (acuan desain) |
@@ -46,7 +46,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.15.10-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.15.11-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -159,6 +159,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.15.10-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.15.11-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.
