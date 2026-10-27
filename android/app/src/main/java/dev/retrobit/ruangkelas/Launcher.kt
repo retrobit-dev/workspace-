@@ -36,13 +36,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
@@ -130,7 +128,7 @@ fun LauncherScreen(
         Canvas(Modifier.fillMaxSize()) { drawScene(box, scene) }
 
         // angin: ekor tirai, daun, kertas pin bergoyang halus
-        WindSway(box = box, scene = scene, isDay = isDay)
+        WindSway(box = box, scene = scene)
 
         // muka hidup: ikon bingkai, judul papan tulis
         LiveFaces(box = box, isDay = isDay)
@@ -195,7 +193,7 @@ private fun DrawScope.drawScene(box: SceneBox, scene: ImageBitmap, dx: Float = 0
  * mengikuti gelombang sinus, sehingga ruangan terasa "hidup" walau gambarnya diam.
  */
 @Composable
-private fun WindSway(box: SceneBox, scene: ImageBitmap, isDay: Boolean) {
+private fun WindSway(box: SceneBox, scene: ImageBitmap) {
     val phase = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -209,28 +207,7 @@ private fun WindSway(box: SceneBox, scene: ImageBitmap, isDay: Boolean) {
 
     Canvas(Modifier.fillMaxSize()) {
         val base = box.unit.toPx()
-        // ekor tirai kanan (kain bebas di bawah ikatan) digambar sebagai lapisan
-        // terpisah — kusen, batang, dan ring benar-benar diam
-        val baseFill = if (isDay) Color(0xFF6A6A78) else Color(0xFF737380)
-        val swayFill = if (isDay) Color(0xFF626B83) else Color(0xFF5F5C70)
-        fun tailPath(q: IntArray): Path = Path().apply {
-            moveTo(box.x(q[0]).toPx(), box.y(q[1]).toPx())
-            lineTo(box.x(q[2]).toPx(), box.y(q[3]).toPx())
-            lineTo(box.x(q[4]).toPx(), box.y(q[5]).toPx())
-            lineTo(box.x(q[6]).toPx(), box.y(q[7]).toPx())
-            close()
-        }
-        drawPath(tailPath(TAIL_QUAD), baseFill)
-        val swayQ = if (isDay) TAIL_SWAY_DAY else TAIL_SWAY_NIGHT
-        val tailPivot = Offset(
-            box.x((swayQ[0] + swayQ[2]) / 2).toPx(),
-            box.y(swayQ[1]).toPx()
-        )
-        val tailDeg = sin(phase.value * 2.0f) * (if (isDay) 3.5f else 1.5f)
-        withTransform({ rotate(degrees = tailDeg, pivot = tailPivot) }) {
-            drawPath(tailPath(swayQ), swayFill)
-        }
-        // daun tanaman bergoyang (pot tidak ikut dianimasikan)
+        // hanya daun tanaman yang bergoyang — tirai diam total (keputusan user 0.16.14)
         val leaf = LEAF_RECT
         val dx = sin(phase.value * 1.7f) * base * 1.6f
         clipRect(
@@ -240,23 +217,6 @@ private fun WindSway(box: SceneBox, scene: ImageBitmap, isDay: Boolean) {
             bottom = box.y(leaf[1] + leaf[3]).toPx()
         ) {
             drawScene(box, scene, dx = dx)
-        }
-        // kertas di papan pin: bergoyang lembut, pivot tepat di pin masing-masing
-        PAPER_RECTS.forEachIndexed { i, pap ->
-            clipRect(
-                left = box.x(pap[2]).toPx(),
-                top = box.y(pap[3]).toPx(),
-                right = box.x(pap[2] + pap[4]).toPx(),
-                bottom = box.y(pap[3] + pap[5]).toPx()
-            ) {
-                val pivot = Offset(box.x(pap[0]).toPx(), box.y(pap[1]).toPx())
-                val deg = sin(phase.value * 1.3f + i * 0.9f) * 7f
-                withTransform({
-                    rotate(degrees = deg, pivot = pivot)
-                }) {
-                    drawScene(box, scene)
-                }
-            }
         }
     }
 }

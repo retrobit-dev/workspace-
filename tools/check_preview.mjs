@@ -111,13 +111,12 @@ if (/BATTERY_TEXT_QUAD|RAIL_LINE/.test(data))
 // ---- angin: gorden & daun bergoyang ----
 if (!document.querySelector("#fx .sway-scene, #fx image")) fail("lapisan angin tidak ada");
 if (/CURTAIN_RECTS\b/.test(data)) fail("konstanta lama CURTAIN_RECTS tidak boleh kembali");
-if (!/TAIL_QUAD/.test(data) || !/TAIL_SWAY_DAY/.test(data))
-  fail("TAIL_QUAD/TAIL_SWAY_DAY hilang — ekor tirai wajib beranimasi (0.16.13)");
-if (!/PAPER_RECTS/.test(data)) fail("PAPER_RECTS hilang — kertas papan pin wajib beranimasi (0.16.11)");
+if (/TAIL_QUAD|TAIL_SWAY|PAPER_RECTS/.test(data))
+  fail("konstanta animasi tirai/kertas kembali — tirai diam total (keputusan user 0.16.14)");
+if (document.getElementById("tail-base") || document.getElementById("tail-sway"))
+  fail("lapisan ekor tirai masih ada — tirai harus diam total");
 const rotCount = (document.querySelectorAll("#fx animateTransform[type=rotate]")).length;
-if (rotCount < 5) fail(`animasi rotate kertas kurang (${rotCount} < 5)`);
-if (!document.getElementById("tail-base") || !document.getElementById("tail-sway"))
-  fail("lapisan ekor tirai (tail-base/tail-sway) hilang");
+if (rotCount !== 0) fail(`masih ada animasi rotate (${rotCount}) — hanya daun yang boleh bergoyang`);
 if (LEAF.length !== 4) fail("LEAF_RECT harus 4 angka");
 
 // ---- bingkai dinding kosong (ikon pintasan dihapus 0.16.1) ----
@@ -143,6 +142,6 @@ if (/image-rendering\s*:\s*pixelated/.test(rawHtml))
   fail("CSS pixelated masih ada — art 0.16.9 smooth tanpa pixelate");
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · ekor tirai mengayun (kusen diam) · kertas pin bergoyang · daun bergoyang · langit→Cuaca · art smooth · siang lembut`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai diam · daun bergoyang · langit→Cuaca · art smooth · siang lembut`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);

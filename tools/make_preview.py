@@ -53,64 +53,8 @@ def parse_data():
         h=scene_h,
         tiles=tiles,
                 board=rect("BOARD_QUAD"),
-                tail=rect("TAIL_QUAD"),
-                tail_sway=rect("TAIL_SWAY_DAY"),
-                papers=list_of_quads("PAPER_RECTS"),
                 leaf=rect("LEAF_RECT"),
     )
-
-
-def tail_group(tail, tsw, id_base):
-    """Ekor tirai: poligon statis + poligon berayun (rotasi di atas-tengah ekor).
-
-    Kusen/batang/ring tidak disentuh — yang bergerak hanya kain di bawah ikatan.
-    """
-    px = (tsw[0] + tsw[2]) // 2
-    py = tsw[1]
-    p_base = " ".join(f"{tail[i]},{tail[i+1]}" for i in (0, 2, 4, 6))
-    p_sw = " ".join(f"{tsw[i]},{tsw[i+1]}" for i in (0, 2, 4, 6))
-    return f"""
-    <g clip-path="url(#c{id_base})">
-      <polygon id="tail-base" points="{p_base}" fill="#6A6A78"/>
-      <polygon id="tail-sway" points="{p_sw}" fill="#626B83">
-        <animateTransform attributeName="transform" type="rotate"
-          values="-3.5 {px} {py}; 3.5 {px} {py}; -3.5 {px} {py}" dur="2.2s"
-          begin="0s" repeatCount="indefinite" calcMode="spline"
-          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
-      </polygon>
-    </g>
-    <clipPath id="c{id_base}"><polygon points="{p_base}"/></clipPath>"""
-
-
-def sway_rotate_group(items, scene_name, deg, dur, id_base, delay0, translate_amp=0.0):
-    """Kelompok gambar yang berotasi di sekitar pivot (engsel/pin) + geseran opsional.
-
-    items: list [pivotX, pivotY, left, top, w, h].
-    """
-    out = []
-    for i, (px, py, l, t, w, h) in enumerate(items):
-        idx = id_base + i
-        begin = delay0 + i * 0.5
-        img = f"""      <image class="sway-scene" href="{scene_name}" x="0" y="0" width="__W__" height="__H__">"""
-        if translate_amp:
-            img += f"""
-        <animateTransform attributeName="transform" type="translate"
-          values="{-translate_amp},0; {translate_amp},0; {-translate_amp},0" dur="{dur}s"
-          begin="{begin}s" repeatCount="indefinite" calcMode="spline"
-          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>"""
-        img += "\n      </image>"
-        out.append(f"""
-    <g clip-path="url(#c{idx})">
-      <g>
-        <animateTransform attributeName="transform" type="rotate"
-          values="{-deg} {px} {py}; {deg} {px} {py}; {-deg} {px} {py}" dur="{dur}s"
-          begin="{begin}s" repeatCount="indefinite" calcMode="spline"
-          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
-{img}
-      </g>
-    </g>
-    <clipPath id="c{idx}"><rect x="{l}" y="{t}" width="{w}" height="{h}"/></clipPath>""")
-    return "\n".join(out)
 
 
 # ------------------------------------------------------------------ gambar scene
@@ -310,11 +254,6 @@ function tick() {
     const file = day ? "scene_day.png" : "scene_night.png";
     sceneEl.src = file;
     document.querySelectorAll(".sway-scene").forEach((img) => img.setAttribute("href", file));
-    const tf = day ? ["#6A6A78", "#626B83"] : ["#737380", "#5F5C70"];
-    const tb = document.getElementById("tail-base");
-    const ts = document.getElementById("tail-sway");
-    if (tb) tb.setAttribute("fill", tf[0]);
-    if (ts) ts.setAttribute("fill", tf[1]);
     lastDay = day;
   }
 
@@ -362,14 +301,8 @@ def build_html(data, scene_sizes):
     sway_scene = "scene_night.png"
     # tirai kanan: terpegang di ring, bawah mengayun (rotasi di rel + geser tipis);
     # kertas di papan pin bergoyang lembut (pivot di pin); daun bergoyang (pot diam)
-    sway = (
-        tail_group(data["tail"], data["tail_sway"], id_base=0)
-        + "\n".join(
-            sway_rotate_group([pap], sway_scene, 7.0, 3.4 + i * 0.25, id_base=1 + i, delay0=0.3 + i * 0.5)
-            for i, pap in enumerate(data["papers"])
-        )
-        + sway_group([data["leaf"]], sway_scene, 2.0, 5.2, id_base=6, delay0=0.4)
-    )
+    # hanya daun yang bergoyang — tirai diam total (keputusan user 0.16.14)
+    sway = sway_group([data["leaf"]], sway_scene, 2.0, 5.2)
 
     html = (
         HTML.replace("__RATIO__", f"{w} / {h}")
