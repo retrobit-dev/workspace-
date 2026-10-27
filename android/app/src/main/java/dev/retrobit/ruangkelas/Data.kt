@@ -197,10 +197,10 @@ data class TileInfo(
 /**
  * Objek di gambar isometrik (koordinat = piksel gambar 1280 × 800).
  *
- * Dibangun ulang dari awal (0.16.0): canvas 1280×800 (kelipatan grid 32),
- * lampu meja menyala di malam hari, kalender meja hidup, lima bingkai
- * pintasan aplikasi, papan tulis, papan pin, rak buku, jendela, gorden,
- * tanaman, dan tempat sampah.
+ * Dibangun ulang dari awal (0.16.0; 0.16.1 tanpa kalender & tanpa ikon
+ * bingkai): canvas 1280×800 (kelipatan grid 32), lampu meja menyala di
+ * malam hari, papan tulis, papan pin, rak buku, jendela, gorden, tanaman,
+ * dan tempat sampah.
  */
 val TILES = listOf(
     // --- meja kerja ---
@@ -225,9 +225,6 @@ val TILES = listOf(
 /** Papan tulis: judul "JADWAL MENGAJAR" di bagian atas, rata tengah. */
 val BOARD_QUAD = intArrayOf(334, 244, 554, 146, 334, 462)
 
-
-)
-
 /** Kaca jendela (kiri-atas, kanan-atas, kiri-bawah, kanan-bawah). */
 val WINDOW_QUAD = intArrayOf(994, 128, 1144, 120, 994, 426, 1144, 418)
 
@@ -245,8 +242,6 @@ val CURTAIN_RECTS = listOf(
 /** Daun tanaman yang ikut bergoyang. */
 val LEAF_RECT = intArrayOf(1090, 476, 132, 160)
 
-
-/* ---------------- ikon aplikasi di lima bingkai ---------------- */
 
 const val SCENE_W = 1280
 const val SCENE_H = 800
