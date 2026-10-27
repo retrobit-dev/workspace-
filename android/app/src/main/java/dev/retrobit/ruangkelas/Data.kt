@@ -232,8 +232,14 @@ val WINDOW_QUAD = intArrayOf(990, 110, 1090, 96, 990, 380, 1090, 366)
 /** Daun tanaman yang ikut bergoyang. */
 val LEAF_RECT = intArrayOf(1055, 470, 150, 160)
 
-/** Panel tirai kanan yang dianimasikan (ditiup angin dari luar jendela). */
-val CURTAIN_R_RECT = intArrayOf(1183, 90, 97, 330)
+/**
+ * Ekor tirai kanan: kain bebas di bawah ikatan yang beranimasi (digambar
+ * sebagai lapisan terpisah — kusen/batang/ring tidak ikut bergerak).
+ * Quad = (atas-kiri, atas-kanan, bawah-kanan, bawah-kiri).
+ */
+val TAIL_QUAD = intArrayOf(1226, 352, 1246, 352, 1258, 464, 1186, 464)
+val TAIL_SWAY_DAY = intArrayOf(1236, 352, 1256, 352, 1259, 464, 1187, 464)
+val TAIL_SWAY_NIGHT = intArrayOf(1231, 352, 1251, 352, 1252, 464, 1180, 464)
 
 /**
  * Kertas di papan pin yang beranimasi lembut.

@@ -62,20 +62,15 @@
     <!-- angin: gorden & daun -->
     
     <g clip-path="url(#c0)">
-      <g>
+      <polygon id="tail-base" points="1226,352 1246,352 1258,464 1186,464" fill="#6A6A78"/>
+      <polygon id="tail-sway" points="1236,352 1256,352 1259,464 1187,464" fill="#626B83">
         <animateTransform attributeName="transform" type="rotate"
-          values="-3.5 1231 90; 3.5 1231 90; -3.5 1231 90" dur="2.2s"
-          begin="0.0s" repeatCount="indefinite" calcMode="spline"
+          values="-3.5 1246 352; 3.5 1246 352; -3.5 1246 352" dur="2.2s"
+          begin="0s" repeatCount="indefinite" calcMode="spline"
           keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
-      <image class="sway-scene" href="scene_night.png" x="0" y="0" width="1280" height="800">
-        <animateTransform attributeName="transform" type="translate"
-          values="-1.0,0; 1.0,0; -1.0,0" dur="2.2s"
-          begin="0.0s" repeatCount="indefinite" calcMode="spline"
-          keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
-      </image>
-      </g>
+      </polygon>
     </g>
-    <clipPath id="c0"><rect x="1183" y="90" width="97" height="330"/></clipPath>
+    <clipPath id="c0"><polygon points="1226,352 1246,352 1258,464 1186,464"/></clipPath>
     <g clip-path="url(#c1)">
       <g>
         <animateTransform attributeName="transform" type="rotate"
@@ -241,6 +236,11 @@ function tick() {
     const file = day ? "scene_day.png" : "scene_night.png";
     sceneEl.src = file;
     document.querySelectorAll(".sway-scene").forEach((img) => img.setAttribute("href", file));
+    const tf = day ? ["#6A6A78", "#626B83"] : ["#737380", "#5F5C70"];
+    const tb = document.getElementById("tail-base");
+    const ts = document.getElementById("tail-sway");
+    if (tb) tb.setAttribute("fill", tf[0]);
+    if (ts) ts.setAttribute("fill", tf[1]);
     lastDay = day;
   }
 

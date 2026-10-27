@@ -129,8 +129,8 @@ fun LauncherScreen(
         // gambar dasar
         Canvas(Modifier.fillMaxSize()) { drawScene(box, scene) }
 
-        // angin: gorden & daun bergoyang halus
-        WindSway(box = box, scene = scene)
+        // angin: ekor tirai, daun, kertas pin bergoyang halus
+        WindSway(box = box, scene = scene, isDay = isDay)
 
         // muka hidup: ikon bingkai, judul papan tulis
         LiveFaces(box = box, isDay = isDay)
@@ -195,7 +195,7 @@ private fun DrawScope.drawScene(box: SceneBox, scene: ImageBitmap, dx: Float = 0
  * mengikuti gelombang sinus, sehingga ruangan terasa "hidup" walau gambarnya diam.
  */
 @Composable
-private fun WindSway(box: SceneBox, scene: ImageBitmap) {
+private fun WindSway(box: SceneBox, scene: ImageBitmap, isDay: Boolean) {
     val phase = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -209,29 +209,26 @@ private fun WindSway(box: SceneBox, scene: ImageBitmap) {
 
     Canvas(Modifier.fillMaxSize()) {
         val base = box.unit.toPx()
-        // tirai kanan: terpegang di ring rel, bagian bawah mengayun bebas —
-        // digerakkan dengan ROTASI di sekitar rel + geseran tipis
-        val cur = CURTAIN_R_RECT
-        clipRect(
-            left = box.x(cur[0]).toPx(),
-            top = box.y(cur[1]).toPx(),
-            right = box.x(cur[0] + cur[2]).toPx(),
-            bottom = box.y(cur[1] + cur[3]).toPx()
-        ) {
-            val pivot = Offset(
-                box.x(cur[0] + cur[2] / 2).toPx(),
-                box.y(cur[1]).toPx()
-            )
-            val geser = sin(phase.value * 2.0f) * base * 1.0f
-            withTransform({
-                rotate(
-                    degrees = sin(phase.value * 2.0f) * 3.5f,
-                    pivot = pivot
-                )
-                translate(geser, 0f)
-            }) {
-                drawScene(box, scene)
-            }
+        // ekor tirai kanan (kain bebas di bawah ikatan) digambar sebagai lapisan
+        // terpisah — kusen, batang, dan ring benar-benar diam
+        val baseFill = if (isDay) Color(0xFF6A6A78) else Color(0xFF737380)
+        val swayFill = if (isDay) Color(0xFF626B83) else Color(0xFF5F5C70)
+        fun tailPath(q: IntArray): Path = Path().apply {
+            moveTo(box.x(q[0]).toPx(), box.y(q[1]).toPx())
+            lineTo(box.x(q[2]).toPx(), box.y(q[3]).toPx())
+            lineTo(box.x(q[4]).toPx(), box.y(q[5]).toPx())
+            lineTo(box.x(q[6]).toPx(), box.y(q[7]).toPx())
+            close()
+        }
+        drawPath(tailPath(TAIL_QUAD), baseFill)
+        val swayQ = if (isDay) TAIL_SWAY_DAY else TAIL_SWAY_NIGHT
+        val tailPivot = Offset(
+            box.x((swayQ[0] + swayQ[2]) / 2).toPx(),
+            box.y(swayQ[1]).toPx()
+        )
+        val tailDeg = sin(phase.value * 2.0f) * (if (isDay) 3.5f else 1.5f)
+        withTransform({ rotate(degrees = tailDeg, pivot = tailPivot) }) {
+            drawPath(tailPath(swayQ), swayFill)
         }
         // daun tanaman bergoyang (pot tidak ikut dianimasikan)
         val leaf = LEAF_RECT
