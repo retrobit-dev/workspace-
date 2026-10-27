@@ -325,7 +325,7 @@ TILES.forEach((tile) => {
 
 
 /* ---- laptop launcher: tertutup -> membuka -> redup -> menyala -> daftar ---- */
-const LAP = {x: 768, y: 304, w: 182, h: 144};
+const LAP = {x: 768, y: 294, w: 182, h: 154};
 const lapK = document.getElementById("lap-kosong");
 const lapB = document.getElementById("lap-buka");
 const lapT = document.getElementById("lap-tutup");

@@ -563,8 +563,8 @@ private fun ambienceOf(hour: Int, isDay: Boolean): Pair<Color, Float> = when (ho
 
 // Laptop launcher: overlay state di (768,304) 182x144; quad layar utk veil redup
 private const val LAP_X = 768
-private const val LAP_Y = 304
-private val LAP_SIZE = IntSize(182, 144)
+private const val LAP_Y = 294
+private val LAP_SIZE = IntSize(182, 154)
 private val LAP_SCREEN_QUAD = listOf(850, 338, 917, 362, 910, 426, 823, 417)
 
 // Bolongan kaca jendela di scene (piksel gambar): langit underlay terlihat dari
