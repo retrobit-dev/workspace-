@@ -7,6 +7,13 @@ metode yang benar-benar bersih.)
 
 ## A. Menghapus objek dari gambar
 
+0. **(0.16.15) Cara pilihan: arsitektur objek mandiri.** Untuk hapus/pindah/
+   edit satu objek, gunakan aset & manifest di `art/objects/` +
+   `tools/compose.py --tanpa ID` (panduan lengkap: `docs/objek.md`). Objek
+   lain tidak tersentuh; verifikasi `compose.py --check` wajib hijau untuk
+   komposit penuh. Full-scene regen (poin 2) hanya untuk perubahan pada
+   gambar dasar/latar itu sendiri.
+
 1. **JANGAN patch lokal / cross-fade.** Metode strip-referensi kiri–kanan
    (dicoba di era 0.16.2) terbukti GAGAL: menyisakan band dan gradasi
    bekas patch, tampilan tidak tajam, dan ditolak user. Metode ini tidak
