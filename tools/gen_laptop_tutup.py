@@ -29,9 +29,10 @@ MODES = {
         rapi=f"{ROOT}/art/objects/background_day_rapi.png",
         ref=f"{ROOT}/art/rebuild-day.png",
         hinge=[(14, 114), (155, 68)],
-        deck=[(20, 107), (151, 71), (146, 123), (93, 144)],
+        deck=[(20, 107), (155, 68), (150, 117), (93, 144)],
         mouse=(56, 38), mbody=(139, 135, 146), mtop=(176, 172, 183), mline=(96, 93, 104),
         base=(233, 230, 228), back=(203, 199, 203), right=(196, 192, 197),
+        side=(171, 165, 176), side2=(158, 152, 164),
         rim=(246, 244, 242), outline=(150, 146, 156), seam=(168, 164, 172),
         glow=(214, 231, 255), core_a=105, halo_a=55, pool_a=40,
         core_c=(115, 79), pool_c=(97, 143),
@@ -42,9 +43,10 @@ MODES = {
         rapi=f"{ROOT}/art/objects/background_night_rapi.png",
         ref=f"{ROOT}/art/rebuild-base.png",
         hinge=[(14, 112), (162, 68)],
-        deck=[(20, 105), (158, 71), (150, 123), (96, 144)],
+        deck=[(20, 105), (162, 68), (154, 120), (96, 144)],
         mouse=(56, 38), mbody=(97, 94, 106), mtop=(130, 126, 138), mline=(66, 63, 74),
         base=(216, 205, 209), back=(185, 175, 183), right=(175, 166, 176),
+        side=(132, 122, 136), side2=(118, 108, 122),
         rim=(233, 224, 227), outline=(122, 113, 126), seam=(140, 131, 142),
         glow=(214, 231, 255), core_a=200, halo_a=110, pool_a=85,
         core_c=(112, 74), pool_c=(97, 143),
@@ -71,6 +73,11 @@ def laptop_mask(cfg) -> np.ndarray:
     d = ImageDraw.Draw(im)
     d.polygon(lid, fill=255)
     d.polygon([tuple(pt) for pt in cfg["deck"]], fill=255)
+    # ketebalan clamshell: dinding sisi menghadap kamera (turun 8px)
+    Ld, Td, Rd, Bd = cfg["deck"]
+    dn = 8
+    d.polygon([Ld, Bd, Rd, (Rd[0], Rd[1] + dn), (Bd[0], Bd[1] + dn), (Ld[0], Ld[1] + dn)], fill=255)
+    d.polygon([Td, Rd, (Rd[0], Rd[1] + dn), (Td[0], Td[1] + dn)], fill=255)
     m = np.asarray(im) > 0
     bg = np.asarray(Image.open(cfg["bg"]).convert("RGB")).astype(int)
     sc = np.asarray(Image.open(cfg["ref"]).convert("RGB")).astype(int)
@@ -87,6 +94,11 @@ def laptop_mask(cfg) -> np.ndarray:
     ImageDraw.Draw(crown).polygon(
         [(76, 2), (136, 2), (174, 60), (76, 60)], fill=255)
     m |= np.asarray(crown) > 0
+    # ekor kanan ghost: ujung engsel laptop terbuka di kanan-atas tutup
+    # (full 916..942 x 348..370) - tak tertangkap diff (bg==scene)
+    ekor = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(ekor).polygon([(148, 54), (174, 54), (174, 76), (148, 76)], fill=255)
+    m |= np.asarray(ekor) > 0
     return m
 
 
@@ -201,16 +213,19 @@ def gen(mode: str, cfg: dict) -> None:
     L, T, R, B = [(pt[0] * S, pt[1] * S) for pt in cfg["deck"]]
     cpt = ((L[0] + R[0]) / 2, (L[1] + R[1]) / 2)
     quad = [L, T, R, B]
+    # ketebalan clamshell: dinding sisi di tepi yang menghadap kamera
+    tR, tB = 5.5 * S, 7.5 * S
+    d.polygon([T, R, (R[0], R[1] + tR), (T[0], T[1] + tR)], fill=cfg["side2"] + (255,))
+    d.polygon([R, B, (B[0], B[1] + tB), (R[0], R[1] + tB)], fill=cfg["side2"] + (255,))
+    d.polygon([B, L, (L[0], L[1] + tB), (B[0], B[1] + tB)], fill=cfg["side"] + (255,))
+    # bidang atas = jejak keyboard yang sama, tutup rapat di atasnya
     d.polygon(quad, fill=cfg["base"] + (255,))
     d.polygon(inset_edge(L, T, cpt, 5.5 * S), fill=cfg["back"] + (255,))
     d.polygon(inset_edge(T, R, cpt, 4.5 * S), fill=cfg["right"] + (255,))
-    d.polygon(inset_edge(R, B, cpt, 3.2 * S), fill=cfg["rim"] + (255,))
-    d.polygon(inset_edge(B, L, cpt, 3.2 * S), fill=cfg["rim"] + (255,))
+    d.polygon(inset_edge(R, B, cpt, 2.2 * S), fill=cfg["rim"] + (255,))
+    d.polygon(inset_edge(B, L, cpt, 2.2 * S), fill=cfg["rim"] + (255,))
     v = inset_edge(L, T, cpt, 8 * S)
     d.line([v[6], v[7], v[4], v[5]], fill=cfg["seam"] + (120,), width=int(1.0 * S))
-    bx, by = B[0] + (cpt[0] - B[0]) * 0.06, B[1] + (cpt[1] - B[1]) * 0.06
-    r = 3.4 * S
-    d.ellipse([bx - r, by - r * 0.55, bx + r, by + r * 0.55], fill=cfg["outline"] + (200,))
     d.polygon(quad, outline=cfg["outline"] + (255,), width=int(1.25 * S))
     ov = ov.resize((W, H), Image.LANCZOS)
     base.alpha_composite(ov)
