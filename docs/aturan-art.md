@@ -18,10 +18,11 @@ metode yang benar-benar bersih.)
    harus tetap ada (papan tulis, pin board, rak, meja, kursi, tanaman,
    lampu, laptop, buku, kalkulator, rail, tirai — plus status jendela/
    tirai yang diminta) dan objek yang dihapus tidak disebut sama sekali.
-3. **Pixelate dengan resep FINAL** (hasil 0.16.3, dipakai 0.16.4–0.16.5):
-   resize → 1280×800 LANCZOS → Color 1.08 → Contrast 1.04 →
-   640×400 LANCZOS → quantize(150, MEDIANCUT, Dither.NONE) →
-   NEAREST balik ke 1280×800.
+3. **Pixelate dengan resep FINAL v2** (0.16.8, anti-blur; skrip
+   `/tmp/sharp_recipe.py` pola: resize → 1280×800 LANCZOS → Color 1.08 →
+   Contrast 1.04 → UnsharpMask(2, 80, 2) → quantize(150, MEDIANCUT,
+   Dither.NONE) pada 1280×800 PENUH (tanpa turun ke 640×400 yang
+   menghaluskan detail; blok 2×2 era lama dihapus karena terlihat blur).
 4. **Verifikasi ketat sebelum lanjut:**
    - Crop/zoom area yang berubah (jendela, rail, zona bekas objek) dan
      bandingkan sebelum–sesudah;

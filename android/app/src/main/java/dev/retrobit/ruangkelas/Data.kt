@@ -218,7 +218,7 @@ val TILES = listOf(
     TileInfo("Profil", Scr.PROFIL, "face", 694, 30, 74, 140),            // bingkai di atas meja
 
     // --- sisi kiri & kanan ---
-    TileInfo("Cuaca", Scr.CUACA, "grid", 898, 96, 254, 326),             // jendela → aplikasi Cuaca
+    TileInfo("Cuaca", Scr.CUACA, "grid", 898, 96, 372, 340),             // jendela + panel terbuka keluar → aplikasi Cuaca
     TileInfo("File", Scr.HOME, "trash", 12, 632, 84, 104),               // tempat sampah
 
 )
