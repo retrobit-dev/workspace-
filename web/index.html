@@ -27,8 +27,7 @@
   }
   /* ukuran stage dipastikan lewat JS (fit()) — CSS di atas hanya fallback */
   #scene{position:absolute;inset:0;width:100%;height:100%;display:block;
-    image-rendering:pixelated;pointer-events:none}
-  #fx image{image-rendering:pixelated}
+    pointer-events:none}
   #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   #fx text{font-family:"Silkscreen","Courier New",monospace;font-weight:700;dominant-baseline:auto}
 
@@ -70,7 +69,7 @@
           keySplines="0.45 0 0.55 1;0.45 0 0.55 1"/>
       </image>
     </g>
-    <clipPath id="c0"><rect x="1090" y="476" width="132" height="160"/></clipPath>
+    <clipPath id="c0"><rect x="1100" y="556" width="168" height="190"/></clipPath>
 
     <!-- lima bingkai aplikasi -->
     
@@ -107,7 +106,7 @@ const TILES = [
   {label: "Catatan", x: 72, y: 448, w: 226, h: 258},
   {label: "Jadwal", x: 340, y: 168, w: 216, h: 286},
   {label: "Profil", x: 694, y: 30, w: 74, h: 140},
-  {label: "Cuaca", x: 898, y: 96, w: 372, h: 340},
+  {label: "Cuaca", x: 1090, y: 110, w: 136, h: 270},
   {label: "File", x: 12, y: 632, w: 84, h: 104},
 ];
 const stage = document.getElementById("stage");

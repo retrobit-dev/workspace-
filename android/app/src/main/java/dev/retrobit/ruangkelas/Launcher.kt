@@ -185,7 +185,7 @@ private fun DrawScope.drawScene(box: SceneBox, scene: ImageBitmap, dx: Float = 0
             box.originY.toPx().roundToInt()
         ),
         dstSize = IntSize(box.width.toPx().roundToInt(), box.height.toPx().roundToInt()),
-        filterQuality = FilterQuality.None
+        filterQuality = FilterQuality.High  // 0.16.9: art smooth — render halus, bukan piksel blok
     )
 }
 

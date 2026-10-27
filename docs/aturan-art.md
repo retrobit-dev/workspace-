@@ -36,18 +36,18 @@ metode yang benar-benar bersih.)
    `tools/sim_overlay.py`, aturan di `tools/check_preview.mjs`, dan shot
    terkait di `docs/screens/`. Checker harus lulus sebelum commit.
 
-## B. Menjaga tampilan tajam (anti-blur)
+## B. Gaya visual (0.16.9: smooth soft-pastel)
 
-6. **Gambar dasar selalu hasil resep pixelate di A.3.** Gradasi halus
-   dari gambar AI membuat tampilan tampak blur saat diskalakan; jangan
-   pernah memakai gambar AI mentah sebagai aset.
-7. **Semua lapisan render wajib nearest-neighbor:**
-   - Preview web: `#scene` dan `#fx image` → `image-rendering:pixelated`.
-   - APK Compose: `filterQuality = FilterQuality.None` di drawImage.
-   - Docs/sim: resize hanya dengan `Image.NEAREST` (zoom) — LANCZOS hanya
-     untuk tahap awal resep pixelate & thumbnail pratinjau, bukan aset.
-8. **Ukuran kanvas kelipatan grid piksel** (kini 1280×800, grid 32) supaya
-   blok piksel tidak pecah saat ditata.
+6. **Gambar dasar TANPA pixelate** (permintaan user 0.16.9): art halus
+   gaya soft-pastel persis referensi user — palet lembut, shading halus,
+   detail jelas. Jangan kembalikan blok piksel 2×2 / kuantisasi blok.
+7. **Semua lapisan render halus (smooth):**
+   - Preview web: TANPA `image-rendering:pixelated` (checker men-fail
+     bila CSS itu muncul lagi).
+   - APK Compose: `filterQuality = FilterQuality.High` di drawImage.
+   - Docs/sim: zoom `Image.NEAREST` hanya untuk crop verifikasi, bukan aset.
+8. **Kanvas tetap 1280×800** — koordinat Data.kt sama persis dengan piksel
+   gambar.
 
 ## C. Rutinitas setelah mengubah art
 

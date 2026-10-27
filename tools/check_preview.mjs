@@ -42,7 +42,8 @@ let errors = 0;
 const fail = (msg) => { errors++; console.log("  ✗ " + msg); };
 const close = (a, b, eps = 0.02) => Math.abs(parseFloat(a) - parseFloat(b)) < eps;
 
-const dom = new JSDOM(readFileSync(HTML, "utf8"), { runScripts: "dangerously", pretendToBeVisual: true });
+const rawHtml = readFileSync(HTML, "utf8");
+const dom = new JSDOM(rawHtml, { runScripts: "dangerously", pretendToBeVisual: true });
 const { document } = dom.window;
 
 const hotspots = [...document.querySelectorAll(".hotspot")];
@@ -131,8 +132,10 @@ const labels = hotspots.map((e) => e.dataset.label);
 if (labels.filter((l) => l === "Binder").length !== 1) fail("hotspot Binder (laci meja) harus tepat satu");
 if (WINDOW_QUAD.length !== 8) fail("WINDOW_QUAD harus 8 angka");
 if (document.querySelector("#fx #flag")) fail("#flag masih ada di svg");
+if (/image-rendering\s*:\s*pixelated/.test(rawHtml))
+  fail("CSS pixelated masih ada — art 0.16.9 smooth tanpa pixelate");
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai diam · jendela→Cuaca`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai diam · langit→Cuaca · art smooth`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);

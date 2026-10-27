@@ -2,7 +2,7 @@
 
 Sumber kebenaran tetap Data.kt (TILES, BOARD_QUAD, LEAF_RECT,
 SCENE_W/H) supaya area ketuk di browser sama persis dengan APK.
-(RAIL_LINE/BATTERY/CURTAIN sudah dihapus — batang gorden cukup digambar art.)
+(RAIL_LINE/BATTERY/CURTAIN sudah dihapus. 0.16.9: art smooth tanpa pixelate — CSS image-rendering:pixelated dihapus.)
 
   python3 tools/make_preview.py   ->  web/index.html + web/scene_day.png + web/scene_night.png
 
@@ -134,8 +134,7 @@ HTML = """<!DOCTYPE html>
   }
   /* ukuran stage dipastikan lewat JS (fit()) — CSS di atas hanya fallback */
   #scene{position:absolute;inset:0;width:100%;height:100%;display:block;
-    image-rendering:pixelated;pointer-events:none}
-  #fx image{image-rendering:pixelated}
+    pointer-events:none}
   #fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   #fx text{font-family:"Silkscreen","Courier New",monospace;font-weight:700;dominant-baseline:auto}
 

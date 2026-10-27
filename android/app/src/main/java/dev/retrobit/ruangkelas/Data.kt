@@ -218,7 +218,7 @@ val TILES = listOf(
     TileInfo("Profil", Scr.PROFIL, "face", 694, 30, 74, 140),            // bingkai di atas meja
 
     // --- sisi kiri & kanan ---
-    TileInfo("Cuaca", Scr.CUACA, "grid", 898, 96, 372, 340),             // jendela + panel terbuka keluar → aplikasi Cuaca
+    TileInfo("Cuaca", Scr.CUACA, "grid", 1090, 110, 136, 270),             // langit lebar jendela kanan → aplikasi Cuaca
     TileInfo("File", Scr.HOME, "trash", 12, 632, 84, 104),               // tempat sampah
 
 )
@@ -227,10 +227,10 @@ val TILES = listOf(
 val BOARD_QUAD = intArrayOf(334, 244, 554, 146, 334, 462)
 
 /** Kaca jendela (kiri-atas, kanan-atas, kiri-bawah, kanan-bawah). */
-val WINDOW_QUAD = intArrayOf(994, 128, 1144, 120, 994, 426, 1144, 418)
+val WINDOW_QUAD = intArrayOf(990, 110, 1090, 96, 990, 380, 1090, 366)
 
 /** Daun tanaman yang ikut bergoyang. */
-val LEAF_RECT = intArrayOf(1090, 476, 132, 160)
+val LEAF_RECT = intArrayOf(1100, 556, 168, 190)
 
 
 const val SCENE_W = 1280
