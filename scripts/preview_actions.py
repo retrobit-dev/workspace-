@@ -75,7 +75,7 @@ def screen_size():
     return (int(m.group(1)), int(m.group(2))) if m else (2560, 1600)
 
 
-def scene_rect(sw: int, sh: int, scene_w=1312, scene_h=816):
+def scene_rect(sw: int, sh: int, scene_w=1280, scene_h=800):
     """Letterbox: gambar 16:10 di tengah layar, sisanya hitam."""
     scale = min(sw / scene_w, sh / scene_h)
     bw, bh = scene_w * scale, scene_h * scale
@@ -96,16 +96,18 @@ def main() -> None:
     shot("launcher")
     crashes()
 
-    # 2. ketuk objek di scene. Koordinat memakai piksel gambar 1312 x 816
-    #    (sama dengan TILES di Data.kt), lalu dipetakan ke piksel layar.
+    # 2. ketuk objek di scene. Koordinat = pusat TILES di Data.kt
+    #    (piksel gambar 1280 x 800), dipetakan ke piksel layar.
     hotspots = [
-        ("launcher-ketuk-jurnal", 854, 377),      # laptop
-        ("launcher-ketuk-kalkulator", 942, 462),  # kalkulator, di kanan laptop
-        ("launcher-ketuk-binder", 767, 615),      # laci meja
-        ("launcher-ketuk-profil", 750, 98),       # foto user di kiri jam dinding
-        ("launcher-ketuk-jadwal", 459, 287),      # papan tulis "JADWAL MENGAJAR"
-        ("launcher-ketuk-sampah", 58, 707),       # tempat sampah -> file manager
-        ("launcher-ketuk-pintasan", 242, 182),    # bingkai aplikasi (Spotify)
+        ("launcher-ketuk-jurnal", 859, 371),      # laptop (768,294,182,154)
+        ("launcher-ketuk-nilai", 766, 441),       # tumpukan buku (719,394,94,94)
+        ("launcher-ketuk-alat-tulis", 943, 415),  # gelas pensil (901,371,85,88)
+        ("launcher-ketuk-kalkulator", 924, 450),  # kalkulator (878,417,92,66)
+        ("launcher-ketuk-binder", 871, 549),      # laci meja (797,493,148,112)
+        ("launcher-ketuk-absensi", 170, 330),     # papan pin (56,220,228,220)
+        ("launcher-ketuk-jadwal", 337, 293),      # papan tulis (72,128,530,330)
+        ("launcher-ketuk-profil", 723, 94),       # bingkai kanan (684,28,79,133)
+        ("launcher-ketuk-sampah", 55, 700),       # tempat sampah -> file manager
     ]
     for name, px, py in hotspots:
         ox, oy, scale = scene_rect(w, h)
@@ -134,10 +136,24 @@ def main() -> None:
     time.sleep(2)
     launch()
     shot("launcher-letterbox")
-    tap_scene(854, 377, w, 1200)   # laptop
+    tap_scene(859, 371, w, 1200)   # laptop
     shot("launcher-letterbox-ketuk")
     time.sleep(2)
     sh("adb shell wm size reset")
+
+    # 4. mode SIANG: geser jam perangkat (emulator google_apis boleh root)
+    #    -> matahari & bayangan nyata harus terlihat; 10:30 UTC = solar ~17:56
+    #    (matahari barat) -> bayangan ke timur (kanan-bawah, kompas iso)
+    sh("adb root")
+    time.sleep(3)
+    sh("adb shell date 102810302026.00")
+    launch()
+    time.sleep(3)
+    shot("launcher-siang")
+    crashes()
+    tap_scene(859, 371, w, h)   # laptop tetap ketemu di siang
+    shot("launcher-siang-ketuk-laptop")
+    time.sleep(2)
     sh("adb shell wm density reset")
     time.sleep(1)
 
