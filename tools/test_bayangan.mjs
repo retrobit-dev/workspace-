@@ -1,7 +1,15 @@
 import {JSDOM} from "jsdom";
 import {readFileSync} from "fs";
 const html = readFileSync("web/index.html", "utf8");
-const dom = new JSDOM(html, {runScripts: "dangerously", pretendToBeVisual: true, url: "https://rk.local/"});
+// jam perangkat dipatok 01:00 WIB (18:00 UTC) supaya uji malam deterministik
+const dom = new JSDOM(html, {runScripts: "dangerously", pretendToBeVisual: true, url: "https://rk.local/",
+  beforeParse(w) {
+    const F = class extends Date {
+      constructor(...a) { a.length === 0 ? super(Date.UTC(2026, 9, 28, 18, 0)) : super(...a); }
+      static now() { return Date.UTC(2026, 9, 28, 18, 0); }
+    };
+    w.Date = F;
+  }});
 const w = dom.window;
 const A = (c, m) => { if (!c) { console.error("GAGAL:", m); process.exit(1); } console.log("ok:", m); };
 const g = w.document.getElementById("bayangan");
@@ -20,7 +28,7 @@ const [az3, el3] = w.matahari(R, O, Date.UTC(2026, 9, 28, 8, 30));
 A(el3 > 5 && el3 < 50, "15:30 WIB: elevasi sore (" + el3.toFixed(1) + "°)");
 A(az3 > 240, "sore: matahari di barat (az " + az3.toFixed(0) + "° > 240)");
 // malam
-const [, el4] = w.matahari(R, O, Date.UTC(2026, 9, 28, 17, 0));
+const [, el4] = w.matahari(R, O, Date.UTC(2026, 9, 28, 18, 0));
 A(el4 < 0, "00:00 WIB: matahari di bawah horizon (" + el4.toFixed(1) + "°)");
 // bayangan tersembunyi saat malam perangkat
 await new Promise(r => setTimeout(r, 300));

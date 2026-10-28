@@ -213,8 +213,8 @@ val TILES = listOf(
     // laptop (aset; kartu aset berisi piksel objek lain -> poligon manual, buku dipotong)
     TileInfo("Jurnal", Scr.JURNAL, "book",
         intArrayOf(920, 333, 863, 321, 796, 393, 813, 394, 813, 424, 857, 443, 917, 419, 925, 386)),
-    TileInfo("Nilai", Scr.NILAI, "chart",                            // tumpukan buku (aset)
-        intArrayOf(719, 407, 719, 451, 730, 449, 736, 483, 740, 487, 762, 487, 793, 470, 812, 477, 812, 452)),
+    TileInfo("Nilai", Scr.NILAI, "chart",                            // satu buku di meja (0.16.38)
+        intArrayOf(766, 294, 752, 305, 733, 298, 690, 320, 688, 368, 690, 336, 726, 352, 766, 330)),
     TileInfo("Alat Tulis", Scr.KIT, "pencil",                        // gelas pensil (kartu)
         intArrayOf(986, 371, 979, 371, 974, 380, 969, 373, 964, 371, 957, 407, 959, 457, 985, 453)),
     TileInfo("Kalkulator", Scr.KALKULATOR, "calc",                   // kalkulator (aset)

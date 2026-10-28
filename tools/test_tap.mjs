@@ -32,7 +32,7 @@ A(show().includes("ABSENSI"), "ketuk pin -> toast ABSENSI (" + show() + ")");
 await new Promise((r) => setTimeout(r, 2350));
 tap(390, 500);
 A(show() === "", "ketuk kaki papan -> tanpa toast");
-tap(759, 456);   // buku (area Nilai)
+tap(733, 323);   // satu buku di meja (area Nilai 0.16.38)
 A(show().includes("NILAI"), "ketuk buku -> toast NILAI (" + show() + ")");
 console.log("SEMUA LULUS");
 process.exit(0);

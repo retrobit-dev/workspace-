@@ -94,7 +94,9 @@ python3 tools/compose.py --tanpa KOMPUTER,KALKULATOR --out art/scene-tanpa-lapto
   `art/objects/tap_polygons.json`, dibangun oleh `tools/tap_poly.py` — aset
   dari kontur alfa; bentuk menempel latar (papan tulis, papan pin, rak, laci)
   poligon terukur manual; Cuaca = dua kaca jendela (satu langit, 0.16.37;
-  celah tirai tetap tersegel).
+  celah tirai tetap tersegel). 0.16.38: tumpukan buku di meja → SATU buku
+  (art dasar diedit langsung via tools/buku_satu.py; buku menempel latar,
+  bukan aset; poligon Nilai ikut diperbarui).
 - Mirror manual di `Data.kt` (`TileInfo.poly`, `poly2`), hit-test
   depan→belakang di `Launcher.kt` (`tileAt`) dan JS preview (`tileAt` global);
   checker `check_preview.mjs` memvalidasi keduanya + kasus ronde 11
