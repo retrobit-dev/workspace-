@@ -79,6 +79,8 @@ data class CuacaData(
     val contoh: Boolean = false
 )
 
+data class KodeAngin(val code: Int, val angin: Int)
+
 object CuacaRepo {
 
     val kota = listOf(
@@ -100,15 +102,15 @@ object CuacaRepo {
      * coba online dulu (sekalian isi cache); bila gagal pakai cache terakhir.
      * Tidak pernah melempar — mengembalikan null bila sama sekali tak ada data.
      */
-    suspend fun kodeKini(ctx: android.content.Context, cityIdx: Int): Int? =
+    suspend fun kodeAnginKini(ctx: android.content.Context, cityIdx: Int): KodeAngin? =
         withContext(Dispatchers.IO) {
             val k = kota[cityIdx.coerceIn(0, kota.size - 1)]
             try {
                 val d = ambil(k)
                 simpanCache(ctx, d)
-                d.now.code
+                KodeAngin(d.now.code, d.now.wind)
             } catch (_: Exception) {
-                muatCache(ctx)?.now?.code
+                muatCache(ctx)?.let { KodeAngin(it.now.code, it.now.wind) }
             }
         }
 

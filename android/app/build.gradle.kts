@@ -12,8 +12,8 @@ android {
         applicationId = "dev.retrobit.ruangkelas"
         minSdk = 26
         targetSdk = 35
-        versionCode = 52
-        versionName = "0.16.29"
+        versionCode = 53
+        versionName = "0.16.30"
         resourceConfigurations += listOf("in", "en")
     }
 

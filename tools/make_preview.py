@@ -129,6 +129,75 @@ def quad_polygon(quad):
     return f"{ax},{ay} {bx},{by} {bx + cx - ax},{by + cy - ay} {cx},{cy}"
 
 
+# pita kain tirai kanan (koordinat scene) — cermin TIRAI_BAND_* di Launcher.kt
+TIRAI_BAND_DAY = [
+    (1192, 198, 1231, 198, 1233, 292, 1194, 292),
+    (1194, 292, 1233, 292, 1234, 358, 1200, 358),
+    (1204, 358, 1234, 358, 1248, 472, 1193, 472, 1193, 420, 1196, 404, 1204, 368),
+]
+TIRAI_BAND_NIGHT = [
+    (1173, 190, 1233, 190, 1234, 280, 1173, 280),
+    (1173, 280, 1234, 280, 1235, 360, 1173, 360),
+    (1173, 360, 1235, 360, 1249, 468, 1166, 468, 1166, 430, 1173, 415),
+]
+
+
+def wind_groups(leaf, scene_name):
+    """Daun (JS-driven) + 3 pita tirai per suasana; transform digerakkan JS
+    windTick() mengikuti kecepatan angin Open-Meteo — tanpa SMIL."""
+    out = []
+    x, y, w, h = leaf
+    out.append(f"""
+    <g clip-path="url(#c0)">
+      <image id="leaf-g" class="sway-scene" href="{scene_name}" x="0" y="0" width="__W__" height="__H__"/>
+    </g>
+    <clipPath id="c0"><rect x="{x}" y="{y}" width="{w}" height="{h}"/></clipPath>""")
+    for mode, bands in (("day", TIRAI_BAND_DAY), ("night", TIRAI_BAND_NIGHT)):
+        disp = "none" if mode == "day" else ""  # scene awal = malam
+        for i, q in enumerate(bands, 1):
+            pts = " ".join(f"{q[j]},{q[j + 1]}" for j in range(0, len(q), 2))
+            out.append(f"""
+    <g clip-path="url(#cb{mode[0]}{i})" class="cur-{mode}" style="display:{disp}">
+      <image id="cb-{mode[0]}{i}" class="sway-scene" href="{scene_name}" x="0" y="0" width="__W__" height="__H__"/>
+    </g>
+    <clipPath id="cb{mode[0]}{i}"><polygon points="{pts}"/></clipPath>""")
+    return "\n".join(out)
+
+
+# JS mesin angin: amplitudo & kecepatan dari SKY_WEATHER.angin (km/h Open-Meteo)
+WIND_JS = r"""
+/* ---- angin nyata: tirai kanan & daun (amplitudo+kecepatan dari wind_speed) ---- */
+const WIND_AMP = [1.1, 2.1, 3.4], WIND_PH = [0, 0.9, 1.8];
+function windK() {
+  const v = (SKY_WEATHER.angin === undefined) ? 8 : SKY_WEATHER.angin;
+  return 0.25 + 0.75 * Math.min(1, Math.max(0, (v - 2) / 23));
+}
+function windTick() {
+  const t = performance.now() / 1000;
+  const k = windK();
+  const gust = 0.72 + 0.28 * Math.sin(t * 0.7854 + 1.3) * Math.sin(t * 1.8326);
+  const w = 2 * Math.PI / (4.6 - 3.2 * ((k - 0.25) / 0.75));
+  const A = k * gust;
+  for (let i = 1; i <= 3; i++) {
+    const dx = (WIND_AMP[i - 1] * A * Math.sin(w * t - WIND_PH[i - 1])).toFixed(2);
+    const tr = "translate(" + dx + ",0)";
+    const dd = document.getElementById("cb-d" + i);
+    const nn = document.getElementById("cb-n" + i);
+    if (dd) dd.setAttribute("transform", tr);
+    if (nn) nn.setAttribute("transform", tr);
+  }
+  const lg = document.getElementById("leaf-g");
+  if (lg) {
+    const dxl = (2.6 * A * Math.sin(2 * w * t - 0.5)).toFixed(2);
+    const dyl = (0.9 * A * Math.sin(3 * w * t)).toFixed(2);
+    lg.setAttribute("transform", "translate(" + dxl + "," + dyl + ")");
+  }
+  requestAnimationFrame(windTick);
+}
+requestAnimationFrame(windTick);
+"""
+
+
 def sway_group(rects, scene_name, amp, dur, id_base=0, delay0=0.0):
     """Kelompok gambar yang ikut bergoyang: scene di-klip ke kotak lalu digeser."""
     groups = []
@@ -401,6 +470,8 @@ function tick() {
       img.src = img.dataset[mode];
     });
     document.querySelectorAll(".sway-scene").forEach((img) => img.setAttribute("href", file));
+    document.querySelectorAll(".cur-day").forEach((el) => { el.style.display = day ? "" : "none"; });
+    document.querySelectorAll(".cur-night").forEach((el) => { el.style.display = day ? "none" : ""; });
     lastDay = day;
   }
 
@@ -441,7 +512,7 @@ def sky_url() -> str:
     return (
         "https://api.open-meteo.com/v1/forecast"
         f"?latitude={sky_preview.JEMBER['lat']}&longitude={sky_preview.JEMBER['lon']}"
-        "&current=weather_code"
+        "&current=weather_code,wind_speed_10m"
     )
 
 
@@ -457,7 +528,7 @@ def build_html(data, scene_sizes, holes):
     # tirai kanan: terpegang di ring, bawah mengayun (rotasi di rel + geser tipis);
     # kertas di papan pin bergoyang lembut (pivot di pin); daun bergoyang (pot diam)
     # hanya daun yang bergoyang — tirai diam total (keputusan user 0.16.14)
-    sway = sway_group([data["leaf"]], sway_scene, 2.0, 5.2)
+    sway = wind_groups(data["leaf"], sway_scene)
 
     html = (
         HTML.replace("__RATIO__", f"{w} / {h}")
@@ -470,7 +541,7 @@ def build_html(data, scene_sizes, holes):
         .replace("__SWAY__", sway.replace("__W__", str(w)).replace("__H__", str(h)))
         # langit hidup (waktu nyata + cuaca)
         .replace("__SKY__", sky_preview.group())
-        .replace("__SKY_JS__", sky_preview.JS
+        .replace("__SKY_JS__", (sky_preview.JS + WIND_JS)
                  .replace("__SKY_STOPS__", json.dumps(sky_preview.SKY_STOPS))
                  .replace("__SKY_URL__", sky_url()))
         .replace("__HOLES__", str(holes))

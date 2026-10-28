@@ -1,6 +1,6 @@
 {
   "name": "ruang-kelas",
-  "version": "0.16.29",
+  "version": "0.16.30",
   "private": true,
   "description": "Launcher Android pixel-art: satu gambar workspace isometrik, objek bisa diketuk untuk membuka aplikasi bawaan.",
   "scripts": {

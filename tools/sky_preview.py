@@ -143,10 +143,12 @@ def group() -> str:
 JS = r"""
 const SKY_STOPS = __SKY_STOPS__;
 const SKY = {x0:1108, x1:1185, y0:336, y1:372, amp:146};
-let SKY_WEATHER = {langit:1, hujan:0, salju:false, kabut:false, petir:false, code:1};
+let SKY_WEATHER = {langit:1, hujan:0, salju:false, kabut:false, petir:false, code:1, angin:8};
 
 function skyStored(){try{return localStorage.getItem("rk-sky-code");}catch(e){return null;}}
 function skyStore(c){try{localStorage.setItem("rk-sky-code",String(c));}catch(e){}}
+function windStored(){try{return localStorage.getItem("rk-sky-wind");}catch(e){return null;}}
+function windStore(v){try{localStorage.setItem("rk-sky-wind",String(v));}catch(e){}}
 function skyHex2rgb(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
 function skyMix(a,b,t){
   const A=skyHex2rgb(a),B=skyHex2rgb(b);
@@ -218,7 +220,10 @@ function skyTick(){
   const ox=SKY.x0+(SKY.x1-SKY.x0)*f;
   const oy=(SKY.y0+(SKY.y1-SKY.y0)*f)-Math.sin(Math.PI*f)*SKY.amp;
   document.getElementById("sky-orb-pos").setAttribute("transform","translate("+ox.toFixed(1)+","+oy.toFixed(1)+")");
-  setDisp("sky-sun",isDay&&SKY_WEATHER.langit<=2);
+  setDisp("sky-sun",isDay);
+  // matahari selalu tampak saat siang; mendung tebal hanya meredupkan (α0.3)
+  const sunEl=document.getElementById("sky-sun");
+  if(sunEl) sunEl.style.opacity=isDay?(SKY_WEATHER.langit<=1?1:(SKY_WEATHER.langit===2?0.8:0.3)):"";
   // bulan selalu tampak di malam hari; mendung tebal hanya membuatnya samar
   setDisp("sky-moon",!isDay);
   const moonEl=document.getElementById("sky-moon");
@@ -227,7 +232,8 @@ function skyTick(){
 }
 function applySkyCode(code){
   if(typeof code!=="number")return;
-  SKY_WEATHER=Object.assign({code:code},skyVisuals(code));
+  const anginLama=SKY_WEATHER.angin;
+  SKY_WEATHER=Object.assign({code:code,angin:anginLama},skyVisuals(code));
   document.getElementById("sky-anim").dataset.weather=String(code);
   applySkyVis(new Date().getHours()>=6&&new Date().getHours()<=17);
 }
@@ -237,10 +243,13 @@ async function skyLoadWeather(){
     const r=await fetch("__SKY_URL__",opt);
     const j=await r.json();
     const c=j&&j.current&&j.current.weather_code;
+    const wn=j&&j.current&&j.current.wind_speed_10m;
+    if(typeof wn==="number"&&wn>=0){SKY_WEATHER.angin=wn;windStore(wn);}
     if(typeof c==="number"){skyStore(c);applySkyCode(c);}
   }catch(e){/* offline: pertahankan kode tersimpan */}
 }
 (function(){
+  const w0=parseFloat(windStored());if(!isNaN(w0)&&w0>=0)SKY_WEATHER.angin=w0;
   applySkyCode(parseInt(skyStored()||"1",10));
   skyTick();
   setInterval(skyTick,1000);

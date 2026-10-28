@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -120,10 +121,12 @@ fun LauncherScreen(
     // kode cuaca untuk animasi langit: cache dulu, lalu refresh online tiap 15 menit
     val appCtx = LocalContext.current
     var skyCode by remember { mutableStateOf(1) }
+    var skyWind by remember { mutableStateOf(12) }  // km/h utk tirai & daun
     LaunchedEffect(Unit) {
         while (true) {
             val idx = appCtx.getSharedPreferences("cuaca", Context.MODE_PRIVATE).getInt("kota", 0)
-            skyCode = CuacaRepo.kodeKini(appCtx, idx) ?: 1
+            val ka = CuacaRepo.kodeAnginKini(appCtx, idx)
+            if (ka != null) { skyCode = ka.code; skyWind = ka.angin }
             delay(15 * 60 * 1000L)
         }
     }
@@ -201,7 +204,7 @@ fun LauncherScreen(
         Canvas(Modifier.fillMaxSize()) { drawScene(box, scene) }
 
         // angin: ekor tirai, daun, kertas pin bergoyang halus
-        WindSway(box = box, scene = scene)
+        WindSway(box = box, scene = scene, isDay = isDay, windKmh = skyWind)
 
         // berkas cahaya matahari ke ruangan (overlay, hanya saat siang cerah)
         SkyBeam(box = box, code = skyCode, isDay = isDay, clock = skyClock)
@@ -257,14 +260,14 @@ fun LauncherScreen(
 }
 
 /** Gambar scene penuh layar, tanpa distorsi. */
-private fun DrawScope.drawScene(box: SceneBox, scene: ImageBitmap, dx: Float = 0f) {
+private fun DrawScope.drawScene(box: SceneBox, scene: ImageBitmap, dx: Float = 0f, dy: Float = 0f) {
     drawImage(
         image = scene,
         srcOffset = IntOffset.Zero,
         srcSize = IntSize(scene.width, scene.height),
         dstOffset = IntOffset(
             (box.originX.toPx() + dx).roundToInt(),
-            box.originY.toPx().roundToInt()
+            (box.originY.toPx() + dy).roundToInt()
         ),
         dstSize = IntSize(box.width.toPx().roundToInt(), box.height.toPx().roundToInt()),
         filterQuality = FilterQuality.High  // 0.16.9: art smooth — render halus, bukan piksel blok
@@ -272,36 +275,68 @@ private fun DrawScope.drawScene(box: SceneBox, scene: ImageBitmap, dx: Float = 0
 }
 
 /**
- * Hembusan angin: bagian gorden dan daun digambar ulang dengan geseran halus
- * mengikuti gelombang sinus, sehingga ruangan terasa "hidup" walau gambarnya diam.
+ * Hembusan angin nyata (Open-Meteo wind_speed_10m): tirai kanan & daun tanaman
+ * digambar ulang dengan geseran halus — amplitudo & kecepatan mengikuti kekuatan
+ * angin (2..25 km/h dipetakan ke 0..1), plus napas gust lambat. Atas tirai tetap
+ * terikat rel; hanya kain yang bergoyang (kusen & dinding tidak ikut).
  */
 @Composable
-private fun WindSway(box: SceneBox, scene: ImageBitmap) {
-    val phase = remember { Animatable(0f) }
+private fun WindSway(box: SceneBox, scene: ImageBitmap, isDay: Boolean, windKmh: Int) {
+    val rawK = ((windKmh - 2f) / 23f).coerceIn(0f, 1f)
+    val k = 0.25f + 0.75f * rawK                 // amplitudo minimum 25% (tak pernah beku)
+    val period = ((4.6f - 3.2f * rawK) * 1000f).toInt().coerceIn(1200, 5200)
+    val phase = remember(period) { Animatable(0f) }
+    LaunchedEffect(period) {
+        while (true) {
+            phase.animateTo((2f * Math.PI).toFloat(), tween(period, easing = LinearEasing))
+            phase.snapTo(0f)
+        }
+    }
+    // napas gust: frekuensi kelipatan -> kontinu saat loop (24s: 3 & 7 siklus)
+    val slow = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         while (true) {
-            phase.animateTo(
-                targetValue = (2f * Math.PI).toFloat(),
-                animationSpec = tween(durationMillis = 5200, easing = LinearEasing)
-            )
-            phase.snapTo(0f)
+            slow.animateTo((2f * Math.PI).toFloat(), tween(24000, easing = LinearEasing))
+            slow.snapTo(0f)
         }
     }
 
     Canvas(Modifier.fillMaxSize()) {
         val base = box.unit.toPx()
-        // hanya daun tanaman yang bergoyang — tirai diam total (keputusan user 0.16.14)
+        val gust = 0.72f + 0.28f * sin(slow.value * 3f + 1.3f) * sin(slow.value * 7f)
+        val a = k * gust
+
+        // tirai kanan: 3 pita (atas terikat, makin ke bawah makin besar)
+        val bands = if (isDay) TIRAI_BAND_DAY else TIRAI_BAND_NIGHT
+        bands.forEachIndexed { i, b ->
+            val dx = base * BAND_AMP[i] * a * sin(phase.value - BAND_PH[i])
+            clipPath(bandPath(b, box)) { drawScene(box, scene, dx = dx) }
+        }
+
+        // daun tanaman (pot tidak ikut — klip berakhir di atas pot)
         val leaf = LEAF_RECT
-        val dx = sin(phase.value * 1.7f) * base * 1.6f
+        val ldx = base * 2.6f * a * sin(2f * phase.value - 0.5f)
+        val ldy = base * 0.9f * a * sin(3f * phase.value)
         clipRect(
             left = box.x(leaf[0]).toPx(),
             top = box.y(leaf[1]).toPx(),
             right = box.x(leaf[0] + leaf[2]).toPx(),
             bottom = box.y(leaf[1] + leaf[3]).toPx()
         ) {
-            drawScene(box, scene, dx = dx)
+            drawScene(box, scene, dx = ldx, dy = ldy)
         }
     }
+}
+
+/** Poligon pita tirai (koordinat scene) -> Path px perangkat. */
+private fun bandPath(q: FloatArray, box: SceneBox): Path = Path().apply {
+    moveTo(box.x(q[0]).toPx(), box.y(q[1]).toPx())
+    var i = 2
+    while (i < q.size) {
+        lineTo(box.x(q[i]).toPx(), box.y(q[i + 1]).toPx())
+        i += 2
+    }
+    close()
 }
 
 private fun lapBmp(ctx: Context, dayRes: Int, nightRes: Int, isDay: Boolean): ImageBitmap {
@@ -536,6 +571,22 @@ private val SKY_HOLES_NIGHT = listOf(
     floatArrayOf(1105f, 166f, 1171f, 197f, 1168f, 408f, 1105f, 376f),
 )
 
+// pita kain tirai kanan yang ikut angin (koordinat scene; atas terikat rel).
+// Tepi kiri dijaga bebas dari bolongan kaca supaya kaca tak ikut bergeser.
+private val TIRAI_BAND_DAY = listOf(
+    floatArrayOf(1192f, 198f, 1231f, 198f, 1233f, 292f, 1194f, 292f),
+    floatArrayOf(1194f, 292f, 1233f, 292f, 1234f, 358f, 1200f, 358f),
+    floatArrayOf(1204f, 358f, 1234f, 358f, 1248f, 472f, 1193f, 472f, 1193f, 420f, 1196f, 404f, 1204f, 368f),
+)
+private val TIRAI_BAND_NIGHT = listOf(
+    floatArrayOf(1173f, 190f, 1233f, 190f, 1234f, 280f, 1173f, 280f),
+    floatArrayOf(1173f, 280f, 1234f, 280f, 1235f, 360f, 1173f, 360f),
+    floatArrayOf(1173f, 360f, 1235f, 360f, 1249f, 468f, 1166f, 468f, 1166f, 430f, 1173f, 415f),
+)
+// amplitudo dasar per pita (scene px pada angin maks) & fase kaskade
+private val BAND_AMP = listOf(0.45f, 0.85f, 1.35f)
+private val BAND_PH = listOf(0f, 0.9f, 1.8f)
+
 // titik gradien langit per menit dalam hari (atas, bawah) — diinterpolasi mulus
 private val SKY_STOPS = listOf(
     intArrayOf(0, 0x0A0F2E, 0x18224E),
@@ -644,9 +695,11 @@ private fun SkyAnim(
         val orbX = sx(1108f + 77f * fx)
         val orbY = sy(336f + 36f * fx - sin(fx * 3.14159265f) * 146f)
 
-        if (isDay && v.langit <= 2) {
+        if (isDay) {
+            // matahari SELALU tampak saat siang; mendung tebal hanya meredupkan (α0.3)
+            val sunA = when (v.langit) { 2 -> 0.8f; 3 -> 0.3f; else -> 1f }
             val hot = code == 0
-            val rayA = if (v.langit == 0) (if (hot) 0.85f else 0.6f) else 0.25f
+            val rayA = (if (v.langit == 0) (if (hot) 0.85f else 0.6f) else 0.25f) * sunA
             for (k in 0 until 8) {
                 val ang = (clock.value * 12f + k * 45f) * (3.14159265f / 180f)
                 val c = cos(ang)
@@ -659,9 +712,9 @@ private fun SkyAnim(
                 )
             }
             val pulse = 0.55f + 0.45f * sin(clock.value * 1.4f)
-            drawCircle(Color(0xFFFFD9A0), radius = base * (if (hot) 30f else 24f), center = Offset(orbX, orbY), alpha = 0.28f * pulse)
-            drawCircle(Color(0xFFFFE9A8), radius = base * 15f, center = Offset(orbX, orbY))
-            drawCircle(Color(0xFFFFF3C4), radius = base * 10.5f, center = Offset(orbX, orbY))
+            drawCircle(Color(0xFFFFD9A0), radius = base * (if (hot) 30f else 24f), center = Offset(orbX, orbY), alpha = 0.28f * pulse * sunA)
+            drawCircle(Color(0xFFFFE9A8), radius = base * 15f, center = Offset(orbX, orbY), alpha = sunA)
+            drawCircle(Color(0xFFFFF3C4), radius = base * 10.5f, center = Offset(orbX, orbY), alpha = sunA)
         }
         // bulan SELALU ada di malam hari; awan tebal hanya membuatnya samar
         // (digambar sebelum awan, jadi awan lewat DI DEPANNYA)

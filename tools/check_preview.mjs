@@ -116,8 +116,13 @@ if (/TAIL_QUAD|TAIL_SWAY|PAPER_RECTS/.test(data))
 if (document.getElementById("tail-base") || document.getElementById("tail-sway"))
   fail("lapisan ekor tirai masih ada — tirai harus diam total");
 const rotCount = (document.querySelectorAll("#fx animateTransform[type=rotate]")).length;
-if (rotCount !== 0) fail(`masih ada animasi rotate (${rotCount}) — hanya daun yang boleh bergoyang`);
+if (rotCount !== 0) fail(`masih ada animasi rotate (${rotCount}) — tirai/daun digerakkan JS`);
 if (LEAF.length !== 4) fail("LEAF_RECT harus 4 angka");
+// angin nyata: pita tirai + daun JS-driven, kecepatan dari wind_speed Open-Meteo
+for (const id of ["cb-d1", "cb-d2", "cb-d3", "cb-n1", "cb-n2", "cb-n3", "leaf-g"])
+  if (!document.getElementById(id)) fail(`lapisan angin ${id} tidak ada`);
+if (!/wind_speed_10m/.test(rawHtml) || !/windTick/.test(rawHtml))
+  fail("mesin angin nyata tidak ada (wind_speed_10m / windTick)");
 
 // ---- bingkai dinding kosong (ikon pintasan dihapus 0.16.1) ----
 if (document.getElementById("icons")) fail("#icons masih ada (ikon pintasan sudah dihapus)");
@@ -167,6 +172,6 @@ if (!holesM || +holesM[1] < 15000)
   fail(`bolongan kaca scene kurang (${holesM ? holesM[1] : "tidak ada"} < 15000 px) — scene harus transparan di kaca`);
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai diam · daun bergoyang · langit→Cuaca · langit hidup (orb+cuaca) · art smooth · siang lembut`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai+daun angin nyata · langit→Cuaca · langit hidup (orb+cuaca+matahari) · art smooth · siang lembut`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);
