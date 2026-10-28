@@ -207,6 +207,122 @@ def main(dry=False):
     print("nilai poly:", data["nilai"]["poly"], "inside:", data["nilai"]["inside"])
 
 
+
+
+# ==================== REBUILD (0.16.42) ====================
+# Zona buku-meja dibangun ulang SEKALI PUTUS dari art asli 3-buku.
+#   dinding   x656-792 di atas tepi-belakang: DINDING POLOS = profil kolom
+#             asli y273-280 dikali kurva gradien vertikal global (dinding
+#             murni x628-664) — berkas cahaya berakhir di buku (fisik ok)
+#   permukaan back(x)..lip(x): PLANE-FIT 2D per kanal dr piksel kayu asli
+#             kedua sisi (rb>35, bebas kertas/buku)
+#   muka depan lip(x)..+28: profil dd-aligned muka kanan x792-799
+#   buku      cutout mask deteksi() dari ORIGINAL (buku-1 murni, terbukti
+#             di stage-1) dipaste di (+2,+36) + bayangan kontak
+LBLIP_X0, LBLIP_Y0, LBLIP_SLP = 648, 372.0, 0.2235
+BACK_X0, BACK_Y0, BACK_SLP = 645, 372.0, -0.13
+
+
+def lip(x):
+    return LBLIP_Y0 + LBLIP_SLP * (x - LBLIP_X0)
+
+
+def back(x):
+    return BACK_Y0 + BACK_SLP * (x - BACK_X0)
+
+
+def rebuild():
+    orig = {m: np.asarray(Image.open(ROOT / "art" / f"asli-tumpukan-{m}.png")
+                          .convert("RGB")).astype(float) for m in ARTS}
+    for mode in ("day", "night"):
+        out = orig[mode].copy()
+        _rb = rb(out); _m = out.mean(2)
+        # ---- 1) DINDING POLOS (x656-792, y273..back)
+        profk = {x: np.median(out[273:281, x], axis=0) for x in range(656, 793)}
+        kurva = {}
+        for y in range(273, 372):                      # gradien vertikal global
+            base = np.median(orig[mode][y, 628:660], axis=0)
+            top = np.median(orig[mode][273:281, 628:660].reshape(-1, 3), 0)
+            kurva[y] = np.clip(base / np.maximum(top, 1e-3), 0.5, 1.6)
+        for x in range(656, 786):
+            yb = int(back(x))
+            for y in range(273, yb):
+                v = profk[x] * kurva[y]
+                if x < 663:                            # feather kiri (ke dinding asli)
+                    t = (x - 656) / 7.0
+                    v = v * t + out[y, x] * (1 - t)
+                out[y, x] = v
+        # ---- 2) PERMUKAAN (x679-785, back..lip): plane-fit 2D per kanal dr
+        # kayu murni kedua sisi (rb>35, bebas kertas/buku) — seluruh zona ini
+        # bekas tumpukan+bayangannya, tidak ada asli yg perlu dipertahankan.
+        sx, sy, sc = [], [], []
+        for x in list(range(628, 676, 2)) + list(range(788, 801, 2)):
+            for y in range(int(back(x)) + 1, int(lip(x)) - 1):
+                if _rb[y, x] > 35 and 100 <= _m[y, x] <= 235:
+                    sx.append(x); sy.append(y); sc.append(out[y, x])
+        A = np.column_stack([np.ones(len(sx)), sx, sy]).astype(float)
+        coef = [np.linalg.lstsq(A, np.array([c[i] for c in sc]), rcond=None)[0] for i in range(3)]
+        for y in range(340, 402):
+            for x in range(679, 786):
+                if y <= back(x) + 1 or y > lip(x) - 1:
+                    continue
+                v = np.array([c[0] + c[1] * x + c[2] * y for c in coef])
+                if x < 684:                      # feather kiri (ke sisi-meja asli)
+                    t = (x - 679) / 5.0
+                    v = v * t + out[y, x] * (1 - t)
+                if x >= 781:                     # feather kanan (ke kayu asli)
+                    t = (x - 781) / 4.0
+                    v = v * (1 - t) + out[y, x] * t
+                out[y, x] = v
+        # ---- 3) MUKA DEPAN (y int(lip) .. 406): GRADIEN BARIS-SAMA dari
+        # kolom muka asli yang terekspos di original: kiri x650-666 & kanan
+        # x772-786 (bebas buku). Kontur lip, shading vertikal, dan transisi
+        # kursi/lantau ikut otomatis karena sumbernya per-baris dari asli.
+        for y in range(370, 405):
+            L = np.median(orig[mode][y, 650:667], axis=0)
+            R = np.median(orig[mode][y, 768:781], axis=0)
+            for x in range(661, 792):
+                if y < int(lip(x)) - 1:
+                    continue
+                if out[y, x, 2] - out[y, x, 0] > 10:      # lantai ungu asli
+                    continue
+                mn = out[y, x].mean()
+                if mn < 70:                               # kursi asli
+                    continue
+                bekas = ((abs(out[y, x, 0] - out[y, x, 2]) <= 28 and mn >= (128 if mode == "day" else 110))
+                         or (-16 <= out[y, x, 0] - out[y, x, 2] and mn <= 150))
+                if not bekas:                             # muka asli: biarkan
+                    continue
+                t = (x - 661) / 126.0; t = t * t * (3 - 2 * t)
+                v = L * (1 - t) + R * t
+                if x < 668:                               # feather kiri
+                    tt = (x - 661) / 7.0
+                    v = v * tt + out[y, x] * (1 - tt)
+                if x >= 784:                              # feather kanan (meja/laptop asli)
+                    tt = (x - 784) / 5.0
+                    v = v * (1 - tt) + out[y, x] * tt
+                out[y, x] = v
+        # ---- 4) BUKU: cutout mask deteksi dari ORIGINAL, paste (+2,+36)
+        m = deteksi(orig[mode].astype(np.uint8), mode)[0]
+        mloc = m[Y_TOP:Y_BOT, X0:X1]
+        mm = cv2.GaussianBlur(mloc, (3, 3), 0)[:, :, None] / 255.0
+        src = orig[mode][Y_TOP:Y_BOT, X0:X1].astype(float)
+        dst = out[Y_TOP + DY:Y_BOT + DY, X0 + DX:X1 + DX]
+        out[Y_TOP + DY:Y_BOT + DY, X0 + DX:X1 + DX] = src * mm + dst * (1 - mm)
+        # bayangan kontak di bawah buku baru
+        for i in range(mloc.shape[1]):
+            col = np.where(mloc[:, i] > 0)[0]
+            if not len(col):
+                continue
+            yb2 = Y_TOP + DY + col.max() + 1
+            x2 = X0 + DX + i
+            if yb2 + 5 < int(lip(x2)) and out[yb2:yb2 + 5, x2].mean() > 70:
+                seg = out[yb2:yb2 + 5, x2]
+                out[yb2:yb2 + 5, x2] = seg * np.linspace(0.86, 1.0, 5)[:, None]
+        Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).save(ARTS[mode])
+        print(f"rebuild[{mode}] ->", ARTS[mode].name)
+
+
 def clean2():
     """Tahap 2 (0.16.38): seluruh band di sekitar buku (x652-798, y300-394)
     di bawah/di atas garis batas dinding-meja diisi ulang dgn BIDANG gradien
@@ -638,7 +754,9 @@ def clean2():
 
 
 if __name__ == "__main__":
-    if "--clean2" in sys.argv:
+    if "--rebuild" in sys.argv:
+        rebuild()
+    elif "--clean2" in sys.argv:
         clean2()
     elif "--restore" in sys.argv:
         for m, p in ARTS.items():
