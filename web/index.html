@@ -1074,8 +1074,16 @@ TILES.forEach((tile) => {
   });
   drawerGrid.appendChild(btn);
 });
+let lapIdle = null;
+function lapResetIdle() {
+  clearTimeout(lapIdle);
+  if (lapState === 1 && !lapBusy) {
+    lapIdle = setTimeout(() => { lapState = 0; lapApply(); }, 30000);
+  }
+}
 document.getElementById("drawer-back").addEventListener("click", () => {
   drawer.style.display = "none";
+  lapResetIdle();  // kembali dari daftar = menyala, 30 dtk tanpa interaksi = padam
 });
 
 lapApply();

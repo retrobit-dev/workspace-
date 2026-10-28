@@ -157,6 +157,17 @@ fun LauncherScreen(
     var caption by remember { mutableStateOf("") }
     var captionTick by remember { mutableStateOf(0) }
 
+    // laptop: kembali dari daftar aplikasi = masih MENYALA; 30 detik tanpa
+    // interaksi di launcher -> padam sendiri (kembali terbuka-mati)
+    LaunchedEffect(state.screen, state.laptopState) {
+        if (state.screen == Scr.HOME && state.laptopState == 2) {
+            delay(30_000)
+            caption = "LAPTOP PADAM"; captionTick++
+            state.laptopState = 0
+        }
+    }
+
+
     // laptop: terbuka (scene dasar) -> klik = animasi menyala -> klik = daftar aplikasi
     val lapScope = rememberCoroutineScope()
     val lapAnim = remember { Animatable(0f) }
