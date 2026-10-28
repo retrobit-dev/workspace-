@@ -117,6 +117,8 @@ jobs:
           adb shell settings put global hide_error_dialogs 1 || true
           adb shell settings put system screen_off_timeout 1800000 || true
           adb install -r dist/RuangKelas-0.15.2-debug.apk || { emit "install gagal"; exit 1; }
+          # izinkan lokasi kasar sekalian (dialog izin tidak menutupi screenshot)
+          adb shell pm grant dev.retrobit.ruangkelas android.permission.ACCESS_COARSE_LOCATION || true
           mkdir -p docs/screens
 
           # launcher hanya punya satu layar: tunggu gambar scene tampil penuh
