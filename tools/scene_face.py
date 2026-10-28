@@ -28,10 +28,20 @@ STRIP_BINGKAI = (986, 105, 1022, 368)
 
 def _regrade_strip_night(im: Image.Image) -> Image.Image:
     x0, y0, x1, y1 = STRIP_BINGKAI
-    reg = im.crop((x0, y0, x1, y1))
-    a = np.asarray(reg).astype(float)
-    # gamma 0.72: midtone naik (arsiran 107-140 -> ~139-166, setara wajah
-    # bingkai lain), struktur internal (rel, seam gelap) tetap terlihat
+    a = np.asarray(im.crop((x0, y0, x1, y1))).astype(float)
+    # 1) hilangkan seam gelap internal (x_full 1001..1013): di art siang garis
+    #    ini tidak ada -> bukan struktur; isi interpolasi horizontal antara
+    #    wajah bingkai kiri (996..1000) dan kanan (1014..1018) per baris
+    l0, l1 = 996 - x0, 1000 - x0
+    r0, r1 = 1014 - x0, 1018 - x0
+    s0, s1 = 1001 - x0, 1013 - x0
+    for yy in range(a.shape[0]):
+        L = a[yy, l0:l1 + 1].mean(axis=0)
+        R = a[yy, r0:r1 + 1].mean(axis=0)
+        for xx in range(s0, s1 + 1):
+            t = (xx - s0) / float(s1 - s0)
+            a[yy, xx] = L * (1.0 - t) + R * t
+    # 2) gamma 0.72: midtone naik menyamai wajah bingkai lain
     a = 255.0 * np.power(a / 255.0, 0.72)
     im.paste(Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)), (x0, y0))
     return im
