@@ -828,7 +828,7 @@ private fun SkyAnim(
         // saat ada bolongan liar di zona itu, yang terlihat kaca abu — bukan hitam.
         drawRect(
             color = Color(0xFF8F939B),
-            topLeft = Offset(sx(935f), sy(100f)), size = Size(box.w(80f).toPx(), box.h(375f).toPx())
+            topLeft = Offset(sx(935f), sy(100f)), size = Size(box.w(80).toPx(), box.h(375).toPx())
         )
         // 1) dasar gradien sesuai waktu nyata (area lega — sisanya tertutup scene).
         // Harus mencakup SEMUA bolongan termasuk celah tirai x975-987 (bug 0.16.34:
