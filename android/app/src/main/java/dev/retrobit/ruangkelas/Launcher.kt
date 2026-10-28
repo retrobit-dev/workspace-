@@ -33,6 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationVector1D
 import androidx.compose.animation.core.FastOutSlowInEasing
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.LocationManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
@@ -66,7 +72,10 @@ import java.time.LocalTime
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.roundToInt
+import kotlin.math.PI
+import kotlin.math.pow
 import kotlin.math.sin
+import kotlin.math.tan
 
 /**
  * Geometri layar launcher.
@@ -122,11 +131,24 @@ fun LauncherScreen(
     val appCtx = LocalContext.current
     var skyCode by remember { mutableStateOf(1) }
     var skyWind by remember { mutableStateOf(12) }  // km/h utk tirai & daun
+    var skyAwan by remember { mutableStateOf(80) }  // % tutupan awan utk intensitas bayangan
+    // lokasi perangkat utk posisi matahari (fallback: kota default Jember)
+    var devLat by remember { mutableStateOf(-8.1728) }
+    var devLon by remember { mutableStateOf(113.6995) }
+    val permLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            bacaLokasiTerakhir(appCtx) { la, lo -> devLat = la; devLon = lo }
+        }
+    }
     LaunchedEffect(Unit) {
+        val ada = bacaLokasiTerakhir(appCtx) { la, lo -> devLat = la; devLon = lo }
+        if (!ada) permLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
         while (true) {
             val idx = appCtx.getSharedPreferences("cuaca", Context.MODE_PRIVATE).getInt("kota", 0)
             val ka = CuacaRepo.kodeAnginKini(appCtx, idx)
-            if (ka != null) { skyCode = ka.code; skyWind = ka.angin }
+            if (ka != null) { skyCode = ka.code; skyWind = ka.angin; skyAwan = ka.awan }
             delay(15 * 60 * 1000L)
         }
     }
@@ -203,6 +225,13 @@ fun LauncherScreen(
         // gambar dasar (kaca jendela transparan — art berada DI DEPAN langit animasi)
         Canvas(Modifier.fillMaxSize()) { drawScene(box, scene) }
 
+        // bayangan matahari nyata: arah dari azimut, panjang dari elevasi,
+        // kepekatan dari tutupan awan — hanya siang (malam menyusul nanti)
+        BayanganMatahari(
+            box = box, isDay = isDay, minute = minute,
+            lat = devLat, lon = devLon, awan = skyAwan, code = skyCode
+        )
+
         // angin: ekor tirai, daun, kertas pin bergoyang halus
         WindSway(box = box, scene = scene, isDay = isDay, windKmh = skyWind)
 
@@ -272,6 +301,89 @@ private fun DrawScope.drawScene(box: SceneBox, scene: ImageBitmap, dx: Float = 0
         dstSize = IntSize(box.width.toPx().roundToInt(), box.height.toPx().roundToInt()),
         filterQuality = FilterQuality.High  // 0.16.9: art smooth — render halus, bukan piksel blok
     )
+}
+
+/** Baca lokasi terakhir perangkat; false = tak ada izin (perlu minta dulu). */
+private fun bacaLokasiTerakhir(ctx: android.content.Context, onHasil: (Double, Double) -> Unit): Boolean {
+    val izin = ContextCompat.checkSelfPermission(
+        ctx, Manifest.permission.ACCESS_COARSE_LOCATION
+    ) == PackageManager.PERMISSION_GRANTED
+    if (!izin) return false
+    val lm = ctx.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        ?: return true
+    var best: android.location.Location? = null
+    for (pr in listOf(LocationManager.GPS_PROVIDER, LocationManager.NETWORK_PROVIDER, LocationManager.PASSIVE_PROVIDER)) {
+        try {
+            val l = lm.getLastKnownLocation(pr)
+            if (l != null && (best == null || l.time > best!!.time)) best = l
+        } catch (_: Exception) {
+        }
+    }
+    best?.let { onHasil(it.latitude, it.longitude) }
+    return true
+}
+
+/** Titik pijak objek utk bayangan (koordinat scene): (cx, cy, radius px). */
+private val BAYANGAN_OBJ = listOf(
+    Triple(766, 484, 40),   // tumpukan buku (meja)
+    Triple(858, 442, 62),   // laptop
+    Triple(924, 479, 34),   // kalkulator
+    Triple(944, 455, 30),   // gelas pensil
+    Triple(805, 332, 40),   // lampu meja (kaki)
+    Triple(1157, 690, 55),  // pot tanaman
+    Triple(872, 605, 72),   // kursi kerja (roda)
+    Triple(55, 750, 42),    // tong sampah
+)
+
+/**
+ * Bayangan tiap objek dari matahari nyata: azimut menentukan arah, elevasi
+ * menentukan panjang (matahari tinggi = pendek), tutupan awan menentukan
+ * kepekatan. Hanya aktif siang — malam dibahas terpisah.
+ */
+@Composable
+private fun BayanganMatahari(
+    box: SceneBox,
+    isDay: Boolean,
+    minute: Int,
+    lat: Double,
+    lon: Double,
+    awan: Int,
+    code: Int,
+) {
+    if (!isDay) return
+    Canvas(Modifier.fillMaxSize()) {
+        val (az, elev) = Matahari.posisi(lat, lon, System.currentTimeMillis())
+        if (elev <= 3.0) return@Canvas
+        val base = box.unit.toPx()
+        val tanE = max(tan(max(elev, 3.0) * PI / 180.0), 0.28)
+        val ls = (1.35 / tanE).coerceIn(0.55, 2.8).toFloat()
+        val dev = ((az + 180.0) % 360.0) - 180.0
+        val angDeg = (161.0 + dev * 0.25).coerceIn(141.0, 181.0).toFloat()
+        var p = (1.0 - awan / 100.0).coerceIn(0.0, 1.0).pow(0.75)
+        if (code == 45 || code == 48) p *= 0.5 else if (code >= 51) p *= 0.75
+        val al = ((0.04 + 0.26 * p) * (sin(elev * PI / 180.0) * 1.5).coerceIn(0.3, 1.0)).toFloat()
+        val warna = Color(0xFF241D38)
+        BAYANGAN_OBJ.forEach { (cx, cy, r0) ->
+            val px = box.x(cx).toPx()
+            val py = box.y(cy).toPx()
+            val r = r0 * base
+            val rx = r * (0.75f + 0.85f * ls)
+            val ry = r * 0.5f
+            val ox = r * 0.85f * ls
+            val brush = Brush.radialGradient(
+                listOf(warna.copy(alpha = al), warna.copy(alpha = 0f)),
+                center = Offset(rx * 0.35f, 0f),
+                radius = rx * 1.05f
+            )
+            rotate(angDeg, pivot = Offset(px, py)) {
+                drawOval(
+                    brush = brush,
+                    topLeft = Offset(px + ox - rx, py - ry),
+                    size = Size(rx * 2f, ry * 2f)
+                )
+            }
+        }
+    }
 }
 
 /**

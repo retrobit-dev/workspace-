@@ -123,6 +123,12 @@ for (const id of ["cb-d1", "cb-d2", "cb-d3", "cb-n1", "cb-n2", "cb-n3", "leaf-g"
   if (!document.getElementById(id)) fail(`lapisan angin ${id} tidak ada`);
 if (!/wind_speed_10m/.test(rawHtml) || !/windTick/.test(rawHtml))
   fail("mesin angin nyata tidak ada (wind_speed_10m / windTick)");
+// bayangan matahari nyata: grup + 8 elips + fungsi matahari + awan
+const bayang = document.getElementById("bayangan");
+if (!bayang || bayang.children.length !== 8) fail("lapisan bayangan matahari tidak ada / jumlah elips salah");
+if (!/function matahari/.test(rawHtml) || !/bayangTick/.test(rawHtml))
+  fail("mesin bayangan matahari tidak ada (matahari/bayangTick)");
+if (!/cloud_cover/.test(rawHtml)) fail("tutupan awan (cloud_cover) tidak diambil dari Open-Meteo");
 
 // ---- bingkai dinding kosong (ikon pintasan dihapus 0.16.1) ----
 if (document.getElementById("icons")) fail("#icons masih ada (ikon pintasan sudah dihapus)");
@@ -172,6 +178,6 @@ if (!holesM || +holesM[1] < 15000)
   fail(`bolongan kaca scene kurang (${holesM ? holesM[1] : "tidak ada"} < 15000 px) — scene harus transparan di kaca`);
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai+daun angin nyata · langit→Cuaca · langit hidup (orb+cuaca+matahari) · art smooth · siang lembut`
+  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai+daun angin nyata · langit→Cuaca · langit hidup (orb+cuaca+matahari) · bayangan matahari nyata · art smooth · siang lembut`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);

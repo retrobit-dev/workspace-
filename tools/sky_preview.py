@@ -143,12 +143,14 @@ def group() -> str:
 JS = r"""
 const SKY_STOPS = __SKY_STOPS__;
 const SKY = {x0:1108, x1:1185, y0:336, y1:372, amp:146};
-let SKY_WEATHER = {langit:1, hujan:0, salju:false, kabut:false, petir:false, code:1, angin:8};
+let SKY_WEATHER = {langit:1, hujan:0, salju:false, kabut:false, petir:false, code:1, angin:8, awan:80};
 
 function skyStored(){try{return localStorage.getItem("rk-sky-code");}catch(e){return null;}}
 function skyStore(c){try{localStorage.setItem("rk-sky-code",String(c));}catch(e){}}
 function windStored(){try{return localStorage.getItem("rk-sky-wind");}catch(e){return null;}}
 function windStore(v){try{localStorage.setItem("rk-sky-wind",String(v));}catch(e){}}
+function awanStored(){try{return localStorage.getItem("rk-sky-awan");}catch(e){return null;}}
+function awanStore(v){try{localStorage.setItem("rk-sky-awan",String(v));}catch(e){}}
 function skyHex2rgb(h){return [parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];}
 function skyMix(a,b,t){
   const A=skyHex2rgb(a),B=skyHex2rgb(b);
@@ -232,8 +234,8 @@ function skyTick(){
 }
 function applySkyCode(code){
   if(typeof code!=="number")return;
-  const anginLama=SKY_WEATHER.angin;
-  SKY_WEATHER=Object.assign({code:code,angin:anginLama},skyVisuals(code));
+  const anginLama=SKY_WEATHER.angin, awanLama=SKY_WEATHER.awan;
+  SKY_WEATHER=Object.assign({code:code,angin:anginLama,awan:awanLama},skyVisuals(code));
   document.getElementById("sky-anim").dataset.weather=String(code);
   applySkyVis(new Date().getHours()>=6&&new Date().getHours()<=17);
 }
@@ -245,11 +247,14 @@ async function skyLoadWeather(){
     const c=j&&j.current&&j.current.weather_code;
     const wn=j&&j.current&&j.current.wind_speed_10m;
     if(typeof wn==="number"&&wn>=0){SKY_WEATHER.angin=wn;windStore(wn);}
+    const cw=j&&j.current&&j.current.cloud_cover;
+    if(typeof cw==="number"&&cw>=0){SKY_WEATHER.awan=cw;awanStore(cw);}
     if(typeof c==="number"){skyStore(c);applySkyCode(c);}
   }catch(e){/* offline: pertahankan kode tersimpan */}
 }
 (function(){
   const w0=parseFloat(windStored());if(!isNaN(w0)&&w0>=0)SKY_WEATHER.angin=w0;
+  const a0=parseFloat(awanStored());if(!isNaN(a0)&&a0>=0)SKY_WEATHER.awan=a0;
   applySkyCode(parseInt(skyStored()||"1",10));
   skyTick();
   setInterval(skyTick,1000);

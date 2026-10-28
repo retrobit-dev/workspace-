@@ -198,6 +198,73 @@ requestAnimationFrame(windTick);
 """
 
 
+# JS bayangan matahari nyata: azimut->arah, elevasi->panjang, awan->kepekatan
+BAYANGAN_JS = r"""
+/* ---- bayangan matahari (waktu & lokasi perangkat, awan Open-Meteo) ---- */
+const BAYANGAN_OBJ = [
+  [766,484,40],[858,442,62],[924,479,34],[944,455,30],
+  [805,332,40],[1157,690,55],[872,605,72],[55,750,42]
+];
+function matahari(lat,lon,t){
+  const R=Math.PI/180, d=t/86400000-10957.5, n=(x)=>((x%360)+360)%360;
+  const g=n(357.529+0.98560028*d), q=n(280.459+0.98564736*d);
+  const L=n(q+1.915*Math.sin(g*R)+0.020*Math.sin(2*g*R));
+  const e=23.439-0.00000036*d;
+  const dec=Math.asin(Math.sin(e*R)*Math.sin(L*R))/R;
+  const ra=Math.atan2(Math.cos(e*R)*Math.sin(L*R),Math.cos(L*R))/R/15;
+  const lmst=((18.697374558+24.06570982441908*d+lon/15)%24+24)%24;
+  const H=(lmst-ra)*15*R, phi=lat*R;
+  const se=Math.sin(phi)*Math.sin(dec*R)+Math.cos(phi)*Math.cos(dec*R)*Math.cos(H);
+  const elev=Math.asin(se)/R;
+  const az=Math.atan2(Math.sin(H),Math.cos(H)*Math.sin(phi)-Math.tan(dec*R)*Math.cos(phi))/R+180;
+  return [n(az),elev];
+}
+function locPerangkat(){
+  try{const v=JSON.parse(localStorage.getItem("rk-loc")||"null");if(v&&isFinite(v.lat))return v;}catch(e){}
+  return {lat:-8.1728,lon:113.6995};
+}
+try{
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition((p)=>{
+      try{localStorage.setItem("rk-loc",JSON.stringify({lat:p.coords.latitude,lon:p.coords.longitude}));}catch(e){}
+    },()=>{},{timeout:8000,maximumAge:600000});
+  }
+}catch(e){}
+function bayangTick(){
+  const g=document.getElementById("bayangan");
+  if(g){
+    const now=new Date();
+    const isDay=now.getHours()>=6&&now.getHours()<=17;
+    const [az,elev]=matahari(locPerangkat().lat,locPerangkat().lon,now.getTime());
+    if(!isDay||elev<=3){g.style.display="none";}
+    else{
+      g.style.display="";
+      const tanE=Math.max(Math.tan(Math.max(elev,3)*Math.PI/180),0.28);
+      const Ls=Math.min(2.8,Math.max(0.55,1.35/tanE));
+      const dev=((az+180)%360)-180;
+      const angD=Math.max(141,Math.min(181,161+dev*0.25));
+      const awan=(SKY_WEATHER.awan===undefined)?80:SKY_WEATHER.awan;
+      let P=Math.pow(Math.max(0,1-awan/100),0.75);
+      const c=SKY_WEATHER.code;
+      if(c===45||c===48)P*=0.5; else if(c>=51)P*=0.75;
+      const al=(0.04+0.26*P)*Math.min(1,Math.max(0.3,Math.sin(elev*Math.PI/180)*1.5));
+      [...g.children].forEach((el,i)=>{
+        const o=BAYANGAN_OBJ[i];if(!o)return;
+        const cx=o[0],cy=o[1],r=o[2];
+        el.setAttribute("transform","translate("+cx+","+cy+") rotate("+angD.toFixed(1)+")");
+        el.setAttribute("cx",(r*0.85*Ls).toFixed(1));
+        el.setAttribute("rx",(r*(0.75+0.85*Ls)).toFixed(1));
+        el.setAttribute("ry",(r*0.5).toFixed(1));
+        el.style.opacity=al.toFixed(3);
+      });
+    }
+  }
+  requestAnimationFrame(bayangTick);
+}
+requestAnimationFrame(bayangTick);
+"""
+
+
 def sway_group(rects, scene_name, amp, dur, id_base=0, delay0=0.0):
     """Kelompok gambar yang ikut bergoyang: scene di-klip ke kotak lalu digeser."""
     groups = []
@@ -299,6 +366,18 @@ HTML = """<!DOCTYPE html>
        data-day="komputer_glow.png" data-night="komputer_glow_night.png">
   <svg id="fx" viewBox="0 0 __SCENE_W__ __SCENE_H__" preserveAspectRatio="none">
     <!-- angin: gorden & daun -->
+    <!-- bayangan matahari nyata (diisi JS: matahari perangkat + awan) -->
+    <g id="bayangan" style="display:none">
+      <ellipse fill="url(#gradBayang)"/><ellipse fill="url(#gradBayang)"/>
+      <ellipse fill="url(#gradBayang)"/><ellipse fill="url(#gradBayang)"/>
+      <ellipse fill="url(#gradBayang)"/><ellipse fill="url(#gradBayang)"/>
+      <ellipse fill="url(#gradBayang)"/><ellipse fill="url(#gradBayang)"/>
+    </g>
+    <radialGradient id="gradBayang" cx="0.35" cy="0.5" r="0.7">
+      <stop offset="0" stop-color="#241D38" stop-opacity="1"/>
+      <stop offset="1" stop-color="#241D38" stop-opacity="0"/>
+    </radialGradient>
+
     __SWAY__
 
     <!-- berkas cahaya matahari ke ruangan (overlay, siang cerah) -->
@@ -541,7 +620,7 @@ def build_html(data, scene_sizes, holes):
         .replace("__SWAY__", sway.replace("__W__", str(w)).replace("__H__", str(h)))
         # langit hidup (waktu nyata + cuaca)
         .replace("__SKY__", sky_preview.group())
-        .replace("__SKY_JS__", (sky_preview.JS + WIND_JS)
+        .replace("__SKY_JS__", (sky_preview.JS + WIND_JS + BAYANGAN_JS)
                  .replace("__SKY_STOPS__", json.dumps(sky_preview.SKY_STOPS))
                  .replace("__SKY_URL__", sky_url()))
         .replace("__HOLES__", str(holes))

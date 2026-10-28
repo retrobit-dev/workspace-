@@ -59,7 +59,8 @@ data class Kota(val nama: String, val lat: Double, val lon: Double)
 
 data class CuacaNow(
     val temp: Int, val feels: Int, val hum: Int,
-    val wind: Int, val code: Int, val rainProb: Int
+    val wind: Int, val code: Int, val rainProb: Int,
+    val awan: Int = 80
 )
 
 data class CuacaHour(val label: String, val temp: Int, val code: Int, val rainProb: Int)
@@ -79,7 +80,7 @@ data class CuacaData(
     val contoh: Boolean = false
 )
 
-data class KodeAngin(val code: Int, val angin: Int)
+data class KodeAngin(val code: Int, val angin: Int, val awan: Int)
 
 object CuacaRepo {
 
@@ -108,9 +109,9 @@ object CuacaRepo {
             try {
                 val d = ambil(k)
                 simpanCache(ctx, d)
-                KodeAngin(d.now.code, d.now.wind)
+                KodeAngin(d.now.code, d.now.wind, d.now.awan)
             } catch (_: Exception) {
-                muatCache(ctx)?.let { KodeAngin(it.now.code, it.now.wind) }
+                muatCache(ctx)?.let { KodeAngin(it.now.code, it.now.wind, it.now.awan) }
             }
         }
 
@@ -119,7 +120,7 @@ object CuacaRepo {
         val url = "https://api.open-meteo.com/v1/forecast" +
             "?latitude=${k.lat}&longitude=${k.lon}" +
             "&current=temperature_2m,apparent_temperature,relative_humidity_2m," +
-            "weather_code,wind_speed_10m" +
+            "weather_code,wind_speed_10m,cloud_cover" +
             "&hourly=temperature_2m,weather_code,precipitation_probability" +
             "&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset" +
             "&timezone=auto&forecast_days=6"
@@ -144,7 +145,8 @@ object CuacaRepo {
             hum = cur.getInt("relative_humidity_2m"),
             wind = cur.getDouble("wind_speed_10m").toInt(),
             code = cur.getInt("weather_code"),
-            rainProb = 0
+            rainProb = 0,
+            awan = cur.optInt("cloud_cover", 80)
         )
 
         val hourly = root.getJSONObject("hourly")
@@ -218,6 +220,7 @@ object CuacaRepo {
             root.put("now", JSONObject().apply {
                 put("temp", d.now.temp); put("feels", d.now.feels)
                 put("hum", d.now.hum); put("wind", d.now.wind); put("code", d.now.code)
+                put("awan", d.now.awan)
             })
             val hArr = org.json.JSONArray()
             d.hours.forEach { h ->
@@ -265,7 +268,8 @@ object CuacaRepo {
             val now = CuacaNow(
                 temp = nowJ.getInt("temp"), feels = nowJ.getInt("feels"),
                 hum = nowJ.getInt("hum"), wind = nowJ.getInt("wind"),
-                code = nowJ.getInt("code"), rainProb = 0
+                code = nowJ.getInt("code"), rainProb = 0,
+                awan = nowJ.optInt("awan", 80)
             )
             CuacaData(root.getString("kota"), now, hours, days, root.getString("at"), false)
         } catch (_: Exception) {
@@ -276,7 +280,7 @@ object CuacaRepo {
     /** Data contoh: tampil saat offline dan cache masih kosong. */
     fun contoh(namaKota: String): CuacaData = CuacaData(
         kota = namaKota,
-        now = CuacaNow(temp = 27, feels = 29, hum = 78, wind = 12, code = 2, rainProb = 15),
+        now = CuacaNow(temp = 27, feels = 29, hum = 78, wind = 12, code = 2, rainProb = 15, awan = 65),
         hours = listOf(
             CuacaHour("06:00", 26, 0, 5), CuacaHour("07:00", 27, 2, 5),
             CuacaHour("08:00", 28, 2, 10), CuacaHour("09:00", 29, 3, 10),
