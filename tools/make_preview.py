@@ -16,6 +16,7 @@ import shutil
 import re
 import sys
 
+import numpy as np
 from PIL import Image, ImageDraw, ImageChops, ImageFilter
 from pathlib import Path
 
@@ -76,15 +77,14 @@ def parse_data():
 # bolongan kaca jendela (piksel gambar) — cermin SKY_HOLES_* di Launcher.kt.
 # Geometri siang & malam BERBEDA (malam: semua sash tertutup).
 SKY_HOLES_DAY = [
-    (1010, 119, 1082, 148, 1082, 338, 1010, 300),  # kaca kiri
-    (1100, 146, 1193, 193, 1190, 404, 1100, 357),  # bukaan kanan
-    # (celah tirai kiri TIDAK dibolongkan 0.16.35: art = kaca, bukan langit —
-    #  bolongan tua di sana tampil hitam bila gradien tak menjangkau)
+    # kaca kiri TIDAK dibolongkan (0.16.36): sisi samping tirai kiri wajib kaca
+    # art opak — pantulan & arsiran asli, tidak bisa tampak bolong.
+    (1100, 146, 1193, 193, 1190, 404, 1100, 357),  # kaca kanan
     (1191, 272, 1194, 289, 1196, 301, 1198, 313, 1200, 320, 1202, 346,
      1203, 366, 1200, 375, 1198, 385, 1196, 398, 1194, 407, 1191, 407),
 ]
 SKY_HOLES_NIGHT = [
-    (1019, 122, 1083, 153, 1082, 366, 1018, 334),  # kaca kiri
+    # kaca kiri malam juga tidak dibolongkan (jendela kiri tertutup art)
     (1105, 166, 1171, 197, 1168, 408, 1105, 376),  # kaca kanan
 ]
 
@@ -113,8 +113,16 @@ def make_scenes():
         global SKY_HOLES
         SKY_HOLES = SKY_HOLES_DAY if mode == "day" else SKY_HOLES_NIGHT
         im, n = punch_holes(im)
-        if n < 15000:
+        if n < 12000:
             raise SystemExit(f"bolongan kaca scene {mode} terlalu kecil ({n} px) — periksa SKY_HOLES")
+        # GERBANG 0.16.36: sisi samping tirai TIDAK BOLEH bolong (kemauan user).
+        # Zona kiri = seluruh sisi tirai kiri + kaca kirinya; zona kanan-luar =
+        # tubuh tirai kanan. Alpha < 250 di sana = bolongan liar -> gagalkan build.
+        arr = np.asarray(im.convert("RGBA"))[:, :, 3]
+        for y0, y1, x0, x1, nama in ((100, 470, 930, 1010, "tirai kiri"),
+                                     (200, 470, 1206, 1258, "tirai kanan")):
+            if int((arr[y0:y1, x0:x1] < 250).sum()):
+                raise SystemExit(f"ada piksel bolong di zona samping {nama} — SKY_HOLES {mode} dilarang menembus situ")
         im.save(WEB / f"scene_{mode}.png", optimize=True)
         sizes[mode] = im.size
         holes_total += n
@@ -373,7 +381,7 @@ HTML = """<!DOCTYPE html>
     <!-- langit hidup (UNDERLAY): dirender DI BAWAH scene; terlihat lewat bolongan kaca -->
     __SKY__
   </svg>
-  <img id="scene" src="scene_night.png" alt="Workspace guru" draggable="false">
+  <img id="scene" src="scene_night.png?v=__VERS__" alt="Workspace guru" draggable="false">
   <!-- laptop: overlay glow menyala (laptop terbuka milik scene dasar) -->
   <img id="lap-glow" class="lap" draggable="false" alt=""
        data-day="komputer_glow.png" data-night="komputer_glow_night.png">
@@ -432,6 +440,9 @@ HTML = """<!DOCTYPE html>
 <script>
 const SCENE = {w: __SCENE_W__, h: __SCENE_H__};
 const TILES = __TILES__;
+/* cache-buster: gambar scene selalu versi terbaru (browser/webview suka
+   menyajikan scene_day.png lama yang bolongannya sudah tidak ada lagi) */
+const RKV = "__VERS__";
 const stage = document.getElementById("stage");
 const sceneEl = document.getElementById("scene");
 const toast = document.getElementById("toast");
@@ -590,11 +601,11 @@ function tick() {
   const day = now.getHours() >= 6 && now.getHours() <= 17;
 
   if (day !== lastDay) {
-    const file = day ? "scene_day.png" : "scene_night.png";
+    const file = (day ? "scene_day.png" : "scene_night.png") + "?v=" + RKV;
     sceneEl.src = file;
     const mode = day ? "day" : "night";
     document.querySelectorAll(".lap").forEach((img) => {
-      img.src = img.dataset[mode];
+      img.src = img.dataset[mode] + "?v=" + RKV;
     });
     document.querySelectorAll(".sway-scene").forEach((img) => img.setAttribute("href", file));
     document.querySelectorAll(".cur-day").forEach((el) => { el.style.display = day ? "" : "none"; });
@@ -647,6 +658,8 @@ def build_html(data, scene_sizes, holes):
     w, h = data["w"], data["h"]
     board = data["board"]
 
+    vers = json.loads((ROOT / "package.json").read_text())["version"]
+
 
     board_w = ((board[2] - board[0]) ** 2 + (board[3] - board[1]) ** 2) ** 0.5
     board_h = ((board[4] - board[0]) ** 2 + (board[5] - board[1]) ** 2) ** 0.5
@@ -675,6 +688,7 @@ def build_html(data, scene_sizes, holes):
                  .replace("__SKY_STOPS__", json.dumps(sky_preview.SKY_STOPS))
                  .replace("__SKY_URL__", sky_url()))
         .replace("__HOLES__", str(holes))
+        .replace("__VERS__", vers)
         # papan tulis
         .replace("__BOARD_MATRIX__", matrix_attr(board))
         .replace("__BOARD_W__", f"{board_w / 2:.2f}")

@@ -188,9 +188,9 @@ val PALETTE = listOf(
  *
  * Area ketuk = POLIGON bentuk objek (0.16.35), bukan kotak pas — bentuk area
  * ketuk = bentuk objek. Sumber: art/objects/tap_polygons.json (tools/tap_poly.py),
- * pasangan [x0,y0, x1,y1, ...]; objek dengan dua area (Cuaca: kaca kiri+kanan)
- * memakai poly2. Urutan TILES belakang->depan: yang DI DEPAN menang bila
- * poligon bersinggungan.
+ * pasangan [x0,y0, x1,y1, ...]; poly2 tersedia utk objek berarea ganda (0.16.36:
+ * Cuaca cukup kaca kanan — kaca kiri kaca art opak). Urutan TILES belakang->depan:
+ * yang DI DEPAN menang bila poligon bersinggungan.
  */
 data class TileInfo(
     val label: String,
@@ -234,8 +234,7 @@ val TILES = listOf(
         intArrayOf(699, 42, 696, 46, 696, 130, 752, 160, 762, 160, 762, 66, 714, 42)),
 
     // --- sisi kiri & kanan ---
-    TileInfo("Cuaca", Scr.CUACA, "grid",                             // dua kaca jendela -> aplikasi Cuaca
-        intArrayOf(1010, 119, 1082, 148, 1082, 338, 1010, 300),
+    TileInfo("Cuaca", Scr.CUACA, "grid",                             // kaca kanan jendela -> aplikasi Cuaca
         intArrayOf(1100, 146, 1193, 193, 1190, 404, 1100, 357)),
     TileInfo("File", Scr.HOME, "trash",                              // tempat sampah (aset)
         intArrayOf(28, 649, 21, 657, 22, 663, 18, 664, 23, 701, 20, 706, 5, 709, 4, 716, 19, 710,

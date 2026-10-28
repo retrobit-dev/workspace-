@@ -102,6 +102,7 @@ def group() -> str:
       </linearGradient>
     </defs>
     <g id="sky-anim" data-weather="1">
+      <rect x="935" y="100" width="80" height="375" fill="#8F939B"/>
       <rect x="968" y="110" width="252" height="305" fill="url(#skygrad)"/>
       <g id="sky-stars" style="display:none">{''.join(stars)}</g>
       <g id="sky-orb"><g id="sky-orb-pos" transform="translate(1146,208)">

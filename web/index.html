@@ -69,7 +69,7 @@
 </head>
 <body>
 <div id="stage">
-  <!-- sky-holes: 64184 -->
+  <!-- sky-holes: 35664 -->
   <svg id="sky-under" viewBox="0 0 1280 800" preserveAspectRatio="none">
     <!-- langit hidup (UNDERLAY): dirender DI BAWAH scene; terlihat lewat bolongan kaca -->
     
@@ -80,6 +80,7 @@
       </linearGradient>
     </defs>
     <g id="sky-anim" data-weather="1">
+      <rect x="935" y="100" width="80" height="375" fill="#8F939B"/>
       <rect x="968" y="110" width="252" height="305" fill="url(#skygrad)"/>
       <g id="sky-stars" style="display:none"><circle cx="1010.0" cy="192.7" r="0.88">
       <animate attributeName="opacity" values="0.2;0.95;0.2" dur="2.68s" begin="-1.68s" repeatCount="indefinite"/>
@@ -869,7 +870,7 @@
     </g>
 
   </svg>
-  <img id="scene" src="scene_night.png" alt="Workspace guru" draggable="false">
+  <img id="scene" src="scene_night.png?v=0.16.36" alt="Workspace guru" draggable="false">
   <!-- laptop: overlay glow menyala (laptop terbuka milik scene dasar) -->
   <img id="lap-glow" class="lap" draggable="false" alt=""
        data-day="komputer_glow.png" data-night="komputer_glow_night.png">
@@ -971,9 +972,12 @@ const TILES = [
   {label: "Catatan", x: 118, y: 435, w: 166, h: 264, poly: [214, 435, 284, 435, 284, 626, 151, 695, 149, 699, 118, 699, 118, 487, 212, 439]},
   {label: "Jadwal", x: 319, y: 107, w: 263, h: 365, poly: [319, 241, 578, 107, 582, 337, 322, 472]},
   {label: "Profil", x: 696, y: 42, w: 66, h: 118, poly: [699, 42, 696, 46, 696, 130, 752, 160, 762, 160, 762, 66, 714, 42]},
-  {label: "Cuaca", x: 1010, y: 119, w: 72, h: 219, poly: [1010, 119, 1082, 148, 1082, 338, 1010, 300], poly2: [1100, 146, 1193, 193, 1190, 404, 1100, 357]},
+  {label: "Cuaca", x: 1100, y: 146, w: 93, h: 258, poly: [1100, 146, 1193, 193, 1190, 404, 1100, 357]},
   {label: "File", x: 4, y: 635, w: 100, h: 129, poly: [28, 649, 21, 657, 22, 663, 18, 664, 23, 701, 20, 706, 5, 709, 4, 716, 19, 710, 20, 706, 24, 707, 31, 742, 50, 751, 75, 751, 77, 760, 82, 764, 103, 761, 102, 746, 91, 741, 97, 706, 103, 704, 99, 692, 104, 664, 99, 652, 74, 642, 72, 635, 67, 635, 66, 647, 62, 648, 62, 654, 58, 657, 39, 657, 35, 652, 40, 651, 40, 646]},
 ];
+/* cache-buster: gambar scene selalu versi terbaru (browser/webview suka
+   menyajikan scene_day.png lama yang bolongannya sudah tidak ada lagi) */
+const RKV = "0.16.36";
 const stage = document.getElementById("stage");
 const sceneEl = document.getElementById("scene");
 const toast = document.getElementById("toast");
@@ -1349,11 +1353,11 @@ function tick() {
   const day = now.getHours() >= 6 && now.getHours() <= 17;
 
   if (day !== lastDay) {
-    const file = day ? "scene_day.png" : "scene_night.png";
+    const file = (day ? "scene_day.png" : "scene_night.png") + "?v=" + RKV;
     sceneEl.src = file;
     const mode = day ? "day" : "night";
     document.querySelectorAll(".lap").forEach((img) => {
-      img.src = img.dataset[mode];
+      img.src = img.dataset[mode] + "?v=" + RKV;
     });
     document.querySelectorAll(".sway-scene").forEach((img) => img.setAttribute("href", file));
     document.querySelectorAll(".cur-day").forEach((el) => { el.style.display = day ? "" : "none"; });

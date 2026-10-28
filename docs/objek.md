@@ -93,7 +93,8 @@ python3 tools/compose.py --tanpa KOMPUTER,KALKULATOR --out art/scene-tanpa-lapto
 - **Bentuk area ketuk = bentuk objek** (prinsip user). Sumber:
   `art/objects/tap_polygons.json`, dibangun oleh `tools/tap_poly.py` — aset
   dari kontur alfa; bentuk menempel latar (papan tulis, papan pin, rak, laci)
-  poligon terukur manual; Cuaca = dua poligon kaca jendela.
+  poligon terukur manual; Cuaca = kaca kanan jendela (kaca kiri kaca art
+  opak sejak 0.16.36 — sisi tirai tidak bolong).
 - Mirror manual di `Data.kt` (`TileInfo.poly`, `poly2`), hit-test
   depan→belakang di `Launcher.kt` (`tileAt`) dan JS preview (`tileAt` global);
   checker `check_preview.mjs` memvalidasi keduanya + kasus ronde 11
