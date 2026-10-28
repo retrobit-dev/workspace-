@@ -17,7 +17,7 @@ A(w.tileAt(170, 330)?.label === "Absensi", "papan pin -> Absensi (tidak ditelan 
 A(w.tileAt(478, 275)?.label === "Jadwal", "muka papan -> Jadwal");
 A(w.tileAt(390, 500) === null, "kaki papan tulis -> null (bukan area ketuk)");
 A(w.tileAt(972, 412)?.label === "Alat Tulis", "gelas pensil -> Alat Tulis");
-A(w.tileAt(1040, 230) === null, "kaca kiri (kaca art opak 0.16.36) -> null, bukan Cuaca");
+A(w.tileAt(1040, 230)?.label === "Cuaca", "kaca kiri -> Cuaca (satu langit dgn kanan)");
 A(w.tileAt(1150, 300)?.label === "Cuaca", "kaca kanan -> Cuaca");
 A(w.tileAt(640, 700) === null, "lantai kosong -> null");
 

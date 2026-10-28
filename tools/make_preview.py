@@ -76,15 +76,18 @@ def parse_data():
 
 # bolongan kaca jendela (piksel gambar) — cermin SKY_HOLES_* di Launcher.kt.
 # Geometri siang & malam BERBEDA (malam: semua sash tertutup).
+# 0.16.37: kaca kiri DIBOLONGKAN lagi — langit kiri & kanan = satu kesatuan
+# langit hidup (matahari lukisan lama di kaca kiri tak terlihat lagi, hanya
+# satu matahari: orb animasi). Celah tirai (x975-987) TETAP TERSEGEL — bukan
+# bolongan; pengaman: pelat kaca + gradien x968 + gerbang zona di make_scenes.
 SKY_HOLES_DAY = [
-    # kaca kiri TIDAK dibolongkan (0.16.36): sisi samping tirai kiri wajib kaca
-    # art opak — pantulan & arsiran asli, tidak bisa tampak bolong.
+    (1010, 119, 1082, 148, 1082, 338, 1010, 300),  # kaca kiri
     (1100, 146, 1193, 193, 1190, 404, 1100, 357),  # kaca kanan
     (1191, 272, 1194, 289, 1196, 301, 1198, 313, 1200, 320, 1202, 346,
      1203, 366, 1200, 375, 1198, 385, 1196, 398, 1194, 407, 1191, 407),
 ]
 SKY_HOLES_NIGHT = [
-    # kaca kiri malam juga tidak dibolongkan (jendela kiri tertutup art)
+    (1019, 122, 1083, 153, 1082, 366, 1018, 334),  # kaca kiri
     (1105, 166, 1171, 197, 1168, 408, 1105, 376),  # kaca kanan
 ]
 
@@ -115,11 +118,23 @@ def make_scenes():
         im, n = punch_holes(im)
         if n < 12000:
             raise SystemExit(f"bolongan kaca scene {mode} terlalu kecil ({n} px) — periksa SKY_HOLES")
-        # GERBANG 0.16.36: sisi samping tirai TIDAK BOLEH bolong (kemauan user).
-        # Zona kiri = seluruh sisi tirai kiri + kaca kirinya; zona kanan-luar =
-        # tubuh tirai kanan. Alpha < 250 di sana = bolongan liar -> gagalkan build.
+        # GERBANG 0.16.36+ (diperhalus 0.16.37): sisi samping tirai TIDAK BOLEH
+        # bolong; transparansi hanya boleh DI DALAM poligon SKY_HOLES yang
+        # dinyatakan (diberi toleransi tepi 3px utk goresan CLEAR). Bolongan
+        # liar di luar itu -> gagalkan build.
         arr = np.asarray(im.convert("RGBA"))[:, :, 3]
-        for y0, y1, x0, x1, nama in ((100, 470, 930, 1010, "tirai kiri"),
+        ok = Image.new("L", im.size, 0)
+        dok = ImageDraw.Draw(ok)
+        for q in SKY_HOLES:
+            dok.polygon(list(zip(q[0::2], q[1::2])), fill=255)
+        ok = ok.filter(ImageFilter.MaxFilter(7))
+        liar = (arr < 250) & ~(np.asarray(ok) > 0)
+        if int(liar.sum()):
+            ys, xs = np.where(liar)
+            raise SystemExit(
+                f"{mode}: {int(liar.sum())} px bolong di luar SKY_HOLES "
+                f"(contoh x{int(xs[0])},y{int(ys[0])}) — bolongan liar dilarang")
+        for y0, y1, x0, x1, nama in ((100, 470, 930, 1006, "tirai kiri"),
                                      (200, 470, 1206, 1258, "tirai kanan")):
             if int((arr[y0:y1, x0:x1] < 250).sum()):
                 raise SystemExit(f"ada piksel bolong di zona samping {nama} — SKY_HOLES {mode} dilarang menembus situ")

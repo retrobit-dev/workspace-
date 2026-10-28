@@ -713,8 +713,11 @@ private val LAP_SIZE = IntSize(182, 154)
 // GEOMETRI SIANG & MALAM BERBEDA (malam: semua sash tertutup) — masing-masing
 // diukur dari art-nya sendiri.
 private val SKY_HOLES_DAY = listOf(
-    // kaca kiri TIDAK dibolongkan (0.16.36): sisi samping tirai kiri wajib kaca
-    // art opak — pantulan & arsiran asli, tidak bisa tampak bolong.
+    // kaca kiri & kanan dibolongkan: SATU kesatuan langit hidup di kedua jendela
+    // (0.16.37 — matahari lukisan lama di kaca kiri tak terlihat; satu matahari
+    // = orb animasi). Celah tirai x975-987 TETAP TERSEGEL (pelat kaca + gradien
+    // x968 + gerbang zona menjamin tidak pernah hitam lagi).
+    floatArrayOf(1010f, 119f, 1082f, 148f, 1082f, 338f, 1010f, 300f), // kaca kiri
     floatArrayOf(1100f, 146f, 1193f, 193f, 1190f, 404f, 1100f, 357f), // kaca kanan
     // segitiga kaca di kanan palang vertikal, sampai tirai kanan
     floatArrayOf(1191f, 272f, 1194f, 289f, 1196f, 301f, 1198f, 313f, 1200f, 320f, 1202f, 346f,
@@ -722,7 +725,8 @@ private val SKY_HOLES_DAY = listOf(
 )
 
 private val SKY_HOLES_NIGHT = listOf(
-    // kaca kiri malam juga tidak dibolongkan (jendela kiri tertutup art)
+    // kaca kiri (sash tertutup; gagang tengah = art, tetap opaque)
+    floatArrayOf(1019f, 122f, 1083f, 153f, 1082f, 366f, 1018f, 334f),
     // kaca kanan (area bulan art ikut digantikan orb animasi)
     floatArrayOf(1105f, 166f, 1171f, 197f, 1168f, 408f, 1105f, 376f),
 )
@@ -830,9 +834,9 @@ private fun SkyAnim(
             color = Color(0xFF8F939B),
             topLeft = Offset(sx(935f), sy(100f)), size = Size(box.w(80).toPx(), box.h(375).toPx())
         )
-        // 1) dasar gradien sesuai waktu nyata (area lega — sisanya tertutup scene).
-        // Harus mencakup SEMUA bolongan termasuk celah tirai x975-987 (bug 0.16.34:
-        // gradien mulai x985 -> bolongan celah tampak hitam saat siang).
+        // 1) dasar gradien sesuai waktu nyata — SATU kesatuan langit untuk kedua
+        // jendela (kiri + kanan). Harus mencakup semua bolongan (termasuk celah
+        // tirai x975-987 yang sudah tersegel — tapis pengaman tetap dipasang).
         val (cTop, cBot) = skyColors(minute)
         drawRect(
             brush = Brush.verticalGradient(listOf(cTop, cBot), startY = sy(110f), endY = sy(415f)),

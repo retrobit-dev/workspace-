@@ -7,8 +7,8 @@ Sumber bentuk:
   - Bentuk menempel latar: poligon TERUKUR MANUAL (dari scan piksel art) —
     papan tulis = muka papan saja (kaki/nampan tidak ikut), papan pin = gabus
     saja (tidak menelan rak), rak & laci = panel depan.
-  - Cuaca: kaca kanan jendela (SKY_HOLES_DAY[0]) — kaca kiri kini kaca art opak
-    (0.16.36: sisi samping tirai tidak bolong), jadi tap Cuaca di kaca kanan.
+  - Cuaca: dua poligon kaca jendela (SKY_HOLES_DAY[0]=kiri, [1]=kanan) — satu
+    langit hidup (0.16.37).
 
 Output: art/objects/tap_polygons.json  {id: {bbox, poly, poly2, inside}}
   poly   = [[x,y],...] koordinat kanvas 1280x800
@@ -162,7 +162,7 @@ def main():
             inside = inside_of(poly)
         elif mode == "langit":
             poly = [list(SKY_HOLES_DAY[0][i:i + 2]) for i in range(0, 8, 2)]
-            poly2 = None
+            poly2 = [list(SKY_HOLES_DAY[1][i:i + 2]) for i in range(0, 8, 2)]
             bbox = list(CUACA_BBOX)
             inside = inside_of(poly)
         out[tid] = {"bbox": bbox, "poly": poly, "poly2": poly2, "inside": list(inside)}
