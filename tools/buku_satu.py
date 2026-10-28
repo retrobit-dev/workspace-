@@ -429,30 +429,51 @@ def clean2():
                         w2 = (x - 792) / 4.0
                         v = v * (1 - w2) + final[y, x] * w2
                 final[y, x] = v
-        # -- (0b) POJOK KIRI (x648-686, s/d bibir): gradien horizontal sempit
-        # (bayangan tepi kiri meja -> kayu band); di bawah bibir = salinan
-        # muka bersih (sumber y+19 = kursi/lantai).
-        _bb2 = lambda x: 391.0 - 0.287 * (x - 650)    # bibir depan meja
-        tt2 = np.clip((np.arange(648, 687) - 648) / 20.0, 0, 1)
-        tt2 = tt2 * tt2 * (3 - 2 * tt2)
-        for i, x in enumerate(range(648, 687)):
-            yb_line = int(a2 + bl2 * x)
-            ybib = int(_bb2(x))
-            for y in range(max(yb_line + 2, 344), min(ybib + 6, 398)):
-                if bmask[y, x] or (x < 782 and 324 <= y <= 404):
-                    continue
-                if y >= ybib:   # tepat di bawah bibir: sumber bersih y+19
-                    v = final[y + 19, x + 64]
+        # -- (0b) ZONA MEJA KIRI (x634-687, y330-392): bekas cover buku
+        # terbawah + isi-ulang lama. Geometri dari art asli:
+        #   dinding-belakang meja : yb(x) = a2 + bl2*x
+        #   tepi-kiri meja (iso)  : xedge(y) = 626 + 1.08*(y-362) utk y>=362
+        # y di atas yb -> dinding (wallref per baris); kiri xedge -> tone
+        # baris-sama dari zona kiri murni (x616-630: bayangan laptop/lantai);
+        # selebihnya permukaan kayu = gradien band (surf). Kertas asli di
+        # dinding (x656-670, y336-354) dipertahankan; buku baru & lampu aman.
+        wallref2 = np.array([np.median(orig[y, 630:652].reshape(-1, 3), 0) for y in range(H)])
+        # gradien horizontal dinding (terang ke kanan arah jendela) dari baris
+        # dinding bersih asli y306-326; kolom 630-710 -> faktor per kolom
+        _wcol = np.median(orig[306:327, 630:711].reshape(21, 81, 3), axis=0)
+        _wref = np.median(orig[306:327, 630:652].reshape(-1, 3), 0)
+        _wfac = np.clip(_wcol.mean(1) / _wref.mean(), 0.85, 1.15)
+        _edge = lambda y: 626 + 1.08 * (y - 362)
+        _front = lambda x: 362.0 + 0.5 * (x - 626)   # tepi depan-kiri meja (iso)
+        for x in range(634, 677):
+            for y in range(330, 392):      # kiri tumpukan: art asli MURNI
+                final[y, x] = orig[y, x]
+        for x in range(677, 687):
+            ybline = a2 + bl2 * x
+            for y in range(330, 392):
+                if 0 <= y - DY < H and 0 <= x - DX < W and book[y - DY, x - DX]:
+                    continue                                   # buku BARU
+                if arr[y, x].mean() < 108 and abs(arr[y, x, 0] - arr[y, x, 2]) < 42:
+                    continue                                   # lampu
+                if y < ybline - 2:
+                    if arr[y, x, 0] - arr[y, x, 2] <= 22:
+                        continue                               # dinding/laptop asli: aman
+                    v = wallref2[y]                            # bekas cover hangat -> dinding
+                elif y >= 362 and x < _edge(y):
+                    v = np.median(final[y, 616:630], axis=0)   # kiri meja
                 else:
-                    A = np.median(final[y, 622:636], axis=0)
-                    B = band[y - 362, 690] if 362 <= y < 392 else band[0, 690]
-                    v = A * (1 - tt2[i]) + B * tt2[i]
-                    if y >= ybib - 3:   # transisi ke salinan muka
-                        wt = (y - (ybib - 3)) / 4.0
-                        v = v * (1 - wt) + final[y + 19, x + 64] * wt
-                if x < 652:         # lebur ke konteks asli di kiri
-                    vk = (652 - x) / 4.0
-                    v = v * (1 - vk) + final[y, x] * vk
+                    v = surf[x]                                # kayu
+                    if y >= _front(x) and x < 672:
+                        v = v * 0.86                           # sisi depan-kiri (lebih gelap)
+                    e = _edge(y)
+                    if y >= 362 and x < e + 3:
+                        v = v * 0.78                           # garis tepi meja
+                    if y >= 362 and x < e + 6:
+                        wq = (x - e) / 6.0
+                        v = v * wq + np.median(final[y, 616:630], axis=0) * (1 - wq)
+                if x >= 683:      # lebur ke band di kanan
+                    w2 = (x - 683) / 4.0
+                    v = v * (1 - w2) + final[y, x] * w2
                 final[y, x] = v
         for x in range(x0b, x1b):        # bayangan kontak mengikuti dasar buku
             bcol = np.where(book[:, x])[0]
@@ -467,9 +488,10 @@ def clean2():
         # Dilakukan TERAKHIR: semua isi-ulang sudah bersih, tinggal angkat
         # buku (mask posisi lama), isi jejaknya dinding/meja seperti mesin
         # stage-1, lalu tempel di (DX,DY) + bayangan kontak baru.
+        bookD = cv2.dilate(book, np.ones((7, 7), np.uint8))
         hole2 = np.zeros(final.shape[:2], bool)
-        for x in range(X0, X1):
-            bc = np.where(book[:, x])[0]
+        for x in range(676, X1):
+            bc = np.where(bookD[:, x])[0]
             if len(bc):
                 hole2[bc.min():bc.max() + 7, x] = True   # +7: bayangan kontak lama ikut
         wallref = np.median(final[:, WALL_SEG[0]:WALL_SEG[1]], axis=1)
@@ -508,6 +530,53 @@ def clean2():
             x2 = X0 + DX + i
             seg = final[yb2:yb2 + 5, x2].astype(float)
             final[yb2:yb2 + 5, x2] = np.clip(seg * np.linspace(0.86, 1.0, len(seg))[:, None], 0, 255).astype(np.uint8)
+        _bb2 = lambda x: 391.0 - 0.287 * (x - 650)    # bibir depan meja
+        # -- (0c-NEW) MUKA DEPAN HOMOGEN (x646-784, ybib-3..+45): seluruh
+        # muka depan di bawah buku = profil dd-aligned (dd = y - ybib(x)) —
+        # struktur bibir/muka ikut kemiringan. dd 0-14 dari art asli kolom
+        # x772-781 (bebas buku & laptop); dd 15-45 dari muka bersih final
+        # x748-790. Gelap halus ke kiri; buku baru, lantai ungu aman.
+        _p0y = int(_bb2(781))
+        prof = []
+        for dd in range(46):
+            if dd <= 14:
+                prof.append(np.median(orig[min(_p0y + dd, 799), 772:782].reshape(-1, 3), 0))
+            else:
+                prof.append(np.median(final[min(_p0y + dd, 799), 748:791].reshape(-1, 3), 0))
+        prof = np.array(prof)
+        for x in range(646, 785):
+            ybib2 = int(_bb2(x))
+            for y in range(max(ybib2 - 3, 362), min(ybib2 + 15, 405)):
+                if 0 <= y - DY < H and 0 <= x - DX < W and book[y - DY, x - DX]:
+                    continue
+                if final[y, x, 2] - final[y, x, 0] > 10:
+                    continue                                   # lantai ungu
+                dd = int(np.clip(y - ybib2, 0, 45))
+                v = prof[dd] * (1.0 - 0.10 * (784 - x) / 138.0)
+                if x >= 684:      # lebur ke muka hasil hole-fill (kanan)
+                    w3 = min((x - 684) / 60.0, 1.0)
+                    v = v * (1 - w3) + final[y, x] * w3
+                if x < 652:       # lebur ke tepi kiri
+                    vk = (652 - x) / 6.0
+                    v = v * (1 - vk) + final[y, x] * vk
+                if x >= 780:      # lebur ke muka existing kanan
+                    w2 = (x - 780) / 4.0
+                    v = v * (1 - w2) + final[y, x] * w2
+                final[y, x] = v
+        # -- (0f) KOTAK KANAN-BUKU (x783-798, y342-362): strip lama beda tone
+        # di kanan buku (kiri-atas alas lampu) -> tone baris-sama dari kayu
+        # bersih x784-796; lampu gelap & laptop (y>362) tak disentuh.
+        for x in range(783, 799):
+            for y in range(342, 363):
+                if 0 <= y - DY < H and 0 <= x - DX < W and book[y - DY, x - DX]:
+                    continue
+                if arr[y, x].mean() < 108:
+                    continue
+                v = np.median(final[y, 784:797], axis=0)
+                if x < 787:       # lebur ke kayu kiri
+                    wk = (787 - x) / 4.0
+                    v = v * (1 - wk) + final[y, x] * wk
+                final[y, x] = v
         # -- (0d) SAPU MINI kiri buku (x676-700, y295-375): kertas tergantung
         # di dinding + sliver pucat kayu, bekas tepi kiri buku lama. Piksel
         # pucat netral saja: di atas garis -> warna dinding kolom, di bawah
@@ -517,11 +586,11 @@ def clean2():
         for x in range(676, 700):
             yb_ = a2 + bl2 * x
             for y in range(295, 375):
-                if book[y, x]:
-                    continue
-                if arr[y, x].mean() < _thr2 or abs(arr[y, x, 0] - arr[y, x, 2]) > 40:
-                    continue
-                v = wallc[x] if y <= yb_ else np.median(final[y, 662:675], axis=0)
+                if 0 <= y - DY < H and 0 <= x - DX < W and book[y - DY, x - DX]:
+                    continue                                   # buku BARU
+                if arr[y, x].mean() < _thr2 or abs(arr[y, x, 0] - arr[y, x, 2]) <= 38:
+                    continue   # hanya piksel HANGAT (kertas): dinding tak tersentuh
+                v = wallc[x] if y <= yb_ else np.median(final[y, 744:757], axis=0)
                 w = 0.0
                 if x >= 698: w = max(w, (x - 698) / 2.0)
                 if y < 297:  w = max(w, (297 - y) / 2.0)
@@ -535,16 +604,35 @@ def clean2():
         zz = np.zeros((H, W), bool)
         zz[300:372, 672:687] = True
         gelp = (arr.mean(2) < _thr2 + 8) & (np.abs(arr[:, :, 0] - arr[:, :, 2]) < 40)
-        gelp &= zz & (book == 0)
+        gelp &= zz
+        gelp &= ~(np.roll(np.roll(book, DY, axis=0), DX, axis=1) > 0)   # buku BARU
         nb, lab = cv2.connectedComponents(gelp.astype(np.uint8), connectivity=8)
-        msk2 = np.zeros((H, W), np.uint8)
         for k in range(1, nb):
             comp = lab == k
-            if comp.sum() <= 220 and not (comp & (book > 0)).any():
-                msk2[comp] = 255
-        if msk2.any():
-            fix2 = cv2.inpaint(np.clip(final, 0, 255).astype(np.uint8), msk2, 3, cv2.INPAINT_TELEA)
-            final[msk2 > 0] = fix2[msk2 > 0]
+            if comp.sum() > 220 or (comp & (book > 0)).any():
+                continue
+            ys2, xs2 = np.where(comp)
+            for yy2, xx2 in zip(ys2, xs2):
+                final[yy2, xx2] = (wallc[xx2] if yy2 <= a2 + bl2 * xx2
+                                   else surf[xx2])
+        # -- (0g) SAPU FINAL pojok kiri-buku (x674-688, y338-360): sisa
+        # tepi halaman/cover buku terbawah asli. Deterministik: dinding di
+        # atas garis, kayu (sumber x744-757) di bawahnya; lebur ke kanan.
+        for x in range(674, 693):
+            for y in range(332, 378):
+                if 0 <= y - DY < H and 0 <= x - DX < W and bookD[y - DY, x - DX]:
+                    continue
+                if y <= a2 + bl2 * x:
+                    v = wallref2[y] * _wfac[x - 630]
+                else:
+                    v = surf[x]          # gradien kayu (kontinu dgn band)
+                    if x <= 690:         # nyambung dgn sisi-kiri meja asli
+                        wk = (690 - x) / 13.0
+                        v = v * (1 - wk) + np.median(orig[y, 658:673].reshape(-1, 3), 0) * wk
+                if x >= 689:
+                    w2 = min((x - 689) / 3.0, 1.0)
+                    v = v * (1 - w2) + final[y, x] * w2
+                final[y, x] = v
         Image.fromarray(np.clip(final, 0, 255).astype(np.uint8)).save(pth)
         print("->", pth)
 
