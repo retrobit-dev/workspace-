@@ -1,0 +1,24 @@
+import {JSDOM} from "jsdom";
+import {readFileSync} from "fs";
+const html = readFileSync("web/index.html", "utf8");
+const dom = new JSDOM(html, {runScripts: "dangerously", pretendToBeVisual: true});
+const w = dom.window;
+const lapG = w.document.getElementById("lap-glow");
+const drawer = w.document.getElementById("drawer");
+const veil = w.document.getElementById("lap-veil");
+const tutup = w.document.getElementById("lap-tutup");
+const A = (c, m) => { if (!c) { console.error("GAGAL:", m); process.exit(1); } console.log("ok:", m); };
+A(!tutup, "aset tutup dihapus dari DOM");
+A(!veil, "veil redup dihapus dari DOM");
+A(typeof w.lapClick === "function", "lapClick tersedia");
+A(lapG.style.opacity === "0" || lapG.style.opacity === "", "glow awal padam");
+w.lapClick();
+A(lapG.style.opacity !== "0" && lapG.style.opacity !== "", "klik-1: glow menyala (" + lapG.style.opacity + ")");
+setTimeout(() => {
+  A(!w.lapBusy, "klik-1 selesai (busy lepas)");
+  A(drawer.style.display !== "block", "klik-1 belum buka drawer");
+  w.lapClick();
+  A(drawer.style.display === "block", "klik-2: drawer terbuka");
+  console.log("SEMUA LULUS");
+  process.exit(0);
+}, 700);

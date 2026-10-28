@@ -131,7 +131,7 @@ fun LauncherScreen(
     var caption by remember { mutableStateOf("") }
     var captionTick by remember { mutableStateOf(0) }
 
-    // laptop: tertutup -> membuka -> redup -> menyala -> klik = daftar aplikasi
+    // laptop: terbuka (scene dasar) -> klik = animasi menyala -> klik = daftar aplikasi
     val lapScope = rememberCoroutineScope()
     val lapAnim = remember { Animatable(0f) }
     fun laptopTap() {
@@ -139,18 +139,11 @@ fun LauncherScreen(
             0 -> lapScope.launch {
                 lapAnim.snapTo(0f)
                 state.laptopState = 1
-                lapAnim.animateTo(1f, tween(520, easing = FastOutSlowInEasing))
-                state.laptopState = 2
-                caption = "LAPTOP TERBUKA"; captionTick++
-            }
-            2 -> lapScope.launch {
-                lapAnim.snapTo(0f)
-                state.laptopState = 3
                 lapAnim.animateTo(1f, tween(620, easing = FastOutSlowInEasing))
-                state.laptopState = 4
+                state.laptopState = 2
                 caption = "LAPTOP MENYALA"; captionTick++
             }
-            4 -> {
+            2 -> {
                 caption = "DAFTAR APLIKASI"; captionTick++
                 state.screen = Scr.DAFTAR
             }
@@ -216,7 +209,7 @@ fun LauncherScreen(
         // muka hidup: ikon bingkai, judul papan tulis
         LiveFaces(box = box, isDay = isDay)
 
-        // laptop launcher: tertutup -> membuka -> redup -> menyala (overlay state)
+        // laptop launcher: terbuka -> menyala (overlay glow)
         LaptopLayer(box = box, isDay = isDay, lap = state.laptopState, prog = lapAnim.value)
 
         TILES.forEach { tile ->
@@ -318,76 +311,32 @@ private fun lapBmp(ctx: Context, dayRes: Int, nightRes: Int, isDay: Boolean): Im
 }
 
 /**
- * Laptop launcher sebagai overlay state di atas scene:
- *  0 tertutup (aset KOMPUTER_TERTUTUP menutupi laptop terbuka di scene)
- *  1 membuka  — meja kosong, laptop muncul + geser naik mengikuti progres
- *  2 terbuka redup — layar gelap (veil), tanpa teks
- *  3 menyala  — glow naik, veil pudar
- *  4 nyala    — glow penuh (malam lebih terang); klik = daftar aplikasi
+ * Laptop launcher sebagai overlay glow di atas scene:
+ *  0 terbuka — laptop di scene dasar (tak digambar)
+ *  1 menyala — glow naik mengikuti progres
+ *  2 nyala   — glow penuh (malam lebih terang); klik = daftar aplikasi
  */
 @Composable
 private fun LaptopLayer(box: SceneBox, isDay: Boolean, lap: Int, prog: Float) {
     val ctx = LocalContext.current
-    val closed = remember(isDay) {
-        lapBmp(ctx, R.drawable.komputer_tertutup, R.drawable.komputer_tertutup_night, isDay)
-    }
-    val kosong = remember(isDay) {
-        lapBmp(ctx, R.drawable.komputer_kosong, R.drawable.komputer_kosong_night, isDay)
-    }
-    val open = remember(isDay) {
-        lapBmp(ctx, R.drawable.komputer_terbuka, R.drawable.komputer_terbuka_night, isDay)
-    }
     val glow = remember(isDay) {
         lapBmp(ctx, R.drawable.komputer_glow, R.drawable.komputer_glow_night, isDay)
     }
+    val target = if (isDay) 0.55f else 1f
 
     Canvas(Modifier.fillMaxSize()) {
-        val dst = IntOffset(box.x(LAP_X).roundToPx(), box.y(LAP_Y).roundToPx())
-        val sz = IntSize(box.w(LAP_SIZE.width).roundToPx(), box.w(LAP_SIZE.height).roundToPx())
-        fun img(b: ImageBitmap, a: Float, dyScene: Float = 0f) {
-            if (a <= 0.005f) return
-            drawImage(
-                b,
-                srcOffset = IntOffset.Zero,
-                srcSize = IntSize(b.width, b.height),
-                dstOffset = IntOffset(dst.x, dst.y + (dyScene * box.h(1).toPx()).roundToInt()),
-                dstSize = sz,
-                alpha = a.coerceIn(0f, 1f),
-                filterQuality = FilterQuality.High
-            )
-        }
-        fun veil(a: Float) {
-            if (a <= 0.005f) return
-            val p = Path()
-            var i = 0
-            while (i < 8) {
-                val px = box.x(LAP_SCREEN_QUAD[i]).toPx()
-                val py = box.y(LAP_SCREEN_QUAD[i + 1]).toPx()
-                if (i == 0) p.moveTo(px, py) else p.lineTo(px, py)
-                i += 2
-            }
-            p.close()
-            drawPath(p, Color(0xFF141430).copy(alpha = a.coerceIn(0f, 1f)))
-        }
-        when (lap) {
-            0 -> img(closed, 1f)
-            1 -> {
-                img(kosong, 1f)
-                img(open, prog, dyScene = (1f - prog) * 12f)
-                img(glow, prog * 0.2f)
-            }
-            2 -> {
-                img(open, 1f)
-                img(glow, 0.22f)
-                veil(0.45f)
-            }
-            3 -> {
-                img(open, 1f)
-                img(glow, 0.22f + prog * (if (isDay) 0.35f else 0.78f))
-                veil(0.45f * (1f - prog))
-            }
-            else -> img(glow, if (isDay) 0.55f else 1f)
-        }
+        if (lap == 0) return@Canvas
+        val a = (if (lap == 1) prog else 1f) * target
+        if (a <= 0.005f) return@Canvas
+        drawImage(
+            glow,
+            srcOffset = IntOffset.Zero,
+            srcSize = IntSize(glow.width, glow.height),
+            dstOffset = IntOffset(box.x(LAP_X).roundToPx(), box.y(LAP_Y).roundToPx()),
+            dstSize = IntSize(box.w(LAP_SIZE.width).roundToPx(), box.w(LAP_SIZE.height).roundToPx()),
+            alpha = a.coerceIn(0f, 1f),
+            filterQuality = FilterQuality.High
+        )
     }
 }
 
@@ -561,11 +510,10 @@ private fun ambienceOf(hour: Int, isDay: Boolean): Pair<Color, Float> = when (ho
      salju, kabut, dan kilat saat badai — semua dari kode cuaca
      Open-Meteo (CuacaRepo, cache offline). Vektor halus, bukan piksel. */
 
-// Laptop launcher: overlay state di (768,304) 182x144; quad layar utk veil redup
+// Laptop launcher: overlay glow di (768,294) 182x154 (laptop terbuka milik scene)
 private const val LAP_X = 768
 private const val LAP_Y = 294
 private val LAP_SIZE = IntSize(182, 154)
-private val LAP_SCREEN_QUAD = listOf(850, 338, 917, 362, 910, 426, 823, 417)
 
 // Bolongan kaca jendela di scene (piksel gambar): langit underlay terlihat dari
 // sini; semua art (rel, bingkai, tirai, palang, gagang) tetap DI DEPAN animasi.

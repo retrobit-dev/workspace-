@@ -225,13 +225,7 @@ HTML = """<!DOCTYPE html>
     __SKY__
   </svg>
   <img id="scene" src="scene_night.png" alt="Workspace guru" draggable="false">
-  <!-- laptop launcher: state overlay (tertutup/membuka/redup/menyala) -->
-  <img id="lap-kosong" class="lap" draggable="false" alt=""
-       data-day="komputer_kosong.png" data-night="komputer_kosong_night.png">
-  <img id="lap-buka" class="lap" draggable="false" alt=""
-       data-day="komputer_terbuka.png" data-night="komputer_terbuka_night.png">
-  <img id="lap-tutup" class="lap" draggable="false" alt=""
-       data-day="komputer_tertutup.png" data-night="komputer_tertutup_night.png">
+  <!-- laptop: overlay glow menyala (laptop terbuka milik scene dasar) -->
   <img id="lap-glow" class="lap" draggable="false" alt=""
        data-day="komputer_glow.png" data-night="komputer_glow_night.png">
   <svg id="fx" viewBox="0 0 __SCENE_W__ __SCENE_H__" preserveAspectRatio="none">
@@ -242,9 +236,6 @@ HTML = """<!DOCTYPE html>
     <polygon id="sky-roomray" points="1150,400 1196,410 900,645 740,565" fill="#FFF2CC" opacity="0">
       <animate attributeName="opacity" values="0.05;0.09;0.05" dur="6s" repeatCount="indefinite"/>
     </polygon>
-
-    <!-- veil layar laptop redup -->
-    <polygon id="lap-veil" points="850,338 917,362 910,426 823,417" fill="#141430" opacity="0"/>
 
     <!-- lima bingkai aplikasi -->
     
@@ -324,22 +315,13 @@ TILES.forEach((tile) => {
 });
 
 
-/* ---- laptop launcher: tertutup -> membuka -> redup -> menyala -> daftar ---- */
+/* ---- laptop: terbuka (scene) -> menyala (glow) -> daftar aplikasi ---- */
 const LAP = {x: 768, y: 294, w: 182, h: 154};
-const lapK = document.getElementById("lap-kosong");
-const lapB = document.getElementById("lap-buka");
-const lapT = document.getElementById("lap-tutup");
 const lapG = document.getElementById("lap-glow");
-const lapV = document.getElementById("lap-veil");
-[lapK, lapB, lapT, lapG].forEach((el) => place(el, LAP.x, LAP.y, LAP.w, LAP.h));
+place(lapG, LAP.x, LAP.y, LAP.w, LAP.h);
 
 let lapState = 0;
 let lapBusy = false;
-
-function lapSet(el, on, op) {
-  el.style.display = on ? "block" : "none";
-  if (op !== undefined) el.style.opacity = op;
-}
 
 function lapGlowFull() {
   const h = new Date().getHours();
@@ -347,49 +329,22 @@ function lapGlowFull() {
 }
 
 function lapApply() {
-  lapSet(lapK, false); lapSet(lapB, false); lapSet(lapT, false); lapSet(lapG, false);
-  lapV.setAttribute("opacity", "0");
-  if (lapState === 0) lapSet(lapT, true, "1");
-  else if (lapState === 2) {
-    lapSet(lapB, true, "1"); lapSet(lapG, true, "0.22");
-    lapV.setAttribute("opacity", "0.45");
-  } else if (lapState === 4) lapSet(lapG, true, lapGlowFull());
+  lapG.style.display = "block";
+  lapG.style.opacity = lapState === 1 ? lapGlowFull() : "0";
 }
 
 function lapClick() {
   if (lapBusy) return;
   if (lapState === 0) {
     lapBusy = true;
-    lapSet(lapT, false);
-    lapSet(lapK, true, "1");
-    lapB.style.transition = "none";
-    lapSet(lapB, true, "0");
-    lapB.style.transform = "translateY(12px)";
-    requestAnimationFrame(() => {
-      lapB.style.transition = "opacity .52s ease, transform .52s ease";
-      lapB.style.opacity = "1";
-      lapB.style.transform = "translateY(0)";
-      lapSet(lapG, true, "0");
-      lapG.style.opacity = "0.2";
-    });
-    setTimeout(() => {
-      lapState = 2; lapBusy = false;
-      lapB.style.transition = ""; lapG.style.opacity = "0.22";
-      lapV.setAttribute("opacity", "0.45");
-      showToast("LAPTOP TERBUKA");
-    }, 540);
-  } else if (lapState === 2) {
-    lapBusy = true;
     lapG.style.transition = "opacity .62s ease";
-    lapV.style.transition = "opacity .62s ease";
     lapG.style.opacity = lapGlowFull();
-    lapV.setAttribute("opacity", "0");
     setTimeout(() => {
-      lapState = 4; lapBusy = false;
-      lapG.style.transition = ""; lapV.style.transition = "";
+      lapState = 1; lapBusy = false;
+      lapG.style.transition = "";
       showToast("LAPTOP MENYALA");
     }, 640);
-  } else if (lapState === 4) {
+  } else {
     drawer.style.display = "block";
     showToast("DAFTAR APLIKASI");
   }

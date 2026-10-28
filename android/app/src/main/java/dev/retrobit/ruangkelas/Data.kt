@@ -243,7 +243,7 @@ class AppState(private val ctx: Context) {
 
     var screen by mutableStateOf(Scr.HOME)
 
-    // laptop launcher: 0 tertutup, 1 membuka, 2 terbuka redup, 3 menyala (anim), 4 nyala
+    // laptop launcher: 0 terbuka, 1 menyala (anim), 2 nyala
     var laptopState by mutableStateOf(0)
     var journalFilter by mutableStateOf("SEMUA")
     var noteFilter by mutableStateOf("SEMUA")
