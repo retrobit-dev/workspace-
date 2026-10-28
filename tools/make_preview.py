@@ -241,8 +241,11 @@ function bayangTick(){
       g.style.display="";
       const tanE=Math.max(Math.tan(Math.max(elev,3)*Math.PI/180),0.28);
       const Ls=Math.min(2.8,Math.max(0.55,1.35/tanE));
-      const dev=((az+180)%360)-180;
-      const angD=Math.max(141,Math.min(181,161+dev*0.25));
+      /* kompas isometrik (kesepakatan user): kiri-atas=barat, kanan-atas=utara,
+         kanan-bawah=timur, kiri-bawah=selatan; bayangan mengarah (az+180) */
+      const sA=(az+180)*Math.PI/180;
+      const vx=0.894*(Math.cos(sA)+Math.sin(sA)), vy=0.447*(Math.sin(sA)-Math.cos(sA));
+      const angD=Math.atan2(vy,vx)*180/Math.PI;
       const awan=(SKY_WEATHER.awan===undefined)?80:SKY_WEATHER.awan;
       let P=Math.pow(Math.max(0,1-awan/100),0.75);
       const c=SKY_WEATHER.code;

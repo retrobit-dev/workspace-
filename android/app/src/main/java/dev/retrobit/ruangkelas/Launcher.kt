@@ -73,6 +73,7 @@ import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.PI
+import kotlin.math.atan2
 import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.tan
@@ -357,8 +358,12 @@ private fun BayanganMatahari(
         val base = box.unit.toPx()
         val tanE = max(tan(max(elev, 3.0) * PI / 180.0), 0.28)
         val ls = (1.35 / tanE).coerceIn(0.55, 2.8).toFloat()
-        val dev = ((az + 180.0) % 360.0) - 180.0
-        val angDeg = (161.0 + dev * 0.25).coerceIn(141.0, 181.0).toFloat()
+        // kompas isometrik (kesepakatan user): kiri-atas=barat, kanan-atas=utara,
+        // kanan-bawah=timur, kiri-bawah=selatan. Bayangan mengarah (az+180)deg.
+        val sA = (az + 180.0) * PI / 180.0
+        val vx = 0.894 * (cos(sA) + sin(sA))
+        val vy = 0.447 * (sin(sA) - cos(sA))
+        val angDeg = atan2(vy, vx).toFloat()
         var p = (1.0 - awan / 100.0).coerceIn(0.0, 1.0).pow(0.75)
         if (code == 45 || code == 48) p *= 0.5 else if (code >= 51) p *= 0.75
         val al = ((0.04 + 0.26 * p) * (sin(elev * PI / 180.0) * 1.5).coerceIn(0.3, 1.0)).toFloat()
@@ -382,6 +387,7 @@ private fun BayanganMatahari(
                     size = Size(rx * 2f, ry * 2f)
                 )
             }
+            // (angDeg dari atan2: sumbu utama elips mengikuti arah kompas)
         }
     }
 }

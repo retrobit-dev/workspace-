@@ -205,22 +205,24 @@ data class TileInfo(
  * dan tempat sampah.
  */
 val TILES = listOf(
+    // Area ketuk = bbox objek persis (diukur dari art; malam geometrinya sama).
+    // Urutan belakang->depan: objek yang DI DEPAN menang bila bbox bersinggungan.
     // --- meja kerja ---
-    TileInfo("Jurnal", Scr.JURNAL, "book", 788, 296, 178, 172),          // laptop
-    TileInfo("Nilai", Scr.NILAI, "chart", 658, 286, 124, 94),            // tumpukan buku
-    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 886, 412, 96, 64),    // kalkulator
-    TileInfo("Alat Tulis", Scr.KIT, "pencil", 936, 352, 58, 80),         // tempat pensil
-    TileInfo("Binder", Scr.BINDER, "folder", 836, 494, 128, 116),        // laci meja
+    TileInfo("Jurnal", Scr.JURNAL, "book", 768, 294, 182, 154),          // laptop (aset)
+    TileInfo("Nilai", Scr.NILAI, "chart", 719, 394, 94, 94),             // tumpukan buku (aset)
+    TileInfo("Alat Tulis", Scr.KIT, "pencil", 901, 371, 85, 88),         // gelas pensil (aset)
+    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 878, 417, 92, 66),    // kalkulator (aset)
+    TileInfo("Binder", Scr.BINDER, "folder", 797, 493, 148, 112),        // laci meja
 
     // --- dinding ---
-    TileInfo("Absensi", Scr.ABSENSI, "check", 64, 268, 172, 178),        // papan pin
-    TileInfo("Catatan", Scr.CATATAN, "pencil", 72, 448, 226, 258),       // rak buku
-    TileInfo("Jadwal", Scr.JADWAL, "board", 340, 168, 216, 286),         // papan tulis
-    TileInfo("Profil", Scr.PROFIL, "face", 694, 30, 74, 140),            // bingkai di atas meja
+    TileInfo("Absensi", Scr.ABSENSI, "check", 56, 220, 228, 220),        // papan pin
+    TileInfo("Catatan", Scr.CATATAN, "pencil", 118, 435, 167, 265),      // rak buku
+    TileInfo("Jadwal", Scr.JADWAL, "board", 72, 128, 530, 330),          // papan tulis (papan+kaki)
+    TileInfo("Profil", Scr.PROFIL, "face", 684, 28, 79, 133),            // bingkai kanan (aset)
 
     // --- sisi kiri & kanan ---
-    TileInfo("Cuaca", Scr.CUACA, "grid", 1090, 110, 136, 270),             // langit lebar jendela kanan → aplikasi Cuaca
-    TileInfo("File", Scr.HOME, "trash", 12, 632, 84, 104),               // tempat sampah
+    TileInfo("Cuaca", Scr.CUACA, "grid", 1090, 110, 136, 270),           // langit lebar jendela kanan → aplikasi Cuaca
+    TileInfo("File", Scr.HOME, "trash", 4, 635, 103, 130),               // tempat sampah (aset)
 
 )
 
