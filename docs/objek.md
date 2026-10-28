@@ -99,7 +99,10 @@ python3 tools/compose.py --tanpa KOMPUTER,KALKULATOR --out art/scene-tanpa-lapto
   bukan aset; poligon Nilai ikut diperbarui). 0.16.39: sisa strip
   halaman lama di kanan-atas buku dibersihkan total di kedua suasana
   (tahap --clean2 v30+: sapu generik piksel halaman + strip dinding hanya
-  sisi dinding).
+  sisi dinding). 0.16.40: buku dipindah ke posisi buku TERBAWAH tumpukan
+  semula (+2,+36); bekas tumpukan/slab kayu/sisa halaman dibersihkan total
+  (rekonstruksi gradien + profil muka depan + inpaint terarah); poligon
+  Nilai & test ikut posisi baru (inside 735,359).
 - Mirror manual di `Data.kt` (`TileInfo.poly`, `poly2`), hit-test
   depan→belakang di `Launcher.kt` (`tileAt`) dan JS preview (`tileAt` global);
   checker `check_preview.mjs` memvalidasi keduanya + kasus ronde 11

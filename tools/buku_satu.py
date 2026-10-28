@@ -21,6 +21,7 @@ Metode v5 (deterministik):
   python3 tools/buku_satu.py --restore    # pulihkan dari /tmp backup
 """
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -34,6 +35,9 @@ ARTS = {"day": ROOT / "art" / "rebuild-day.png",
 
 X0, X1 = 684, 780          # rentang kolom tumpukan (termasuk pojok kanan)
 Y_TOP, Y_BOT = 288, 400
+DX, DY = 2, 36             # offset posisi buku tunggal = posisi buku TERBAWAH
+                           # tumpukan asli (V-tip halaman asli (726,384) vs
+                           # buku tunggal (726,348)) — 0.16.40 permintaan user
 WALL_SEG = (650, 682)      # kolom bersih utk sampel dinding per baris
 BOUND_SEG = (653, 681)     # kolom bersih utk fit garis dinding->meja
 
@@ -165,7 +169,8 @@ def main(dry=False):
             fill[rows, x] = cols
         blur = np.asarray(Image.fromarray(fill).filter(ImageFilter.GaussianBlur(1.1)))
         arr[hole] = blur[hole]
-        # 3) tempel buku-1 kembali DI TEMPAT SAMA
+        # 3) tempel buku-1 kembali DI TEMPAT SAMA (pemindahan ke posisi
+        #    terbawah dilakukan di akhir --clean2, lihat "PINDAH BUKU")
         mm = (mloc[:, :, None] / 255.0)
         arr[Y_TOP:Y_BOT, X0:X1] = np.clip(
             cutout.astype(float) * mm + arr[Y_TOP:Y_BOT, X0:X1].astype(float) * (1 - mm),
@@ -184,15 +189,17 @@ def main(dry=False):
         Image.fromarray(arr).save(ARTS[mode])
         print("->", ARTS[mode])
 
-    # poligon "nilai" = mask buku (posisi sama)
+    # poligon "nilai" = mask buku (posisi baru: +DX,+DY)
     m = info["day"][0]
-    cnts, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    m2 = np.zeros_like(m)
+    m2[Y_TOP + DY:Y_BOT + DY, X0 + DX:X1 + DX] = m[Y_TOP:Y_BOT, X0:X1]
+    cnts, _ = cv2.findContours(m2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     c = max(cnts, key=cv2.contourArea)
     poly = cv2.approxPolyDP(c, 2.0, True).reshape(-1, 2)
-    dist = cv2.distanceTransform(m, cv2.DIST_L2, 5)
+    dist = cv2.distanceTransform(m2, cv2.DIST_L2, 5)
     _, _, _, p = cv2.minMaxLoc(dist)
     data = json.loads((ROOT / "art/objects/tap_polygons.json").read_text())
-    ys, xs = np.where(m > 0)
+    ys, xs = np.where(m2 > 0)
     data["nilai"] = {"bbox": [int(xs.min()), int(ys.min()), int(xs.max() - xs.min()), int(ys.max() - ys.min())],
                      "poly": [[int(px), int(py)] for px, py in poly],
                      "poly2": None, "inside": [int(p[0]), int(p[1])]}
@@ -278,17 +285,17 @@ def clean2():
                     if x >= 781: w = max(w, (x - 781) / 2.0)
                     v = v * (1 - w) + arr[y, x] * w
                     final[y, x] = v
-        # mikro: hantu outline tua di kiri-bawah (x656-702, y342-378) —
+        # mikro: hantu outline tua di kiri-bawah (x656-702, y342-366) —
         # isi kayu meja per kolom (sampel y380-386), lalu shadow kontak lembut
         for x in range(656, 702):
             samp = np.median(arr[380:387, x], axis=0)
             bc = np.where(bookm[:, x])[0]
             ytop = (bc.max() - 1) if len(bc) else 342
-            for y in range(max(342, ytop + 1), 378):
-                t = (378 - y) / 36.0
+            for y in range(max(342, ytop + 1), 366):
+                t = (366 - y) / 24.0
                 v = samp * (1 + 0.10 * t)
-                if y >= 370:   # lebur ke art asli di tepi bawah (hindari jahitan)
-                    w = (y - 370) / 8.0
+                if y >= 358:   # lebur ke art asli di tepi bawah (hindari jahitan)
+                    w = (y - 358) / 8.0
                     v = v * (1 - w) + arr[y, x] * w
                 final[y, x] = v
         for x in range(656, 702):
@@ -334,13 +341,13 @@ def clean2():
             samp = np.median(arr[381:388, x], axis=0)
             bc = np.where(bookm[:, x])[0]
             ytop = max(336, (bc.max() + 1)) if len(bc) else 336
-            for y in range(ytop, 378):
+            for y in range(ytop, 372):
                 if mode == "night" and x > 766 and y > 345 and arr[y, x].mean() < 132:
                     continue   # alas/kaki lampu night (gelap): jangan disentuh
-                t = (378 - y) / 48.0
+                t = (372 - y) / 48.0
                 v = samp * (1 + 0.06 * t)
-                if y >= 370:
-                    w = (y - 370) / 8.0
+                if y >= 364:
+                    w = (y - 364) / 8.0
                     v = v * (1 - w) + arr[y, x] * w
                 if x >= xmax - 4:
                     w2 = (x - (xmax - 4)) / 4.0
@@ -356,7 +363,7 @@ def clean2():
         hal = (np.abs(_rba) <= 32) & (_mean >= thr)
         hal &= cv2.dilate(bookf, np.ones((3, 3), np.uint8)) == 0
         z = np.zeros((H, W), bool)
-        z[288:392, 758:800] = True
+        z[288:366, 758:800] = True
         hal &= z
         yy_, xx_ = np.mgrid[0:H, 0:W]
         yb_ = a2 + bl2 * xx_
@@ -370,6 +377,174 @@ def clean2():
             dsk = np.median(arr[376:384, x], axis=0) if x < 776 else np.median(arr[336:344, x], axis=0)
             for y in col:
                 final[y, x] = wallc[x] if y <= yb_[0, x] else dsk
+        # ==== REKONSTRUKSI BAND KAYU BAWAH (0.16.40) ====
+        # Slab flat bekas isi-ulang tumpukan diganti permukaan gradien
+        # natural: referensi kiri & kanan dari art asli 3-buku, konteks
+        # bawah dari muka-depan yang dibersihkan dulu; buku baru
+        # dilindungi + bayangan kontak ikut dasar.
+        orig = np.asarray(Image.open(ROOT / "art" / f"asli-tumpukan-{mode}.png").convert("RGB")).astype(float)
+        bmask = cv2.dilate(book, np.ones((3, 3), np.uint8)) > 0
+        _rb2 = arr[:, :, 0] - arr[:, :, 2]
+        _m2 = arr.mean(2)
+        # -- band permukaan kayu (y344-391): mulai x687 — pojok kiri sudah
+        # ditangani langkah (0); di atas y362 hanya piksel sisa tumpukan.
+        x0b, x1b, y0b, y1b = 687, 796, 344, 392
+        woodthr = 35 if mode == "day" else 20
+        refL = np.median(orig[368:376, 646:664].reshape(-1, 3), 0)   # kayu kiri asli
+        refR = np.median(orig[368:376, 780:798].reshape(-1, 3), 0)   # kayu kanan asli
+        bawah = np.median(final[392:396, 650:790], axis=0)           # muka depan bersih
+        bawah_full = np.tile(bawah[0], (x1b, 1))                     # per kolom penuh
+        bawah_full[650:790] = bawah
+        bawah_full[:650] = bawah[0]; bawah_full[790:] = bawah[-1]
+        bawah = cv2.blur(bawah_full[None, :, :], (13, 1))[0]
+        xs = np.arange(x1b)
+        tt = np.clip((xs - 630) / (780 - 630), 0, 1); tt = tt * tt * (3 - 2 * tt)
+        surf = refL[None, :] * (1 - tt[:, None]) + refR[None, :] * tt[:, None]
+        ys = np.arange(362, y1b)
+        # blend ke muka depan mengikuti GARIS BIBIR diagonal (bukan y global):
+        # bibir = 391 - 0.287*(x-650) (dari (650,391) ke (800,363) di art asli)
+        yb = 391.0 - 0.287 * (xs - 650)
+        tv = np.clip((ys[:, None] - (yb[None, :] - 6.0)) / 9.0, 0, 1)[:, :, None]
+        band = surf[None, :, :] * (1 - tv) + bawah[None, :, :] * tv
+        hal_day = (_m2 >= 148) & (np.abs(_rb2) <= 40)      # halaman krem
+        hal_nig = (_m2 >= 120) & (np.abs(_rb2) <= 40)
+        cov = (_rb2 >= 8) & (_m2 <= 115)                    # cover biru gelap
+        stack_like = ((hal_day if mode == "day" else hal_nig) | cov)
+        # dinding day (ungu terang, |r-b| kecil) ikut hal_day — remnant hanya
+        # dianggap tumpukan bila berada DI BAWAH garis dinding-meja
+        _yy2, _xx2 = np.mgrid[0:H, 0:W]
+        stack_like &= _yy2 > (a2 + bl2 * _xx2 + 2)
+        for y in range(y0b, y1b):
+            for x in range(x0b, x1b):
+                if bmask[y, x]:
+                    continue
+                if y < 362:      # zona atas: hanya piksel sisa tumpukan
+                    if not stack_like[y, x]:
+                        continue
+                    w = max(0.0, (6 - (y - 344)) / 6.0) if y < 350 else 0.0
+                    v = band[0, x] if w == 0 else band[0, x] * (1 - w) + final[y, x] * w
+                else:
+                    v = band[y - 362, x]
+                    if x >= 792:  # lebur ke kanan (hindari jahitan vertikal)
+                        w2 = (x - 792) / 4.0
+                        v = v * (1 - w2) + final[y, x] * w2
+                final[y, x] = v
+        # -- (0b) POJOK KIRI (x648-686, s/d bibir): gradien horizontal sempit
+        # (bayangan tepi kiri meja -> kayu band); di bawah bibir = salinan
+        # muka bersih (sumber y+19 = kursi/lantai).
+        _bb2 = lambda x: 391.0 - 0.287 * (x - 650)    # bibir depan meja
+        tt2 = np.clip((np.arange(648, 687) - 648) / 20.0, 0, 1)
+        tt2 = tt2 * tt2 * (3 - 2 * tt2)
+        for i, x in enumerate(range(648, 687)):
+            yb_line = int(a2 + bl2 * x)
+            ybib = int(_bb2(x))
+            for y in range(max(yb_line + 2, 344), min(ybib + 6, 398)):
+                if bmask[y, x] or (x < 782 and 324 <= y <= 404):
+                    continue
+                if y >= ybib:   # tepat di bawah bibir: sumber bersih y+19
+                    v = final[y + 19, x + 64]
+                else:
+                    A = np.median(final[y, 622:636], axis=0)
+                    B = band[y - 362, 690] if 362 <= y < 392 else band[0, 690]
+                    v = A * (1 - tt2[i]) + B * tt2[i]
+                    if y >= ybib - 3:   # transisi ke salinan muka
+                        wt = (y - (ybib - 3)) / 4.0
+                        v = v * (1 - wt) + final[y + 19, x + 64] * wt
+                if x < 652:         # lebur ke konteks asli di kiri
+                    vk = (652 - x) / 4.0
+                    v = v * (1 - vk) + final[y, x] * vk
+                final[y, x] = v
+        for x in range(x0b, x1b):        # bayangan kontak mengikuti dasar buku
+            bcol = np.where(book[:, x])[0]
+            if not len(bcol):
+                continue
+            y0c = bcol.max() + 1
+            for k, al in enumerate((0.14, 0.10, 0.06, 0.03)):
+                y = y0c + k
+                if y0b <= y < y1b and not bmask[y, x]:
+                    final[y, x] *= (1.0 - al)
+        # ==== PINDAH BUKU ke posisi buku TERBAWAH tumpukan asli (0.16.40) ====
+        # Dilakukan TERAKHIR: semua isi-ulang sudah bersih, tinggal angkat
+        # buku (mask posisi lama), isi jejaknya dinding/meja seperti mesin
+        # stage-1, lalu tempel di (DX,DY) + bayangan kontak baru.
+        hole2 = np.zeros(final.shape[:2], bool)
+        for x in range(X0, X1):
+            bc = np.where(book[:, x])[0]
+            if len(bc):
+                hole2[bc.min():bc.max() + 7, x] = True   # +7: bayangan kontak lama ikut
+        wallref = np.median(final[:, WALL_SEG[0]:WALL_SEG[1]], axis=1)
+        fill2 = final.copy()
+        for x in range(X0, X1):
+            if not hole2[:, x].any():
+                continue
+            yb_ = a + bl * x
+            ysx = np.where(hole2[:, x])[0]
+            y0h, y1h = int(ysx.min()), min(int(ysx.max()), 392)
+            desksamp = np.median(final[y1h + 4:y1h + 12, x], axis=0)
+            rows = np.arange(y0h, y1h + 1)
+            cols = np.zeros((len(rows), 3))
+            up = rows <= yb_ - 3
+            dn = rows >= yb_ + 3
+            mid = ~up & ~dn
+            cols[up] = wallref[rows[up]]
+            cols[dn] = desksamp
+            if mid.any():
+                t = (rows[mid] - (yb_ - 3)) / 6.0
+                cols[mid] = wallref[rows[mid]] * (1 - t[:, None]) + desksamp * t[:, None]
+            fill2[rows, x] = cols
+        blur2 = np.asarray(Image.fromarray(np.clip(fill2, 0, 255).astype(np.uint8)).filter(ImageFilter.GaussianBlur(1.1)))
+        bwin = book[Y_TOP:Y_BOT, X0:X1]
+        mm = bwin[:, :, None] / 255.0
+        src = final[Y_TOP:Y_BOT, X0:X1].astype(float)      # buku SEBELUM lubang diisi
+        final[hole2] = blur2[hole2]
+        dst = final[Y_TOP + DY:Y_BOT + DY, X0 + DX:X1 + DX]
+        final[Y_TOP + DY:Y_BOT + DY, X0 + DX:X1 + DX] = np.clip(
+            src * mm + dst.astype(float) * (1 - mm), 0, 255).astype(np.uint8)
+        for i in range(bwin.shape[1]):  # bayangan kontak baru
+            col = np.where(bwin[:, i] > 0)[0]
+            if not len(col):
+                continue
+            yb2 = Y_TOP + DY + col.max() + 1
+            x2 = X0 + DX + i
+            seg = final[yb2:yb2 + 5, x2].astype(float)
+            final[yb2:yb2 + 5, x2] = np.clip(seg * np.linspace(0.86, 1.0, len(seg))[:, None], 0, 255).astype(np.uint8)
+        # -- (0d) SAPU MINI kiri buku (x676-700, y295-375): kertas tergantung
+        # di dinding + sliver pucat kayu, bekas tepi kiri buku lama. Piksel
+        # pucat netral saja: di atas garis -> warna dinding kolom, di bawah
+        # -> kayu baris-sama (x662-674, hasil rekonstruksi pojok). Buku lama
+        # (posisi pre-pindah) dilindungi.
+        _thr2 = 148 if mode == "day" else 136
+        for x in range(676, 700):
+            yb_ = a2 + bl2 * x
+            for y in range(295, 375):
+                if book[y, x]:
+                    continue
+                if arr[y, x].mean() < _thr2 or abs(arr[y, x, 0] - arr[y, x, 2]) > 40:
+                    continue
+                v = wallc[x] if y <= yb_ else np.median(final[y, 662:675], axis=0)
+                w = 0.0
+                if x >= 698: w = max(w, (x - 698) / 2.0)
+                if y < 297:  w = max(w, (297 - y) / 2.0)
+                if y > 373:  w = max(w, (y - 373) / 2.0)
+                if w > 0:
+                    v = v * (1 - w) + final[y, x] * w
+                final[y, x] = v
+        # -- (0e) titik gelap netral kecil (bekas pusat spiral & notch tepi
+        # kiri buku lama) di zona x672-690 y322-364: komponen gelap-netral
+        # <=14px yang tak menempel buku -> inpaint radius 3.
+        zz = np.zeros((H, W), bool)
+        zz[300:372, 672:687] = True
+        gelp = (arr.mean(2) < _thr2 + 8) & (np.abs(arr[:, :, 0] - arr[:, :, 2]) < 40)
+        gelp &= zz & (book == 0)
+        nb, lab = cv2.connectedComponents(gelp.astype(np.uint8), connectivity=8)
+        msk2 = np.zeros((H, W), np.uint8)
+        for k in range(1, nb):
+            comp = lab == k
+            if comp.sum() <= 220 and not (comp & (book > 0)).any():
+                msk2[comp] = 255
+        if msk2.any():
+            fix2 = cv2.inpaint(np.clip(final, 0, 255).astype(np.uint8), msk2, 3, cv2.INPAINT_TELEA)
+            final[msk2 > 0] = fix2[msk2 > 0]
         Image.fromarray(np.clip(final, 0, 255).astype(np.uint8)).save(pth)
         print("->", pth)
 
@@ -380,9 +555,16 @@ if __name__ == "__main__":
     elif "--restore" in sys.argv:
         for m, p in ARTS.items():
             bak = Path(f"/tmp/backup_{'day' if m == 'day' else 'night'}.png")
+            if not bak.exists():
+                alt = ROOT / "art" / f"asli-tumpukan-{m}.png"
+                if alt.exists():
+                    shutil.copy(alt, bak)
+                    print("(fallback art/asli-tumpukan)", bak)
             if bak.exists():
                 Image.open(bak).save(p)
                 print("restore", p)
+            else:
+                sys.exit(f"backup {m} tidak ada — /tmp & art/asli-tumpukan hilang")
     elif "--dry" in sys.argv:
         main(dry=True)
     else:

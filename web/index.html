@@ -870,7 +870,7 @@
     </g>
 
   </svg>
-  <img id="scene" src="scene_night.png?v=0.16.39" alt="Workspace guru" draggable="false">
+  <img id="scene" src="scene_night.png?v=0.16.40" alt="Workspace guru" draggable="false">
   <!-- laptop: overlay glow menyala (laptop terbuka milik scene dasar) -->
   <img id="lap-glow" class="lap" draggable="false" alt=""
        data-day="komputer_glow.png" data-night="komputer_glow_night.png">
@@ -964,7 +964,7 @@
 const SCENE = {w: 1280, h: 800};
 const TILES = [
   {label: "Jurnal", x: 796, y: 321, w: 129, h: 122, poly: [920, 333, 863, 321, 796, 393, 813, 394, 813, 424, 857, 443, 917, 419, 925, 386]},
-  {label: "Nilai", x: 688, y: 294, w: 78, h: 74, poly: [766, 294, 752, 305, 733, 298, 690, 320, 688, 368, 690, 336, 726, 352, 766, 330]},
+  {label: "Nilai", x: 690, y: 330, w: 78, h: 74, poly: [768, 330, 754, 341, 735, 334, 692, 356, 690, 404, 692, 372, 728, 388, 768, 366]},
   {label: "Alat Tulis", x: 957, y: 371, w: 29, h: 86, poly: [986, 371, 979, 371, 974, 380, 969, 373, 964, 371, 957, 407, 959, 457, 985, 453]},
   {label: "Kalkulator", x: 886, y: 417, w: 83, h: 60, poly: [969, 425, 961, 417, 955, 417, 950, 424, 950, 434, 928, 425, 890, 447, 886, 461, 912, 475, 926, 477, 960, 458, 957, 451, 963, 449, 963, 442, 952, 434, 969, 435]},
   {label: "Binder", x: 838, y: 493, w: 106, h: 111, poly: [848, 493, 944, 493, 944, 604, 884, 604, 839, 568, 838, 520, 853, 519, 869, 507]},
@@ -977,7 +977,7 @@ const TILES = [
 ];
 /* cache-buster: gambar scene selalu versi terbaru (browser/webview suka
    menyajikan scene_day.png lama yang bolongannya sudah tidak ada lagi) */
-const RKV = "0.16.39";
+const RKV = "0.16.40";
 const stage = document.getElementById("stage");
 const sceneEl = document.getElementById("scene");
 const toast = document.getElementById("toast");
