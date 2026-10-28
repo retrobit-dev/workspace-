@@ -162,6 +162,17 @@ def main() -> None:
     sh("adb shell wm density reset")
     time.sleep(1)
 
+    # 5. mode MALAM: geser jam ke 21:00 -> tirai menutup, bulan, lampu
+    #    nyala, veil gelap; zona buku-meja versi malam ikut terverifikasi.
+    sh("adb shell date 102821002026.00")
+    launch()
+    time.sleep(3)
+    shot("launcher-malam")
+    crashes()
+    tap_scene(735, 359, w, h)   # buku -> NILAI harus tetap terbuka di malam
+    shot("launcher-malam-ketuk-nilai")
+    time.sleep(2)
+
     # 4. bukti tidak ada rail/header: teks di layar hanya label sementara
     labels = [n["text"] for n in nodes() if n["text"]]
     print("teks di layar:", labels, flush=True)
