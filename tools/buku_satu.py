@@ -78,7 +78,7 @@ def deteksi(arr, mode):
         cut[x] = top[x] + 4 + e + 3
         yb2 = np.where(_rb[:, x] > 60)[0]
         yb2 = yb2[(yb2 >= top[x]) & (yb2 < Y_BOT)]
-        bottom[x] = (yb2[-1] if len(yb2) else cut[x])
+        bottom[x] = (yb2[-1] if len(yb2) else min(cut[x] + 26, Y_BOT - 1))
     m = np.zeros(arr.shape[:2], np.uint8)
     for x in range(X0, X1):
         if 0 < cut[x] < bottom[x]:
@@ -200,8 +200,184 @@ def main(dry=False):
     print("nilai poly:", data["nilai"]["poly"], "inside:", data["nilai"]["inside"])
 
 
+def clean2():
+    """Tahap 2 (0.16.38): seluruh band di sekitar buku (x652-798, y300-394)
+    di bawah/di atas garis batas dinding-meja diisi ulang dgn BIDANG gradien
+    2D per kanal (dipaskan dr piksel band itu sendiri). Bekas sisa tumpukan,
+    goresan vertikal, dan tepi tua semua tertutup bidang halus; buku, lampu,
+    dan garis batas dilindungi."""
+    for mode, pth in ARTS.items():
+        arr = np.asarray(Image.open(pth).convert("RGB")).astype(float)
+        H, W = arr.shape[:2]
+        a, bl = garis_meja(arr)
+        book = deteksi(arr.astype(np.uint8), mode)[0]
+        prot = cv2.dilate(book, np.ones((5, 5), np.uint8)) > 0
+        # lampu (abu gelap) dilindungi — ambang ketat supaya serpihan buku lama
+        # di dekat kaki lampu TIDAK ikut terlindungi
+        _rb = rb(arr); mean = arr.mean(2)
+        lampu = (mean < 108) & (np.abs(_rb) < 42)
+        prot |= cv2.dilate((lampu * 255).astype(np.uint8), np.ones((3, 3), np.uint8)) > 0
+
+        BX0, BY0, BX1, BY1 = 652, 300, 798, 394
+        yy, xx = np.mgrid[0:H, 0:W]
+        inband = np.zeros((H, W), bool)
+        inband[BY0:BY1, BX0:BX1] = True
+        yb = a + bl * xx
+        atas = inband & (yy <= yb - 3)          # sisi dinding
+        bawah = inband & (yy >= yb + 3)         # sisi meja
+        garis = inband & ~atas & ~bawah         # pita garis kayu: jangan disentuh
+        fillable = (atas | bawah) & ~prot
+
+        def fit_plane(sel):
+            pys, pxs = np.where(sel)
+            A = np.stack([np.ones(len(pxs)), pxs, pys], 1).astype(float)
+            coef, *_ = np.linalg.lstsq(A, arr[pys, pxs], rcond=None)
+            ys_, xs_ = np.mgrid[0:H, 0:W]
+            return coef[0][None, None, :] + coef[1] * xs_[:, :, None] + coef[2] * ys_[:, :, None]
+
+        # sampel: dalam band, jauh dari buku/lampu/garis (noise sisa = nol-mean)
+        samp_atas = atas & ~prot & (xx < 780)
+        samp_bawah = bawah & ~prot & (yy < 388)
+        plane_atas = fit_plane(samp_atas)
+        plane_bawah = fit_plane(samp_bawah)
+
+        out = arr.copy()
+        out[atas & fillable] = plane_atas[atas & fillable]
+        out[bawah & fillable] = plane_bawah[bawah & fillable]
+        # feather: blur hanya area terisi utk melebur tepi
+        mask = np.zeros((H, W), float)
+        mask[(atas | bawah) & fillable & (yy > BY0 + 2) & (yy < BY1 - 3)] = 1.0
+        mimg = np.asarray(Image.fromarray((mask * 255).astype(np.uint8)).filter(
+            ImageFilter.GaussianBlur(1.6))).astype(float) / 255
+        sm = np.asarray(Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).filter(
+            ImageFilter.GaussianBlur(1.2))).astype(float)
+        alpha = (mimg * 255).astype(np.uint8)
+        alpha = np.asarray(Image.fromarray(alpha).filter(ImageFilter.GaussianBlur(1.0))).astype(float) / 255
+        final = out * (1 - alpha[:, :, None]) + sm * alpha[:, :, None]
+        final = np.where(mask[:, :, None] > 0, final, arr)
+        # bayangan kontak halus di bawah buku (kembali setelah fill)
+        bookm = book > 0
+        for x in range(X0, X1):
+            col = np.where(bookm[:, x])[0]
+            if not len(col):
+                continue
+            y0c = col.max() + 1
+            for k, alpha2 in enumerate((0.14, 0.10, 0.06, 0.03)):
+                y2 = y0c + k
+                if y2 < H:
+                    final[y2, x] *= (1 - alpha2)
+        # mikro night: serpihan halaman x776-782, y334-362 (di luar jangkauan
+        # semua fill) -> kayu meja per kolom, lebur dua tepi
+        if mode == "night":
+            for x in range(776, 783):
+                samp = np.median(arr[366:372, x], axis=0)
+                for y in range(334, 362):
+                    v = samp * (1 + 0.05 * ((362 - y) / 28.0))
+                    w = 0.0
+                    if y >= 356: w = max(w, (y - 356) / 6.0)
+                    if x >= 781: w = max(w, (x - 781) / 2.0)
+                    v = v * (1 - w) + arr[y, x] * w
+                    final[y, x] = v
+        # mikro: hantu outline tua di kiri-bawah (x656-702, y342-378) —
+        # isi kayu meja per kolom (sampel y380-386), lalu shadow kontak lembut
+        for x in range(656, 702):
+            samp = np.median(arr[380:387, x], axis=0)
+            bc = np.where(bookm[:, x])[0]
+            ytop = (bc.max() - 1) if len(bc) else 342
+            for y in range(max(342, ytop + 1), 378):
+                t = (378 - y) / 36.0
+                v = samp * (1 + 0.10 * t)
+                if y >= 370:   # lebur ke art asli di tepi bawah (hindari jahitan)
+                    w = (y - 370) / 8.0
+                    v = v * (1 - w) + arr[y, x] * w
+                final[y, x] = v
+        for x in range(656, 702):
+            bc = np.where(bookm[:, x])[0]
+            if not len(bc):
+                continue
+            y0c = bc.max() + 1
+            for k, al in enumerate((0.16, 0.11, 0.07, 0.04)):
+                if y0c + k < H:
+                    final[y0c + k, x] *= (1 - al)
+        if mode == "day":
+            pass  # siang: area kanan-atas sudah bersih tanpa patch (patch abu menimpa tepi meja asli)
+        # strip halaman lama kanan-atas (x779-787, y295-330): dinding
+        # (di atas garis) -> warna dinding per baris, meja di bawah garis
+        for x in range(779, 788):
+            if mode == "day":
+                continue
+            yb_ = a + bl * x
+            wall_col = np.median(arr[281:285, x], axis=0)   # dinding di kolom yg sama (atas buku)
+            samp = np.median(arr[336:344, x], axis=0) if mode == "night" else np.median(arr[338:346, x], axis=0)
+            bc = np.where(bookm[:, x])[0]
+            ytop = (286 if mode == "day" else max(295, (bc.max() + 1) if len(bc) else 295))
+            for y in range(ytop, 314):
+                if len(bc) and bc.min() <= y <= bc.max():
+                    continue
+                if y <= yb_:
+                    v = wall_col
+                else:
+                    v = samp
+                w = 0.0
+                if y >= 308:
+                    w = max(w, (y - 308) / 6.0)
+                if ytop > 295:  # strip dikecilkan utk night: lembutkan atas
+                    w = max(w, min(1.0, (y - ytop + 3) / 6.0))
+                if w > 0:
+                    v = v * (1 - w) + arr[y, x] * w
+                final[y, x] = v
+        # kanan-bawah buku (x718-784, s/d y378): bekas halaman/tumpukan/hantu
+        # diisi kayu meja per kolom (sampel bersih y381-387). TANPA skip gelap —
+        # cover gelap buku lama justru sasaran; lengan lampu ada di x>=790 (aman).
+        xmax = 776 if mode == "night" else 778
+        for x in range(718, xmax):
+            samp = np.median(arr[381:388, x], axis=0)
+            bc = np.where(bookm[:, x])[0]
+            ytop = max(336, (bc.max() + 1)) if len(bc) else 336
+            for y in range(ytop, 378):
+                if mode == "night" and x > 766 and y > 345 and arr[y, x].mean() < 132:
+                    continue   # alas/kaki lampu night (gelap): jangan disentuh
+                t = (378 - y) / 48.0
+                v = samp * (1 + 0.06 * t)
+                if y >= 370:
+                    w = (y - 370) / 8.0
+                    v = v * (1 - w) + arr[y, x] * w
+                if x >= xmax - 4:
+                    w2 = (x - (xmax - 4)) / 4.0
+                    v = v * (1 - w2) + arr[y, x] * w2
+                final[y, x] = v
+        # SAPU GENERIK: piksel "warna halaman" (netral terang) yang tersisa di
+        # zona kanan-buku -> dinding (atas garis) / meja (bawah garis). Buku,
+        # lampu gelap, dan kayu meja tak tersentuh.
+        a2, bl2 = garis_meja(arr)
+        bookf = deteksi(arr.astype(np.uint8), mode)[0]
+        _rba = rb(arr); _mean = arr.mean(2)
+        thr = 148 if mode == "day" else 138
+        hal = (np.abs(_rba) <= 32) & (_mean >= thr)
+        hal &= cv2.dilate(bookf, np.ones((3, 3), np.uint8)) == 0
+        z = np.zeros((H, W), bool)
+        z[288:392, 758:800] = True
+        hal &= z
+        yy_, xx_ = np.mgrid[0:H, 0:W]
+        yb_ = a2 + bl2 * xx_
+        atas2 = hal & (yy_ <= yb_)
+        bawah2 = hal & (yy_ > yb_)
+        wallc = np.median(arr[281:285, :, :], axis=0)   # per kolom (H,3)
+        for x in range(758, 800):
+            col = np.where(hal[:, x])[0]
+            if not len(col):
+                continue
+            dsk = np.median(arr[376:384, x], axis=0) if x < 776 else np.median(arr[336:344, x], axis=0)
+            for y in col:
+                final[y, x] = wallc[x] if y <= yb_[0, x] else dsk
+        Image.fromarray(np.clip(final, 0, 255).astype(np.uint8)).save(pth)
+        print("->", pth)
+
+
 if __name__ == "__main__":
-    if "--restore" in sys.argv:
+    if "--clean2" in sys.argv:
+        clean2()
+    elif "--restore" in sys.argv:
         for m, p in ARTS.items():
             bak = Path(f"/tmp/backup_{'day' if m == 'day' else 'night'}.png")
             if bak.exists():

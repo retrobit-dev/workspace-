@@ -96,7 +96,10 @@ python3 tools/compose.py --tanpa KOMPUTER,KALKULATOR --out art/scene-tanpa-lapto
   poligon terukur manual; Cuaca = dua kaca jendela (satu langit, 0.16.37;
   celah tirai tetap tersegel). 0.16.38: tumpukan buku di meja → SATU buku
   (art dasar diedit langsung via tools/buku_satu.py; buku menempel latar,
-  bukan aset; poligon Nilai ikut diperbarui).
+  bukan aset; poligon Nilai ikut diperbarui). 0.16.39: sisa strip
+  halaman lama di kanan-atas buku dibersihkan total di kedua suasana
+  (tahap --clean2 v30+: sapu generik piksel halaman + strip dinding hanya
+  sisi dinding).
 - Mirror manual di `Data.kt` (`TileInfo.poly`, `poly2`), hit-test
   depan→belakang di `Launcher.kt` (`tileAt`) dan JS preview (`tileAt` global);
   checker `check_preview.mjs` memvalidasi keduanya + kasus ronde 11
