@@ -12,6 +12,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -53,12 +54,14 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -256,26 +259,55 @@ fun LauncherScreen(
         // laptop launcher: terbuka -> menyala (overlay glow)
         LaptopLayer(box = box, isDay = isDay, lap = state.laptopState, prog = lapAnim.value)
 
-        TILES.forEach { tile ->
-            LauncherHotspot(
-                tile = tile,
-                box = box,
-                onTap = {
-                    if (tile.label == "Jurnal") {
-                        laptopTap()
-                    } else {
-                        when {
-                            tile.label == "File" ->
-                                caption = if (openFileManager(ctx)) "MEMBUKA FILE MANAGER"
-                                else "FILE MANAGER TIDAK DITEMUKAN"
-                            else -> caption = tile.label
+        // area ketuk = poligon bentuk objek (0.16.35): satu layer ketuk utk semua
+        // objek, hit-test depan->belakang; highlight tekan ikut bentuk poligon.
+        var flashTile by remember { mutableStateOf<String?>(null) }
+        var flashTick by remember { mutableStateOf(0) }
+        LaunchedEffect(flashTile, flashTick) {
+            if (flashTile != null) {
+                delay(220)
+                flashTile = null
+            }
+        }
+        Canvas(Modifier.fillMaxSize()) {
+            val label = flashTile ?: return@Canvas
+            val tile = TILES.firstOrNull { it.label == label } ?: return@Canvas
+            val base = box.unit.toPx()
+            val ox = box.originX.toPx(); val oy = box.originY.toPx()
+            fun polyOf(poly: IntArray): Path = Path().apply {
+                moveTo(ox + poly[0] * base, oy + poly[1] * base)
+                for (k in 2 until poly.size step 2) lineTo(ox + poly[k] * base, oy + poly[k + 1] * base)
+                close()
+            }
+            val p = polyOf(tile.poly)
+            tile.poly2?.let { p.addPath(polyOf(it)) }
+            drawPath(p, color = Amber, style = Stroke(width = 3.dp.toPx()))
+        }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures { pos ->
+                        val px = ((pos.x - box.originX.toPx()) / box.unit.toPx()).roundToInt()
+                        val py = ((pos.y - box.originY.toPx()) / box.unit.toPx()).roundToInt()
+                        val tile = tileAt(px, py) ?: return@detectTapGestures
+                        flashTile = tile.label
+                        flashTick++
+                        if (tile.label == "Jurnal") {
+                            laptopTap()
+                        } else {
+                            when {
+                                tile.label == "File" ->
+                                    caption = if (openFileManager(ctx)) "MEMBUKA FILE MANAGER"
+                                    else "FILE MANAGER TIDAK DITEMUKAN"
+                                else -> caption = tile.label
+                            }
+                            captionTick++
+                            onOpen(tile)
                         }
-                        captionTick++
-                        onOpen(tile)
                     }
                 }
-            )
-        }
+        )
 
         if (state.scanlines) Scanlines()
 
@@ -504,27 +536,24 @@ private fun LaptopLayer(box: SceneBox, isDay: Boolean, lap: Int, prog: Float) {
     }
 }
 
-@Composable
-private fun LauncherHotspot(
-    tile: TileInfo,
-    box: SceneBox,
-    onTap: () -> Unit
-) {
-    val source = remember { MutableInteractionSource() }
-    val pressed by source.collectIsPressedAsState()
-
-    Box(
-        Modifier
-            .offset(x = box.x(tile.x), y = box.y(tile.y))
-            .size(width = box.w(tile.w), height = box.h(tile.h))
-            .background(if (pressed) Color(0x33F2AB3F) else Color.Transparent)
-            .border(
-                width = if (pressed) 3.dp else 0.dp,
-                color = if (pressed) Amber else Color.Transparent
-            )
-            .clickable(interactionSource = source, indication = null) { onTap() }
-    )
+/** Titik dalam poligon (ray casting); poly = pasangan [x0,y0, x1,y1, ...]. */
+private fun inPoly(px: Int, py: Int, poly: IntArray): Boolean {
+    var inside = false
+    var j = poly.size - 2
+    for (i in 0 until poly.size step 2) {
+        val xi = poly[i]; val yi = poly[i + 1]
+        val xj = poly[j]; val yj = poly[j + 1]
+        if ((yi > py) != (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi) inside = !inside
+        j = i
+    }
+    return inside
 }
+
+/** Objek terdepan yang poligonnya memuat titik (TILES berurut belakang->depan). */
+private fun tileAt(px: Int, py: Int): TileInfo? =
+    TILES.asReversed().firstOrNull { t ->
+        inPoly(px, py, t.poly) || (t.poly2?.let { inPoly(px, py, it) } == true)
+    }
 
 /**
  * Tempat sampah = pintasan ke file manager.
@@ -686,8 +715,6 @@ private val LAP_SIZE = IntSize(182, 154)
 private val SKY_HOLES_DAY = listOf(
     floatArrayOf(1010f, 119f, 1082f, 148f, 1082f, 338f, 1010f, 300f), // kaca kiri
     floatArrayOf(1100f, 146f, 1193f, 193f, 1190f, 404f, 1100f, 357f), // bukaan kanan
-    // celah sempit antara tirai kiri & bingkai (langit asli terlihat di art)
-    floatArrayOf(975f, 206f, 977f, 197f, 981f, 181f, 987f, 186f, 987f, 280f, 986f, 287f, 982f, 296f, 978f, 284f, 975f, 252f),
     // segitiga kaca di kanan palang vertikal, sampai tirai kanan
     floatArrayOf(1191f, 272f, 1194f, 289f, 1196f, 301f, 1198f, 313f, 1200f, 320f, 1202f, 346f,
         1203f, 366f, 1200f, 375f, 1198f, 385f, 1196f, 398f, 1194f, 407f, 1191f, 407f),
@@ -797,11 +824,13 @@ private fun SkyAnim(
         val regionTopLeft = Offset(sx(1006f), sy(115f))
         val regionSize = Size(box.w(198).toPx(), box.h(295).toPx())
 
-        // 1) dasar gradien sesuai waktu nyata (area lega — sisanya tertutup scene)
+        // 1) dasar gradien sesuai waktu nyata (area lega — sisanya tertutup scene).
+        // Harus mencakup SEMUA bolongan termasuk celah tirai x975-987 (bug 0.16.34:
+        // gradien mulai x985 -> bolongan celah tampak hitam saat siang).
         val (cTop, cBot) = skyColors(minute)
         drawRect(
             brush = Brush.verticalGradient(listOf(cTop, cBot), startY = sy(110f), endY = sy(415f)),
-            topLeft = Offset(sx(985f), sy(105f)), size = Size(box.w(235).toPx(), box.h(310).toPx())
+            topLeft = Offset(sx(968f), sy(105f)), size = Size(box.w(252).toPx(), box.h(310).toPx())
         )
 
         // 2) bintang berkedip saat malam yang tidak mendung

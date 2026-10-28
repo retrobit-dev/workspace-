@@ -39,11 +39,20 @@ def parse_data():
     scene_h = int(re.search(r"const val SCENE_H = (\d+)", src).group(1))
 
     tiles = []
-    for label, x, y, w, h in re.findall(
-        r'TileInfo\("([^"]+)",\s*Scr\.\w+,\s*"[^"]*",\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)',
-        src,
-    ):
-        tiles.append({"label": label, "x": int(x), "y": int(y), "w": int(w), "h": int(h)})
+    # 0.16.35: TileInfo memakai POLIGON (bentuk area ketuk = bentuk objek):
+    # TileInfo("Label", Scr.X, "glyph", intArrayOf(x0,y0,x1,y1,...)[, intArrayOf(...)])
+    for m in re.finditer(r'TileInfo\("([^"]+)",\s*Scr\.\w+,\s*"[^"]*"', src):
+        tail = src[m.end(): src.index("))", m.end()) + 2]
+        polys = [[int(v) for v in p.split(",")]
+                 for p in re.findall(r"intArrayOf\(([-\d,\s]+)\)", tail)]
+        poly = polys[0]
+        xs, ys = poly[0::2], poly[1::2]
+        tiles.append({
+            "label": m.group(1), "poly": poly,
+            "poly2": polys[1] if len(polys) > 1 else None,
+            "x": min(xs), "y": min(ys),
+            "w": max(xs) - min(xs), "h": max(ys) - min(ys),
+        })
 
     def rect(name):
         return _ints(re.search(rf"val {name} = intArrayOf\(([^)]*)\)", src).group(1))
@@ -69,7 +78,8 @@ def parse_data():
 SKY_HOLES_DAY = [
     (1010, 119, 1082, 148, 1082, 338, 1010, 300),  # kaca kiri
     (1100, 146, 1193, 193, 1190, 404, 1100, 357),  # bukaan kanan
-    (975, 206, 977, 197, 981, 181, 987, 186, 987, 280, 986, 287, 982, 296, 978, 284, 975, 252),
+    # (celah tirai kiri TIDAK dibolongkan 0.16.35: art = kaca, bukan langit —
+    #  bolongan tua di sana tampil hitam bila gradien tak menjangkau)
     (1191, 272, 1194, 289, 1196, 301, 1198, 313, 1200, 320, 1202, 346,
      1203, 366, 1200, 375, 1198, 385, 1196, 398, 1194, 407, 1191, 407),
 ]
@@ -332,9 +342,9 @@ HTML = """<!DOCTYPE html>
   .ditem small{display:block;margin-top:4px;color:#7D75A0;font-size:9px}
   #fx text{font-family:"Silkscreen","Courier New",monospace;font-weight:700;dominant-baseline:auto}
 
-  .hotspot{position:absolute;border:0;padding:0;margin:0;background:transparent;
-    cursor:pointer;outline:none;border-radius:0}
-  .hotspot.is-pressed{background:rgba(242,171,63,.20);box-shadow:0 0 0 3px var(--amber) inset}
+  .tap-flash{position:absolute;inset:0;background:rgba(242,171,63,.22);opacity:0;
+    pointer-events:none;transition:opacity .12s ease}
+  .tap-flash.show{opacity:1}
 
   #tint{position:absolute;inset:0;pointer-events:none}
   #scan{position:absolute;inset:0;pointer-events:none;
@@ -447,22 +457,49 @@ function open(name) {
   showToast("MEMBUKA " + name);
 }
 
-TILES.forEach((tile) => {
-  const el = document.createElement("button");
-  el.className = "hotspot";
-  el.type = "button";
-  el.dataset.label = tile.label;
-  el.setAttribute("aria-label", tile.label);
-  place(el, tile.x, tile.y, tile.w, tile.h);
-  el.addEventListener("pointerdown", () => el.classList.add("is-pressed"));
-  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) =>
-    el.addEventListener(ev, () => el.classList.remove("is-pressed")));
-  el.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (tile.label === "Jurnal") { lapClick(); return; }
-    open(tile.label);
-  });
-  stage.appendChild(el);
+/* ---- area ketuk = poligon bentuk objek (0.16.35) ----
+   Satu hit-test global pada stage (sama dengan APK): depan->belakang,
+   bentuk area ketuk = bentuk objek; highlight tekan berbentuk poligon. */
+function inPoly(px, py, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 2; i < poly.length; j = i, i += 2) {
+    const xi = poly[i], yi = poly[i + 1], xj = poly[j], yj = poly[j + 1];
+    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function tileAt(px, py) {
+  for (let i = TILES.length - 1; i >= 0; i--) {
+    const t = TILES[i];
+    if (inPoly(px, py, t.poly) || (t.poly2 && inPoly(px, py, t.poly2))) return t;
+  }
+  return null;
+}
+window.tileAt = tileAt;   // dipakai check_preview.mjs
+window.TILES_RO = TILES;
+const tapFlash = document.createElement("div");
+tapFlash.className = "tap-flash";
+stage.appendChild(tapFlash);
+let flashTimer = null;
+stage.addEventListener("pointerdown", (e) => {
+  if (e.target.closest && e.target.closest("#drawer")) return;   // drawer punya tombol sendiri
+  const r = stage.getBoundingClientRect();
+  const px = ((e.clientX - r.left) / r.width) * __W__;
+  const py = ((e.clientY - r.top) / r.height) * __H__;
+  const tile = tileAt(px, py);
+  if (!tile) return;
+  const poly = (tile.poly2 && inPoly(px, py, tile.poly2)) ? tile.poly2 : tile.poly;
+  let pts = "";
+  for (let i = 0; i < poly.length; i += 2) {
+    if (i) pts += ",";
+    pts += (poly[i] / __W__ * 100).toFixed(2) + "% " + (poly[i + 1] / __H__ * 100).toFixed(2) + "%";
+  }
+  tapFlash.style.clipPath = "polygon(" + pts + ")";
+  tapFlash.classList.add("show");
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => tapFlash.classList.remove("show"), 220);
+  if (tile.label === "Jurnal") { lapClick(); return; }
+  open(tile.label);
 });
 
 
@@ -626,7 +663,10 @@ def build_html(data, scene_sizes, holes):
         .replace("__SCENE_W__", str(w))
         .replace("__SCENE_H__", str(h))
         .replace("__TILES__", "[\n" + "".join(
-            f'  {{label: "{t["label"]}", x: {t["x"]}, y: {t["y"]}, w: {t["w"]}, h: {t["h"]}}},\n'
+            f'  {{label: "{t["label"]}", x: {t["x"]}, y: {t["y"]}, w: {t["w"]}, h: {t["h"]}, '
+            f'poly: {json.dumps(t["poly"])}'
+            + (f', poly2: {json.dumps(t["poly2"])}' if t.get("poly2") else "")
+            + "},\n"
             for t in data["tiles"]) + "]")
         .replace("__SWAY__", sway.replace("__W__", str(w)).replace("__H__", str(h)))
         # langit hidup (waktu nyata + cuaca)

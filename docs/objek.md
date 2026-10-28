@@ -88,6 +88,18 @@ python3 tools/compose.py --tanpa KOMPUTER,KALKULATOR --out art/scene-tanpa-lapto
   objek (alfa>2, dilate 5×5) dengan cincin sumber 40px. Rect penuh TIDAK
   dipakai (menghapus area latar di sekitar objek).
 
+## Poligon area ketuk (0.16.35)
+
+- **Bentuk area ketuk = bentuk objek** (prinsip user). Sumber:
+  `art/objects/tap_polygons.json`, dibangun oleh `tools/tap_poly.py` — aset
+  dari kontur alfa; bentuk menempel latar (papan tulis, papan pin, rak, laci)
+  poligon terukur manual; Cuaca = dua poligon kaca jendela.
+- Mirror manual di `Data.kt` (`TileInfo.poly`, `poly2`), hit-test
+  depan→belakang di `Launcher.kt` (`tileAt`) dan JS preview (`tileAt` global);
+  checker `check_preview.mjs` memvalidasi keduanya + kasus ronde 11
+  (papan pin ≠ bbox papan tulis; kaki papan bukan area ketuk).
+
+
 ## Keterbatasan yang diketahui
 
 - Bekas objek di background hasil inpaint berupa smear halus (natural tapi

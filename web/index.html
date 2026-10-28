@@ -43,9 +43,9 @@
   .ditem small{display:block;margin-top:4px;color:#7D75A0;font-size:9px}
   #fx text{font-family:"Silkscreen","Courier New",monospace;font-weight:700;dominant-baseline:auto}
 
-  .hotspot{position:absolute;border:0;padding:0;margin:0;background:transparent;
-    cursor:pointer;outline:none;border-radius:0}
-  .hotspot.is-pressed{background:rgba(242,171,63,.20);box-shadow:0 0 0 3px var(--amber) inset}
+  .tap-flash{position:absolute;inset:0;background:rgba(242,171,63,.22);opacity:0;
+    pointer-events:none;transition:opacity .12s ease}
+  .tap-flash.show{opacity:1}
 
   #tint{position:absolute;inset:0;pointer-events:none}
   #scan{position:absolute;inset:0;pointer-events:none;
@@ -80,7 +80,7 @@
       </linearGradient>
     </defs>
     <g id="sky-anim" data-weather="1">
-      <rect x="1006" y="115" width="198" height="295" fill="url(#skygrad)"/>
+      <rect x="968" y="110" width="252" height="305" fill="url(#skygrad)"/>
       <g id="sky-stars" style="display:none"><circle cx="1010.0" cy="192.7" r="0.88">
       <animate attributeName="opacity" values="0.2;0.95;0.2" dur="2.68s" begin="-1.68s" repeatCount="indefinite"/>
     </circle><circle cx="1071.9" cy="347.2" r="1.07">
@@ -185,7 +185,7 @@
       <animateTransform attributeName="transform" type="translate"
         from="-40,209" to="158,209" dur="51.97s" begin="-1.15s" repeatCount="indefinite"/>
     </g></g>
-      <rect id="sky-dim" x="1006" y="115" width="198" height="295" fill="#3A4150" opacity="0"/>
+      <rect id="sky-dim" x="968" y="110" width="252" height="305" fill="#3A4150" opacity="0"/>
       <g id="sky-rain" style="display:none"><line x1="1182.2" y1="450" x2="1180.0" y2="460">
       <animateTransform attributeName="transform" type="translate"
         from="0,-490" to="0,-90" dur="3.6s" begin="-2.45s" repeatCount="indefinite"/>
@@ -858,7 +858,7 @@
       <animateTransform attributeName="transform" type="translate"
         values="-30 0;30 0;-30 0" dur="22s" repeatCount="indefinite"/>
     </rect></g>
-      <rect id="sky-flash" x="1006" y="115" width="198" height="295" fill="#F4F6FF" opacity="0">
+      <rect id="sky-flash" x="968" y="110" width="252" height="305" fill="#F4F6FF" opacity="0">
         <animate attributeName="opacity" values="0;0;0.85;0;0.5;0;0;0"
           keyTimes="0;0.42;0.433;0.44;0.452;0.47;0.9;1" dur="7s" repeatCount="indefinite"/>
       </rect>
@@ -962,17 +962,17 @@
 <script>
 const SCENE = {w: 1280, h: 800};
 const TILES = [
-  {label: "Jurnal", x: 768, y: 294, w: 182, h: 154},
-  {label: "Nilai", x: 719, y: 394, w: 94, h: 94},
-  {label: "Alat Tulis", x: 901, y: 371, w: 85, h: 88},
-  {label: "Kalkulator", x: 878, y: 417, w: 92, h: 66},
-  {label: "Binder", x: 797, y: 493, w: 148, h: 112},
-  {label: "Absensi", x: 56, y: 220, w: 228, h: 220},
-  {label: "Catatan", x: 118, y: 435, w: 167, h: 265},
-  {label: "Jadwal", x: 72, y: 128, w: 530, h: 330},
-  {label: "Profil", x: 684, y: 28, w: 79, h: 133},
-  {label: "Cuaca", x: 1090, y: 110, w: 136, h: 270},
-  {label: "File", x: 4, y: 635, w: 103, h: 130},
+  {label: "Jurnal", x: 796, y: 321, w: 129, h: 122, poly: [920, 333, 863, 321, 796, 393, 813, 394, 813, 424, 857, 443, 917, 419, 925, 386]},
+  {label: "Nilai", x: 719, y: 407, w: 93, h: 80, poly: [719, 407, 719, 451, 730, 449, 736, 483, 740, 487, 762, 487, 793, 470, 812, 477, 812, 452]},
+  {label: "Alat Tulis", x: 957, y: 371, w: 29, h: 86, poly: [986, 371, 979, 371, 974, 380, 969, 373, 964, 371, 957, 407, 959, 457, 985, 453]},
+  {label: "Kalkulator", x: 886, y: 417, w: 83, h: 60, poly: [969, 425, 961, 417, 955, 417, 950, 424, 950, 434, 928, 425, 890, 447, 886, 461, 912, 475, 926, 477, 960, 458, 957, 451, 963, 449, 963, 442, 952, 434, 969, 435]},
+  {label: "Binder", x: 838, y: 493, w: 106, h: 111, poly: [848, 493, 944, 493, 944, 604, 884, 604, 839, 568, 838, 520, 853, 519, 869, 507]},
+  {label: "Absensi", x: 66, y: 217, w: 167, h: 220, poly: [66, 264, 233, 217, 233, 401, 67, 437]},
+  {label: "Catatan", x: 118, y: 435, w: 166, h: 264, poly: [214, 435, 284, 435, 284, 626, 151, 695, 149, 699, 118, 699, 118, 487, 212, 439]},
+  {label: "Jadwal", x: 319, y: 107, w: 263, h: 365, poly: [319, 241, 578, 107, 582, 337, 322, 472]},
+  {label: "Profil", x: 696, y: 42, w: 66, h: 118, poly: [699, 42, 696, 46, 696, 130, 752, 160, 762, 160, 762, 66, 714, 42]},
+  {label: "Cuaca", x: 1010, y: 119, w: 72, h: 219, poly: [1010, 119, 1082, 148, 1082, 338, 1010, 300], poly2: [1100, 146, 1193, 193, 1190, 404, 1100, 357]},
+  {label: "File", x: 4, y: 635, w: 100, h: 129, poly: [28, 649, 21, 657, 22, 663, 18, 664, 23, 701, 20, 706, 5, 709, 4, 716, 19, 710, 20, 706, 24, 707, 31, 742, 50, 751, 75, 751, 77, 760, 82, 764, 103, 761, 102, 746, 91, 741, 97, 706, 103, 704, 99, 692, 104, 664, 99, 652, 74, 642, 72, 635, 67, 635, 66, 647, 62, 648, 62, 654, 58, 657, 39, 657, 35, 652, 40, 651, 40, 646]},
 ];
 const stage = document.getElementById("stage");
 const sceneEl = document.getElementById("scene");
@@ -999,22 +999,49 @@ function open(name) {
   showToast("MEMBUKA " + name);
 }
 
-TILES.forEach((tile) => {
-  const el = document.createElement("button");
-  el.className = "hotspot";
-  el.type = "button";
-  el.dataset.label = tile.label;
-  el.setAttribute("aria-label", tile.label);
-  place(el, tile.x, tile.y, tile.w, tile.h);
-  el.addEventListener("pointerdown", () => el.classList.add("is-pressed"));
-  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) =>
-    el.addEventListener(ev, () => el.classList.remove("is-pressed")));
-  el.addEventListener("click", (e) => {
-    e.stopPropagation();
-    if (tile.label === "Jurnal") { lapClick(); return; }
-    open(tile.label);
-  });
-  stage.appendChild(el);
+/* ---- area ketuk = poligon bentuk objek (0.16.35) ----
+   Satu hit-test global pada stage (sama dengan APK): depan->belakang,
+   bentuk area ketuk = bentuk objek; highlight tekan berbentuk poligon. */
+function inPoly(px, py, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 2; i < poly.length; j = i, i += 2) {
+    const xi = poly[i], yi = poly[i + 1], xj = poly[j], yj = poly[j + 1];
+    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function tileAt(px, py) {
+  for (let i = TILES.length - 1; i >= 0; i--) {
+    const t = TILES[i];
+    if (inPoly(px, py, t.poly) || (t.poly2 && inPoly(px, py, t.poly2))) return t;
+  }
+  return null;
+}
+window.tileAt = tileAt;   // dipakai check_preview.mjs
+window.TILES_RO = TILES;
+const tapFlash = document.createElement("div");
+tapFlash.className = "tap-flash";
+stage.appendChild(tapFlash);
+let flashTimer = null;
+stage.addEventListener("pointerdown", (e) => {
+  if (e.target.closest && e.target.closest("#drawer")) return;   // drawer punya tombol sendiri
+  const r = stage.getBoundingClientRect();
+  const px = ((e.clientX - r.left) / r.width) * 1280;
+  const py = ((e.clientY - r.top) / r.height) * 800;
+  const tile = tileAt(px, py);
+  if (!tile) return;
+  const poly = (tile.poly2 && inPoly(px, py, tile.poly2)) ? tile.poly2 : tile.poly;
+  let pts = "";
+  for (let i = 0; i < poly.length; i += 2) {
+    if (i) pts += ",";
+    pts += (poly[i] / 1280 * 100).toFixed(2) + "% " + (poly[i + 1] / 800 * 100).toFixed(2) + "%";
+  }
+  tapFlash.style.clipPath = "polygon(" + pts + ")";
+  tapFlash.classList.add("show");
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(() => tapFlash.classList.remove("show"), 220);
+  if (tile.label === "Jurnal") { lapClick(); return; }
+  open(tile.label);
 });
 
 

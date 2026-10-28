@@ -41,7 +41,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 | | |
 |---|---|
 | Langit hidup | Matahari/bulan bergerak, warna langit waktu nyata, awan/hujan/salju/kabut/kilat mengikuti cuaca (Open-Meteo) |
-| APK siap pasang | [`dist/RuangKelas-0.16.34-debug.apk`](dist/RuangKelas-0.16.34-debug.apk) |
+| APK siap pasang | [`dist/RuangKelas-0.16.35-debug.apk`](dist/RuangKelas-0.16.35-debug.apk) |
 | Build otomatis | [`.github/workflows/android.yml`](.github/workflows/android.yml) |
 | Bukti jalan | [`docs/index.html`](docs/index.html) · [`docs/screens/`](docs/screens) |
 | Prototipe HTML lama | diarsipkan — lihat [`arsip/0.15.12/`](arsip/0.15.12) (ambil dari sejarah git) |
@@ -50,7 +50,7 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 
 ## Cara memasang
 
-1. Unduh `dist/RuangKelas-0.16.34-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
+1. Unduh `dist/RuangKelas-0.16.35-debug.apk`, buka di tablet, izinkan "instal dari sumber ini".
 2. Buka **Ruang Kelas** — launcher langsung tampil penuh, landscape, tanpa system bar.
 
 ## Mode landscape
@@ -60,13 +60,15 @@ tidak lagi tertutup; garis rel dan angka persentase dibuat lebih tipis/kecil.
 - Gambar selalu mempertahankan rasio aslinya **16:10**. Kalau layar lebih lebar/pendek,
   sisa ruang dibiarkan hitam (letterbox) — art tidak pernah melar dan koordinat ketuk
   tetap presisi. Semua posisi dihitung dari satu satuan `unit` (ukuran 1 piksel gambar),
-  dipakai bersama oleh gambar dan 17 area ketuk.
+  dipakai bersama oleh gambar dan 11 area ketuk berbentuk poligon.
 - Di browser, jendela portrait menampilkan ajakan "putar ke landscape"; kalau didukung,
   browser juga diminta mengunci orientasi saat layar disentuh.
 
 ## Objek yang bisa diketuk
 
-Koordinat ketuk disimpan di `Data.kt` (`TILES`, satuan piksel gambar 1312 × 816):
+Area ketuk disimpan di `Data.kt` (`TILES`, satuan piksel gambar 1280 × 800) —
+sejak 0.16.35 berupa **poligon bentuk objek** (bukan kotak pas): papan tulis =
+papan saja, papan pin = areanya sendiri; sumber `art/objects/tap_polygons.json`:
 
 | Objek | Aplikasi |
 |---|---|
@@ -119,15 +121,16 @@ npm start          # http://localhost:4173  → menyajikan web/
 npm run preview:build   # bangun ulang web/ dari art + TILES
 ```
 
-`web/index.html` dibuat oleh `tools/make_preview.py` yang membaca `TILES`,
-`BOARD_QUAD`, `RAIL_LINE`, `CURTAIN_RECTS`, `LEAF_RECT`, dan `SCENE_W/H`
+`web/index.html` dibuat oleh `tools/make_preview.py` yang membaca `TILES`
+(poligon), `BOARD_QUAD`, `SKY_HOLES_*`, `LEAF_RECT`, dan `SCENE_W/H`
 langsung dari `Data.kt` — jadi area ketuk di browser identik dengan di APK. Gambar
 penuh layar, tanpa sidebar/tab/header, objek menyala saat ditekan,
 gorden kiri–kanan bergoyang, dan suasana siang/malam otomatis mengikuti
 jam browser.
 
 Cek cepat tanpa browser: `node tools/check_preview.mjs` (jsdom) memastikan
-setiap hotspot berada tepat di atas objeknya.
+hit-test poligon ketuk objek yang benar (papan pin ≠ bbox papan tulis, kaki
+papan bukan area ketuk) dan semua lapisan hidup tetap terpasang.
 
 ## Struktur
 
@@ -159,6 +162,6 @@ cd android && gradle :app:assembleDebug
 ```
 
 GitHub Actions menjalankan hal yang sama, menyimpan APK ke `dist/`, dan memperbarui
-release `v0.16.34-android`. Workflow kedua (`android-preview.yml`, dipicu
+release `v0.16.35-android`. Workflow kedua (`android-preview.yml`, dipicu
 `.ci/preview.trigger`) memasang APK di emulator tablet 2560 × 1600, memotret launcher,
 mengetuk beberapa objek, lalu menyimpan screenshot ke `docs/screens/`.

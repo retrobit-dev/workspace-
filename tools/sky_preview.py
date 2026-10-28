@@ -102,7 +102,7 @@ def group() -> str:
       </linearGradient>
     </defs>
     <g id="sky-anim" data-weather="1">
-      <rect x="1006" y="115" width="198" height="295" fill="url(#skygrad)"/>
+      <rect x="968" y="110" width="252" height="305" fill="url(#skygrad)"/>
       <g id="sky-stars" style="display:none">{''.join(stars)}</g>
       <g id="sky-orb"><g id="sky-orb-pos" transform="translate(1146,208)">
         <g id="sky-sun">
@@ -123,11 +123,11 @@ def group() -> str:
         </g>
       </g></g>
       <g id="sky-clouds" class="sky-cloud-host">{''.join(clouds)}</g>
-      <rect id="sky-dim" x="1006" y="115" width="198" height="295" fill="#3A4150" opacity="0"/>
+      <rect id="sky-dim" x="968" y="110" width="252" height="305" fill="#3A4150" opacity="0"/>
       <g id="sky-rain" style="display:none">{''.join(rains)}</g>
       <g id="sky-snow" style="display:none">{''.join(snows)}</g>
       <g id="sky-fog" style="display:none">{''.join(fogs)}</g>
-      <rect id="sky-flash" x="1006" y="115" width="198" height="295" fill="#F4F6FF" opacity="0">
+      <rect id="sky-flash" x="968" y="110" width="252" height="305" fill="#F4F6FF" opacity="0">
         <animate attributeName="opacity" values="0;0;0.85;0;0.5;0;0;0"
           keyTimes="0;0.42;0.433;0.44;0.452;0.47;0.9;1" dur="7s" repeatCount="indefinite"/>
       </rect>

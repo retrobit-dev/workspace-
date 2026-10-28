@@ -7,7 +7,9 @@ diolah dari satu gambar dasar — masing-masing sudah digambar langsung:
   - ``art/rebuild-day.png``  : siang — lampu mati, matahari & awan.
 
 Dua-duanya 1280×800 (kelipatan grid 32). Fungsi ``load_scene`` tinggal
-memilih file yang tepat; tidak ada grade/pet ulang piksel lagi.
+memilih file yang tepat. Sejak 0.16.33 malam diberi grade deterministik:
+interpolasi seam kolom x1001-1013 lalu gamma 0.72 pada strip bingkai kiri
+(STRIP_BINGKAI) — lihat _regrade_strip_night.
 """
 from pathlib import Path
 

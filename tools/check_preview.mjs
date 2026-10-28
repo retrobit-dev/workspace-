@@ -24,8 +24,19 @@ const rect = (name) => {
   return m[1].split(",").map((v) => +v.trim());
 };
 
-const tiles = [...data.matchAll(/TileInfo\("([^"]+)",\s*Scr\.\w+,\s*"[^"]*",\s*(\d+),\s*(\d+),\s*(\d+),\s*(\d+)\)/g)]
-  .map((m) => ({ label: m[1], x: +m[2], y: +m[3], w: +m[4], h: +m[5] }));
+const tiles = [...data.matchAll(/TileInfo\("([^"]+)",\s*Scr\.\w+,\s*"[^"]*"/g)].map((m) => {
+  const end = data.indexOf("))", m.index) + 2;
+  const tail = data.slice(m.index, end);
+  const polys = [...tail.matchAll(/intArrayOf\(([-\d,\s]+)\)/g)]
+    .map((p) => p[1].split(",").map((v) => +v.trim()));
+  const poly = polys[0];
+  const xs = poly.filter((_, i) => i % 2 === 0), ys = poly.filter((_, i) => i % 2 === 1);
+  return {
+    label: m[1], poly, poly2: polys[1] || null,
+    x: Math.min(...xs), y: Math.min(...ys),
+    w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys),
+  };
+});
 
 const listOfQuads = (name) => {
   const start = data.indexOf(`val ${name} = listOf(`);
@@ -46,23 +57,55 @@ const rawHtml = readFileSync(HTML, "utf8");
 const dom = new JSDOM(rawHtml, { runScripts: "dangerously", pretendToBeVisual: true });
 const { document } = dom.window;
 
-const hotspots = [...document.querySelectorAll(".hotspot")];
-if (hotspots.length !== tiles.length) fail(`jumlah hotspot ${hotspots.length} != ${tiles.length} tile`);
-if (tiles.length !== 11) fail(`TILES berisi ${tiles.length} objek, harusnya 11`);
+// ---- area ketuk = poligon bentuk objek (0.16.35) ----
+const tilesRo = dom.window.TILES_RO;
+if (!tilesRo || tilesRo.length !== 11) fail(`TILES_RO di JS ${tilesRo ? tilesRo.length : "hilang"}, harusnya 11`);
+if (typeof dom.window.tileAt !== "function") fail("dom.window.tileAt tidak ada (hit-test poligon hilang)");
 
-tiles.forEach((tile, i) => {
-  const el = hotspots[i];
-  if (!el) return;
-  if (el.dataset.label !== tile.label) fail(`urutan: ${el.dataset.label} != ${tile.label}`);
-  const want = {
-    left: (tile.x / SCENE.w) * 100, top: (tile.y / SCENE.h) * 100,
-    width: (tile.w / SCENE.w) * 100, height: (tile.h / SCENE.h) * 100,
-  };
-  const got = { left: el.style.left, top: el.style.top, width: el.style.width, height: el.style.height };
-  for (const k of Object.keys(want)) {
-    if (!close(got[k], want[k])) fail(`${tile.label}.${k}: ${got[k]} != ${want[k].toFixed(4)}%`);
+const inPoly = (px, py, poly) => {
+  let inside = false;
+  for (let i = 0, j = poly.length - 2; i < poly.length; j = i, i += 2) {
+    const xi = poly[i], yi = poly[i + 1], xj = poly[j], yj = poly[j + 1];
+    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
   }
+  return inside;
+};
+const hitLabel = (px, py) => {
+  for (let i = tiles.length - 1; i >= 0; i--) {
+    const t = tiles[i];
+    if (inPoly(px, py, t.poly) || (t.poly2 && inPoly(px, py, t.poly2))) return t.label;
+  }
+  return null;
+};
+
+// setiap tile: hitung Data.kt harus menemukan label yang sama dari titik dalam poligonnya
+tiles.forEach((tile) => {
+  let found = null;
+  for (let y = tile.y + 3; y < tile.y + tile.h && !found; y += 4) {
+    for (let x = tile.x + 3; x < tile.x + tile.w; x += 4) {
+      if (hitLabel(x, y) === tile.label && hitLabel(x + 4, y) === tile.label
+        && hitLabel(x, y + 4) === tile.label && hitLabel(x - 4, y - 4) === tile.label) {
+        found = [x, y]; break;
+      }
+    }
+  }
+  if (!found) fail(`${tile.label}: tidak ada titik uji stabil di dalam poligon`);
 });
+
+// ketukan di Data.kt (tileAt JS preview) harus cocok juga
+if (dom.window.tileAt && tilesRo) {
+  for (const t of tilesRo) {
+    const same = tiles.find((x) => x.label === t.label);
+    if (!same || JSON.stringify(t.poly) !== JSON.stringify(same.poly))
+      fail(`${t.label}: poligon JS != Data.kt`);
+  }
+}
+
+// ronde 11: papan pin TIDAK boleh ditelan bbox papan tulis; kaki papan bukan area ketuk
+if (hitLabel(170, 330) !== "Absensi") fail("ketuk papan pin (170,330) bukan Absensi");
+if (hitLabel(478, 275) !== "Jadwal") fail("ketuk muka papan (478,275) bukan Jadwal");
+if (hitLabel(390, 500) !== null) fail("kaki papan tulis (390,500) masih area ketuk (harus null)");
+if (hitLabel(972, 412) !== "Alat Tulis") fail("ketuk gelas pensil (972,412) bukan Alat Tulis");
 
 // ---- tidak ada jam analog ----
 ["hh", "mh", "sh", "analog"].forEach((id) => {
@@ -142,7 +185,7 @@ const now = new Date();
 if (!document.getElementById("tint").style.background) fail("selaput suasana belum diset");
 
 // ---- label wajib ----
-const labels = hotspots.map((e) => e.dataset.label);
+const labels = tiles.map((t) => t.label);
 ["Jurnal", "Nilai", "Kalkulator", "Alat Tulis", "Binder", "Jadwal", "Profil", "File", "Catatan", "Absensi", "Cuaca"].forEach((k) => {
   if (!labels.includes(k)) fail(`hotspot "${k}" hilang`);
 });
@@ -178,6 +221,6 @@ if (!holesM || +holesM[1] < 15000)
   fail(`bolongan kaca scene kurang (${holesM ? holesM[1] : "tidak ada"} < 15000 px) — scene harus transparan di kaca`);
 
 console.log(errors === 0
-  ? `PREVIEW OK · ${hotspots.length} hotspot · tanpa kalender · tanpa baterai/bar rel · tirai+daun angin nyata · langit→Cuaca · langit hidup (orb+cuaca+matahari) · bayangan matahari nyata · art smooth · siang lembut`
+  ? `PREVIEW OK · ${tiles.length} hotspot poligon · tanpa kalender · tanpa baterai/bar rel · tirai+daun angin nyata · langit→Cuaca · langit hidup (orb+cuaca+matahari) · bayangan matahari nyata · art smooth · siang lembut`
   : `PREVIEW GAGAL · ${errors} masalah`);
 process.exit(errors === 0 ? 0 : 1);

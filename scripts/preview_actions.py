@@ -2,9 +2,11 @@
 
 Dijalankan di GitHub Actions setelah emulator boot dan APK terpasang.
 """
+import json
 import re
 import subprocess
 import time
+from pathlib import Path
 
 PACKAGE = "dev.retrobit.ruangkelas"
 ACTIVITY = f"{PACKAGE}/.MainActivity"
@@ -96,20 +98,23 @@ def main() -> None:
     shot("launcher")
     crashes()
 
-    # 2. ketuk objek di scene. Koordinat = pusat TILES di Data.kt
-    #    (piksel gambar 1280 x 800), dipetakan ke piksel layar.
+    # 2. ketuk objek di scene. Koordinat = titik dalam POLIGON tiap objek
+    #    (art/objects/tap_polygons.json — bentuk area ketuk = bentuk objek,
+    #    0.16.35), dipetakan ke piksel layar.
+    poly_file = Path(__file__).resolve().parent.parent / "art/objects/tap_polygons.json"
+    polys = json.loads(poly_file.read_text()) if poly_file.exists() else {}
     hotspots = [
-        ("launcher-ketuk-jurnal", 859, 371),      # laptop (768,294,182,154)
-        ("launcher-ketuk-nilai", 766, 441),       # tumpukan buku (719,394,94,94)
-        ("launcher-ketuk-alat-tulis", 943, 415),  # gelas pensil (901,371,85,88)
-        ("launcher-ketuk-kalkulator", 924, 450),  # kalkulator (878,417,92,66)
-        ("launcher-ketuk-binder", 871, 549),      # laci meja (797,493,148,112)
-        ("launcher-ketuk-absensi", 170, 330),     # papan pin (56,220,228,220)
-        ("launcher-ketuk-jadwal", 337, 293),      # papan tulis (72,128,530,330)
-        ("launcher-ketuk-profil", 723, 94),       # bingkai kanan (684,28,79,133)
-        ("launcher-ketuk-sampah", 55, 700),       # tempat sampah -> file manager
+        ("launcher-ketuk-jurnal", polys.get("jurnal", {}).get("inside", [875, 382])),
+        ("launcher-ketuk-nilai", polys.get("nilai", {}).get("inside", [759, 456])),
+        ("launcher-ketuk-alat-tulis", polys.get("alat-tulis", {}).get("inside", [972, 412])),
+        ("launcher-ketuk-kalkulator", polys.get("kalkulator", {}).get("inside", [923, 454])),
+        ("launcher-ketuk-binder", polys.get("binder", {}).get("inside", [895, 549])),
+        ("launcher-ketuk-absensi", [170, 330]),   # papan pin: bukti TIDAK ditelan bbox papan tulis
+        ("launcher-ketuk-jadwal", polys.get("jadwal", {}).get("inside", [478, 275])),
+        ("launcher-ketuk-profil", polys.get("profil", {}).get("inside", [762, 112])),
+        ("launcher-ketuk-sampah", polys.get("file", {}).get("inside", [61, 695])),
     ]
-    for name, px, py in hotspots:
+    for name, (px, py) in hotspots:
         ox, oy, scale = scene_rect(w, h)
         print("ketuk", name, "layar", int(ox + px * scale), int(oy + py * scale), flush=True)
         tap_scene(px, py, w, h)

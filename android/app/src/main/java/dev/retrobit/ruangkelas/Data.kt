@@ -185,15 +185,19 @@ val PALETTE = listOf(
 /**
  * Satu objek yang bisa diketuk di gambar workspace.
  * Koordinat memakai piksel gambar (SCENE_W × SCENE_H), bukan grid.
+ *
+ * Area ketuk = POLIGON bentuk objek (0.16.35), bukan kotak pas — bentuk area
+ * ketuk = bentuk objek. Sumber: art/objects/tap_polygons.json (tools/tap_poly.py),
+ * pasangan [x0,y0, x1,y1, ...]; objek dengan dua area (Cuaca: kaca kiri+kanan)
+ * memakai poly2. Urutan TILES belakang->depan: yang DI DEPAN menang bila
+ * poligon bersinggungan.
  */
 data class TileInfo(
     val label: String,
     val target: Scr,
     val glyph: String,
-    val x: Int,
-    val y: Int,
-    val w: Int,
-    val h: Int
+    val poly: IntArray,
+    val poly2: IntArray? = null
 )
 
 /**
@@ -205,25 +209,39 @@ data class TileInfo(
  * dan tempat sampah.
  */
 val TILES = listOf(
-    // Area ketuk = bbox objek persis (diukur dari art; malam geometrinya sama).
-    // Urutan belakang->depan: objek yang DI DEPAN menang bila bbox bersinggungan.
     // --- meja kerja ---
-    TileInfo("Jurnal", Scr.JURNAL, "book", 768, 294, 182, 154),          // laptop (aset)
-    TileInfo("Nilai", Scr.NILAI, "chart", 719, 394, 94, 94),             // tumpukan buku (aset)
-    TileInfo("Alat Tulis", Scr.KIT, "pencil", 901, 371, 85, 88),         // gelas pensil (aset)
-    TileInfo("Kalkulator", Scr.KALKULATOR, "calc", 878, 417, 92, 66),    // kalkulator (aset)
-    TileInfo("Binder", Scr.BINDER, "folder", 797, 493, 148, 112),        // laci meja
+    // laptop (aset; kartu aset berisi piksel objek lain -> poligon manual, buku dipotong)
+    TileInfo("Jurnal", Scr.JURNAL, "book",
+        intArrayOf(920, 333, 863, 321, 796, 393, 813, 394, 813, 424, 857, 443, 917, 419, 925, 386)),
+    TileInfo("Nilai", Scr.NILAI, "chart",                            // tumpukan buku (aset)
+        intArrayOf(719, 407, 719, 451, 730, 449, 736, 483, 740, 487, 762, 487, 793, 470, 812, 477, 812, 452)),
+    TileInfo("Alat Tulis", Scr.KIT, "pencil",                        // gelas pensil (kartu)
+        intArrayOf(986, 371, 979, 371, 974, 380, 969, 373, 964, 371, 957, 407, 959, 457, 985, 453)),
+    TileInfo("Kalkulator", Scr.KALKULATOR, "calc",                   // kalkulator (aset)
+        intArrayOf(969, 425, 961, 417, 955, 417, 950, 424, 950, 434, 928, 425, 890, 447, 886, 461,
+            912, 475, 926, 477, 960, 458, 957, 451, 963, 449, 963, 442, 952, 434, 969, 435)),
+    TileInfo("Binder", Scr.BINDER, "folder",                         // laci meja
+        intArrayOf(848, 493, 944, 493, 944, 604, 884, 604, 839, 568, 838, 520, 853, 519, 869, 507)),
 
     // --- dinding ---
-    TileInfo("Absensi", Scr.ABSENSI, "check", 56, 220, 228, 220),        // papan pin
-    TileInfo("Catatan", Scr.CATATAN, "pencil", 118, 435, 167, 265),      // rak buku
-    TileInfo("Jadwal", Scr.JADWAL, "board", 72, 128, 530, 330),          // papan tulis (papan+kaki)
-    TileInfo("Profil", Scr.PROFIL, "face", 684, 28, 79, 133),            // bingkai kanan (aset)
+    TileInfo("Absensi", Scr.ABSENSI, "check",                        // papan pin (gabus+bingkai)
+        intArrayOf(66, 264, 233, 217, 233, 401, 67, 437)),
+    TileInfo("Catatan", Scr.CATATAN, "pencil",                       // rak buku
+        intArrayOf(214, 435, 284, 435, 284, 626, 151, 695, 149, 699, 118, 699, 118, 487, 212, 439)),
+    TileInfo("Jadwal", Scr.JADWAL, "board",                          // papan tulis = muka papan SAJA (kaki tidak)
+        intArrayOf(319, 241, 578, 107, 582, 337, 322, 472)),
+    TileInfo("Profil", Scr.PROFIL, "face",                           // bingkai kanan (aset)
+        intArrayOf(699, 42, 696, 46, 696, 130, 752, 160, 762, 160, 762, 66, 714, 42)),
 
     // --- sisi kiri & kanan ---
-    TileInfo("Cuaca", Scr.CUACA, "grid", 1090, 110, 136, 270),           // langit lebar jendela kanan → aplikasi Cuaca
-    TileInfo("File", Scr.HOME, "trash", 4, 635, 103, 130),               // tempat sampah (aset)
-
+    TileInfo("Cuaca", Scr.CUACA, "grid",                             // dua kaca jendela -> aplikasi Cuaca
+        intArrayOf(1010, 119, 1082, 148, 1082, 338, 1010, 300),
+        intArrayOf(1100, 146, 1193, 193, 1190, 404, 1100, 357)),
+    TileInfo("File", Scr.HOME, "trash",                              // tempat sampah (aset)
+        intArrayOf(28, 649, 21, 657, 22, 663, 18, 664, 23, 701, 20, 706, 5, 709, 4, 716, 19, 710,
+            20, 706, 24, 707, 31, 742, 50, 751, 75, 751, 77, 760, 82, 764, 103, 761, 102, 746,
+            91, 741, 97, 706, 103, 704, 99, 692, 104, 664, 99, 652, 74, 642, 72, 635, 67, 635,
+            66, 647, 62, 648, 62, 654, 58, 657, 39, 657, 35, 652, 40, 651, 40, 646)),
 )
 
 /** Papan tulis: judul "JADWAL MENGAJAR" di bagian atas, rata tengah. */
