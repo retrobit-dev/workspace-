@@ -329,7 +329,7 @@ private fun WindSway(box: SceneBox, scene: ImageBitmap, isDay: Boolean, windKmh:
 }
 
 /** Poligon pita tirai (koordinat scene) -> Path px perangkat. */
-private fun bandPath(q: FloatArray, box: SceneBox): Path = Path().apply {
+private fun DrawScope.bandPath(q: FloatArray, box: SceneBox): Path = Path().apply {
     moveTo(box.x(q[0].toInt()).toPx(), box.y(q[1].toInt()).toPx())
     var i = 2
     while (i < q.size) {
