@@ -228,7 +228,7 @@ def lip(x):
 
 
 def back(x):
-    return BACK_Y0 + BACK_SLP * (x - BACK_X0)
+    return 292 + 0.5 * (785 - x)   # garis iso dinding-meja (terukur)
 
 
 def rebuild():
@@ -237,33 +237,43 @@ def rebuild():
     for mode in ("day", "night"):
         out = orig[mode].copy()
         _rb = rb(out); _m = out.mean(2)
-        # ---- 1) DINDING POLOS (x656-792, y273..back)
-        profk = {x: np.median(out[273:281, x], axis=0) for x in range(656, 793)}
-        kurva = {}
-        for y in range(273, 372):                      # gradien vertikal global
-            base = np.median(orig[mode][y, 628:660], axis=0)
-            top = np.median(orig[mode][273:281, 628:660].reshape(-1, 3), 0)
-            kurva[y] = np.clip(base / np.maximum(top, 1e-3), 0.5, 1.6)
-        for x in range(656, 786):
-            yb = int(back(x))
-            for y in range(273, yb):
-                v = profk[x] * kurva[y]
-                if x < 663:                            # feather kiri (ke dinding asli)
-                    t = (x - 656) / 7.0
-                    v = v * t + out[y, x] * (1 - t)
+        # ---- 1) DINDING (x656-782, y273..back): tile tekstur dinding asli
+        # (blok bersih y273-296, 24 baris) ke bawah per kolom, dikali rasio
+        # nada vertikal kolom kiri (x638-648) -> tekstur asli terbawa, nada
+        # mengikuti gradien vertikal; pijar hangat lampu dipertahankan.
+        Vrow = np.median(orig[mode][273:366, 638:648], axis=1).astype(float)
+        for x in range(656, 782):
+            band = orig[mode][273:297, x].astype(float)
+            bmed = np.median(band, axis=0)
+            band = np.where((np.abs(band - bmed).sum(1) > 60)[:, None],
+                            bmed[None, :], band)      # buang lengan/kotak lampu
+            for y in range(273, 366):
+                if y >= back(x) - 1:
+                    continue
+                yp = 273 + (y - 273) % 24
+                v = np.clip(band[yp - 273]
+                            * (Vrow[y - 273] / np.maximum(Vrow[yp - 273], 1.0)),
+                            0, 255)
+                if x < 662:
+                    tt = min(1.0, (x - 656) / 6.0)
+                    v = v * tt + out[y, x] * (1 - tt)
+                if x >= 776:
+                    tt = min(1.0, (x - 776) / 6.0)
+                    v = v * (1 - tt) + out[y, x] * tt
                 out[y, x] = v
         # ---- 2) PERMUKAAN (x679-785, back..lip): plane-fit 2D per kanal dr
         # kayu murni kedua sisi (rb>35, bebas kertas/buku) — seluruh zona ini
         # bekas tumpukan+bayangannya, tidak ada asli yg perlu dipertahankan.
         sx, sy, sc = [], [], []
-        for x in list(range(628, 676, 2)) + list(range(788, 801, 2)):
-            for y in range(int(back(x)) + 1, int(lip(x)) - 1):
-                if _rb[y, x] > 35 and 100 <= _m[y, x] <= 235:
+        for x in list(range(650, 675, 2)) + list(range(788, 799, 2)):
+            ylo = max(int(back(x)) + 1, 352)
+            for y in range(ylo, int(lip(x)) - 1):
+                if _rb[y, x] > 45 and 100 <= _m[y, x] <= 235:
                     sx.append(x); sy.append(y); sc.append(out[y, x])
         A = np.column_stack([np.ones(len(sx)), sx, sy]).astype(float)
         coef = [np.linalg.lstsq(A, np.array([c[i] for c in sc]), rcond=None)[0] for i in range(3)]
-        for y in range(340, 402):
-            for x in range(679, 786):
+        for y in range(352, 370):
+            for x in range(679, 770):
                 if y <= back(x) + 1 or y > lip(x) - 1:
                     continue
                 v = np.array([c[0] + c[1] * x + c[2] * y for c in coef])
@@ -271,10 +281,47 @@ def rebuild():
                     t = (x - 679) / 5.0
                     v = v * t + out[y, x] * (1 - t)
                 if x >= 781:                     # feather kanan (ke kayu asli)
-                    t = (x - 781) / 4.0
+                    t = min(1.0, (x - 781) / 4.0)
                     v = v * (1 - t) + out[y, x] * t
                 out[y, x] = v
-        # ---- 3) MUKA DEPAN (y int(lip) .. 406): GRADIEN BARIS-SAMA dari
+        # ---- 2b) SUDUT POJOK: segmen kayu antara garis-iso (back) dan
+        # garis-lama — bekas sudut buku-2. Diisi penuh per-baris dari kayu
+        # bersih x773-779 (satu baris yg sama -> shading/glow menyambung);
+        # fallback baris valid terdekat. Pita bayangan alas lampu (x>=781)
+        # & piksel gelap-netral (kaki/lengan lampu) dipertahankan.
+        ys, ws = [], []
+        for y in range(296, 370):
+            ref = [orig[mode][y, xx] for xx in range(773, 787)
+                   if orig[mode][y, xx, 0] - orig[mode][y, xx, 2] > (25 if mode == "day" else 18)
+                   and orig[mode][y, xx, 0] - orig[mode][y, xx, 1] >= (40 if mode == "day" else 30)
+                   and 105 <= orig[mode][y, xx].mean() <= 210]
+            if len(ref) >= 3:
+                ys.append(y)
+                ws.append(np.median(np.array(ref), axis=0))
+        if ys:
+            ws = np.array(ws, float)
+            allw = np.empty((370 - 296, 3))
+            for c in range(3):
+                allw[:, c] = np.interp(np.arange(296, 370), np.array(ys), ws[:, c])
+            k = np.array([1, 2, 3, 2, 1], float); k /= k.sum()
+            pad = np.pad(allw, ((2, 2), (0, 0)), mode="edge")
+            allw = np.stack([np.convolve(pad[:, c], k, mode="valid") for c in range(3)], 1)
+            for i, y in enumerate(range(296, 370)):
+                wv = allw[i]
+                xlo = int(787 - 2 * (y - 292))
+                if y >= 352:
+                    xlo = max(xlo, 771)        # kanan zona plane saja
+                x0 = max(679, xlo)
+                for x in range(x0, 781):
+                    if y < back(x) - 1 or y > BACK_Y0 + BACK_SLP * (x - BACK_X0) - 1:
+                        continue
+                    if ((x - 785) / 22.0) ** 2 + ((y - 296) / 13.0) ** 2 <= 1.15:
+                        continue    # elips kaki/lengan lampu: biarkan asli
+                    pv = np.array([c[0] + c[1] * x + c[2] * y for c in coef])
+                    out[y, x] = wv if y < 352 else pv
+                    if y < 352:
+                        out[y, x] = 0.65 * wv + 0.35 * pv   # 2D halus, glow kanan terjaga
+        # ---- 3) MUKA DEPAN        # ---- 3) MUKA DEPAN        # ---- 3) MUKA DEPAN (y int(lip) .. 406): GRADIEN BARIS-SAMA dari
         # kolom muka asli yang terekspos di original: kiri x650-666 & kanan
         # x772-786 (bebas buku). Kontur lip, shading vertikal, dan transisi
         # kursi/lantau ikut otomatis karena sumbernya per-baris dari asli.
@@ -319,6 +366,16 @@ def rebuild():
             if yb2 + 5 < int(lip(x2)) and out[yb2:yb2 + 5, x2].mean() > 70:
                 seg = out[yb2:yb2 + 5, x2]
                 out[yb2:yb2 + 5, x2] = seg * np.linspace(0.86, 1.0, 5)[:, None]
+        # bayangan kontak di tepi KANAN buku baru (tanam buku ke kayu)
+        for j in range(mloc.shape[0]):
+            row = np.where(mloc[j, :] > 0)[0]
+            if not len(row) or row.max() - row.min() < 8:
+                continue
+            xr2 = X0 + DX + row.max()
+            y2 = Y_TOP + DY + j
+            seg = out[y2, xr2 + 1:xr2 + 5]
+            if len(seg) == 4 and seg.mean() > 90:
+                out[y2, xr2 + 1:xr2 + 5] = seg * np.linspace(0.90, 1.0, 4)[:, None]
         Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).save(ARTS[mode])
         print(f"rebuild[{mode}] ->", ARTS[mode].name)
 

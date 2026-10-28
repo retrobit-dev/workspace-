@@ -102,7 +102,12 @@ python3 tools/compose.py --tanpa KOMPUTER,KALKULATOR --out art/scene-tanpa-lapto
   sisi dinding). 0.16.40: buku dipindah ke posisi buku TERBAWAH tumpukan
   semula (+2,+36); bekas tumpukan/slab kayu/sisa halaman dibersihkan total
   (rekonstruksi gradien + profil muka depan + inpaint terarah); poligon
-  Nilai & test ikut posisi baru (inside 735,359). 0.16.42: zona buku-meja DIBANGUN ULANG sekali putus dari
+  Nilai & test ikut posisi baru (inside 735,359). 0.16.43: dinding zona buku = tile tekstur asli y273-296 per kolom (gradien
+  berkas cahaya jendela & pijar lampu ikut), garis-iso dinding-meja terukur
+  292+0.5*(785-x) (sudut belakang benar), sudut pojok per-baris dari kayu
+  x773-786 dgn interpolasi+smooth antar-baris, kaki lampu (elips) & pita
+  bayangan alas asli, ghost mask buku-2 dihapus, bayangan kontak tepi kanan
+  buku. 0.16.42: zona buku-meja DIBANGUN ULANG sekali putus dari
   art asli 3-buku (tools/buku_satu.py --rebuild): dinding polos profil
   kolom, permukaan plane-fit kayu asli, muka depan gradien baris-sama
   kolom asli; buku cutout-mask asli dipaste (+2,+36). 0.16.41: perapian total
