@@ -1,12 +1,16 @@
-# Ruang Kelas — Rebuild Dari Awal
+# Isometric Launcher — Ruang Belajar Isometrik
 
-Workspace direset per permintaan user. Versi lengkap terakhir (0.16.43)
-tetap ada di git history (`9c3f59e`) dan GitHub Releases (`v0.16.43-android`).
+Launcher Android custom berbentuk ruang belajar isometrik. Rebuild dari awal
+(rilis lama terakhir: 0.16.43 @ `9c3f59e`, tetap ada di history & Releases).
 
-- **Gaya dipertahankan** → lihat `style/gaya.md` (palet, aturan, prompt) dan
-  `style/ref-day.png` / `style/ref-night.png` (referensi visual 1280×800).
-- Pulihkan file lama: `git checkout 9c3f59e -- <path>` (atau reset penuh:
-  `git reset --hard 9c3f59e`).
+- **Gaya**: smooth soft-pastel isometrik 3/4 top-down, 1280×800 — acuan di `style/`
+- **Versi baru**: 0.1.0 (vc1)
+- **Modul M1**: Jadwal, Catatan, Absensi, Nilai, Cuaca
 
-Langkah pertama rebuild: (menunggu arahan) — art baru, struktur aplikasi,
-atau fitur inti.
+## Struktur
+```
+art/            scene + aset + poligon ketuk
+android/        aplikasi Kotlin + Compose (Tahap 3)
+web/            preview single-file (real-app) — disaji di :4173
+tools/          pipeline (serve, cek, build preview)
+```
