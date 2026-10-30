@@ -1,9 +1,0 @@
-{
-  "name": "isometric-launcher",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Launcher Android ruang belajar isometrik (rebuild dari awal, gaya soft-pastel dipertahankan)",
-  "scripts": {
-    "start": "python3 tools/serve.py"
-  }
-}
